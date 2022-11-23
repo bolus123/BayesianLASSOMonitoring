@@ -1,46 +1,39 @@
-nn <- 60
+n <- 100
+p <- 5
 
-Y <- arima.sim(list(ar = 0.5), n = nn)
-Ytilde <- Y - mean(Y)
-X <- getX(Ytilde, nn, 5, 1, 1)
+Y <- arima.sim(list(ar = 0.5), n = n)
+TT <- getT(Y, p)
+X <- NULL
 
-Beta <- getInitialBetaLS(Ytilde, nn, 5, 1, 1)
-result <- optim(Beta, fn = getSSE, method = "BFGS", Y = Ytilde, X = X)
-InitialBeta <- result$par
-InitialSigma2 <- result$value / nn
-InitialLambda <- sqrt(rgamma(1, shape = 0.1, rate = 0.1) * InitialSigma2)
-aa <- getOmega(InitialBeta, InitialLambda)
-#bb <- getBetaLASSO(Ytilde, X, aa)
-#getLambdaEM(bb, InitialLambda, InitialSigma2, 
-#            1000, 1e-6)
+lambda2 <- 1000
 
-ddd <- getPosterior(Ytilde, X, 
-                        aa,
-                        InitialBeta, 
-                        InitialLambda, 
-                        InitialSigma2, 
-                        1000, 
-                        1000, 100, 1e-6) 
+f <- lm.fit(cbind(1, TT), Y)
 
-BetaNull <- getInitialBetaLSNull(Ytilde, nn, 5)
-XNull <- getXNull(Ytilde, nn, 5)
-resultNull <- optim(BetaNull, fn = getSSE, method = "BFGS", Y = Ytilde, 
-                 X = XNull)
-InitialBetaNull <- resultNull$par
-InitialSigma2Null <- resultNull$value / nn
-InitialLambdaNull <- sqrt(rgamma(1, shape = 0.1, rate = 0.1) * InitialSigma2Null)
-InitialOmegaNull <- getOmega(InitialBetaNull, InitialLambdaNull)
+oldbeta00 <- f$coefficients[1]
+oldBeta00 <- getBeta00(beta00, n)
+oldBeta20 <- f$coefficients[2:6]
+
+oldsigma2 <- var(f$residuals)
+
+oldtau200 <- getTau2(beta00, sigma2, lambda2)
+oldTau220 <- getTau2Vec(Beta20, sigma2, lambda2)
 
 
-dddNull <- getPosterior(Ytilde, XNull, 
-                        InitialOmegaNull,
-                        InitialBetaNull, 
-                        InitialLambdaNull, 
-                        InitialSigma2Null, 
-                    1000, 
-                    1000, 100, 1e-6) 
+newBeta00 <- getBeta00(0, n)
+R00 <- getR(Y, 0, p, 0, 
+            oldBeta00, 0, oldBeta20, 
+            0, matrix(0, 1, 1), TT)
+newbeta00 <- getbeta00(Y, R00, oldtau200, oldsigma2) 
+newBeta00 <- getBeta00(newbeta00, n)
 
-plot(Ytilde, type= 'l')
-points(XNull %*% dddNull$Beta[2,], type = 'l', lty = 2)
-ee <- forecast::auto.arima(Ytilde)
-points(ee$fitted)
+
+R20 <- getR(Y, 0, 0, 0, 
+           newBeta00, 0, oldBeta20, 
+           0, matrix(0, 1, 1), TT)
+
+
+newBeta20 <- getBeta20Mono(Y, R20, TT, oldTau220, oldsigma2)
+
+getR(arma::vec V, int q, int p, int K,
+     arma::vec Beta00, arma::vec Beta10, arma::vec Beta20, 
+     arma::vec UDelta, arma::mat X, arma::mat T) 
