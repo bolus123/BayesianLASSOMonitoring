@@ -1,9 +1,45 @@
+
+set.seed(1234)
 n <- 100
 p <- 5
 
 Y <- arima.sim(list(ar = 0.5), n = n)
-TT <- getT(Y, p)
+Y[1:50] <- Y[1:50] + 2
+
+aa <- getPosteriorLayer2(Y, 5, 5, 1, 1, 1, 1, 
+                         rep(1, 5) / 5,
+                         100, 50, 1000, simlambda = TRUE, lambda = 5);
+
+plot(Y)
+points(aa$fit0[100, ], col = 'red')
+points(aa$fit1[100, ], col = 'blue')
+
+points(aa$beta00[1] + getSUMat(aa$U[, , 1]) %*% aa$Delta[1, ], 
+       col = 'green')
+
+
+aa <- getPosteriorLayer2(Y, 5, 5, 1, 1, 1, 1, 
+                         rep(1, 5) / 5,
+                         100, 50, 1000, simlambda = FALSE, lambda = 5);
+
+bb <- getPosteriorLayer2(Y, 1, 0, 1, 1, 1, 1, 
+                         rep(1, 5) / 5,
+                         100, 50, 200, simlambda = FALSE, lambda = 1); 
+
+
+
+
+ru <- aa$RU
+bb <-getU(ru, aa$Delta, aa$sigma2, rep(1, 5) / 5)
+
+
 X <- NULL
+
+XX <- matrix(c(1, 2, 3, 4), ncol = 2)
+getPosterior(Y, 1, 2, 3, 4, XX)
+
+
+U <- matrix(c(1, 0, 0, 0, 1, 0, 1, 0, 0), ncol = 3, byrow = TRUE)
 
 lambda2 <- 1000
 
