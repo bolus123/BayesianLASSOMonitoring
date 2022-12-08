@@ -1252,6 +1252,283 @@ arma::mat getU(arma::vec Uvec, int n, int K) {
 }
 
 
+// [[Rcpp::export]]
+arma::rowvec getTvec(arma::vec V, int p, int i) {
+  
+  int n = V.n_elem;
+  arma::rowvec Tvec(p);
+  
+    for (int j = 0; j < p; j++) {
+      if (i - j - 1 >= 0) {
+        Tvec(j) = V(i - j - 1);
+      }
+    }
+  
+  return(Tvec);
+  
+}
+
+// [[Rcpp::export]]
+double dzinbinom(double Yi, double psi, double omega, double Vi){
+ 
+ double out;
+  double expVi = exp(Vi);
+  
+  if (Yi == 0) {
+    out = omega;
+  } else {
+    out = 0;
+  }
+  out = out + (1 - omega) * (R::gammafn(Yi + psi) / R::gammafn(Yi + 1) / R::gammafn(psi)) *
+    pow(expVi / (expVi + psi), Yi) * pow(psi / (expVi + psi), psi);
+  
+  return(out);
+  
+}
+
+// [[Rcpp::export]]
+double getVTarget(double Yi, double psi, double omega, double sigma2,
+                     double Vi, double fiti) {
+  
+  double out = dzinbinom(Yi, psi, omega, Vi);
+  double expVi = exp(Vi);
+  out = out * exp(- 1.0 / 2.0 / sigma2 * pow((Vi - fiti), 2));
+  return(out);
+  
+}
+
+// [[Rcpp::export]]
+arma::vec getV(arma::vec Y, double psi, double omega, 
+               arma::vec beta0, double sigma2, int p, int burnin,
+               arma::vec V,
+               Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
+               Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
+               Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
+               Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
+               Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
+               Rcpp::Nullable<Rcpp::NumericVector> delta0=R_NilValue, 
+               Rcpp::Nullable<Rcpp::NumericVector> delta1=R_NilValue) {
+  
+  int n = Y.n_elem;
+  int i;
+  int sim;
+  arma::vec newV = V;
+  
+  double tmpV;
+  arma::rowvec Tvec;
+  
+  int q;
+  int K;
+  int r;
+  
+  arma::mat X_;
+  arma::mat T_;
+  arma::mat U_;
+  arma::mat W_;
+  arma::mat UW_;
+  
+  arma::vec beta1_;
+  arma::vec beta2_;
+  arma::vec delta0_;
+  arma::vec delta1_;
+  
+  double a;
+  double tmpprob;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    beta1_ = Rcpp::as<arma::vec>(beta1);
+    q = X_.n_cols;
+  } else {
+    q = 0;
+  }
+  if (p > 0) {
+    beta2_ = Rcpp::as<arma::vec>(beta2);
+  } else {
+    p = 0;
+  }
+  if (U.isNotNull()) {
+    U_ = Rcpp::as<arma::mat>(U);
+    delta0_ = Rcpp::as<arma::vec>(delta0);
+    K = U_.n_cols;
+    if (W.isNotNull()) {
+      W_ = Rcpp::as<arma::mat>(W);
+      delta1_ = Rcpp::as<arma::vec>(delta1);
+      r = W_.n_cols;
+      UW_ = getUW(U_, W_);
+    } else {
+      r = 0;
+    }
+  } else {
+    K = 0;
+  }
+  
+  arma::vec fit;
+  
+  
+  for (i = 0; i < n; i++) {
+    if (p > 0) {
+      Tvec = getTvec(newV, p, i);
+    }
+    
+    
+    // get the fit
+    fit = 1 * beta0;
+    if (q > 0) {
+      fit = fit + X_.row(i) * beta1_;
+    }
+    //Rcpp::Rcout << 3 << std::endl;
+    if (p > 0) {
+      fit = fit + Tvec * beta2_;
+    }
+    //Rcpp::Rcout << 4 << std::endl;
+    if (K > 0) {
+      fit = fit + U_.row(i) * delta0_;
+      //Rcpp::Rcout << 5 << std::endl;
+      if (r > 0) {
+        fit = fit + UW_.row(i) * delta1_;
+       //Rcpp::Rcout << 6 << std::endl;
+      }
+    }
+    //Rcpp::Rcout << 7 << std::endl;
+      // get the fit
+      
+      
+      
+      //get V using Metropolis-Hastings
+    for (sim = 0; sim < burnin; sim++) {
+      tmpV = R::rnorm(newV(i), sqrt(sigma2));
+      tmpprob = R::runif(0, 1);
+      a = getVTarget(Y(i), psi, omega, sigma2, tmpV, fit(0)) / 
+        getVTarget(Y(i), psi, omega, sigma2, newV(i), fit(0)); 
+      if (a > 1.0) {
+        a = 1.0;
+      }
+      if (tmpprob < a) {
+        newV(i) = tmpV;
+      }
+    }
+    
+    //Rcpp::Rcout << 4 << std::endl;
+    
+  }
+  return(newV);
+}
+
+
+// [[Rcpp::export]]
+double rzinbinom(double omega, double mu, double psi) {
+  
+  double tmpprob = R::runif(0, 1);
+  double out;
+  
+  if (tmpprob < omega) {
+    out = 0;
+  } else {
+    out = R::rnbinom(psi, psi / (mu + psi));
+  }
+  return(out);
+}
+
+// [[Rcpp::export]]
+double sumlogdzinbinom(arma::vec Y, arma::vec V, double psi, double omega) {
+  int n = Y.n_elem;
+  double out = 0;
+  for (int i = 0; i < n; i++) {
+    out = out + log(dzinbinom(Y(i), psi, omega, V(i)));
+  }
+  return(out);
+}
+
+// [[Rcpp::export]]
+arma::vec getBetaParm(double mean, double var) {
+  arma::vec out(2);
+  out(0) = mean * (mean * (1 - mean) / var - 1);
+  out(1) = out(0) * (1 - mean) / mean;
+  return(out);
+}
+
+// [[Rcpp::export]]
+double getOmega(arma::vec Y, arma::vec V, double psi, double omega, int burnin) {
+
+  double newOmega = omega;
+  double tmpOmega;
+  arma::vec tmoparm1(2);
+  arma::vec tmoparm2(2);
+  double tmppb;
+  double a;
+  
+  for (int sim = 0; sim < burnin; sim++) {
+    tmoparm1 = getBetaParm(newOmega, 1.0 / 9.0);
+    tmpOmega = R::rbeta(tmoparm1(0), tmoparm1(1));
+    tmoparm2 = getBetaParm(tmpOmega, 1.0 / 9.0);
+    a = exp(sumlogdzinbinom(Y, V, psi, tmpOmega) - 
+      sumlogdzinbinom(Y, V, psi, newOmega)) * 
+      R::dbeta(newOmega, tmoparm2(0), tmoparm2(1), false) /
+        R::dbeta(tmpOmega, tmoparm1(0), tmoparm1(1), false);
+
+    tmppb = R::runif(0, 1);
+    if (tmppb < a) {
+      newOmega = tmpOmega;
+    }
+    
+  }
+  return(newOmega);
+}
+
+// [[Rcpp::export]]
+arma::vec getGammaParm(double mean, double var) {
+  arma::vec out(2);
+  out(0) = pow(mean, 2) / var;
+  out(1) = var / mean;
+  return(out);
+}
+
+// [[Rcpp::export]]
+double getPsi(arma::vec Y, arma::vec V, double psi, double omega, int burnin) {
+
+  double newPsi = psi;
+  double tmpPsi;
+  arma::vec tmoparm1(2);
+  arma::vec tmoparm2(2);
+  double tmppb;
+  double a;
+  
+  for (int sim = 0; sim < burnin; sim++) {
+    tmoparm1 = getGammaParm(newPsi, newPsi);
+    tmpPsi = R::rgamma(tmoparm1(0), tmoparm1(1));
+    tmoparm2 = getGammaParm(tmpPsi, tmpPsi);
+    a = exp(sumlogdzinbinom(Y, V, tmpPsi, omega) - 
+      sumlogdzinbinom(Y, V, newPsi, omega)) * 
+      R::dgamma(newPsi, tmoparm2(0), tmoparm2(1), false) /
+        R::dgamma(tmpPsi, tmoparm1(0), tmoparm1(1), false);
+    
+    tmppb = R::runif(0, 1);
+    if (tmppb < a) {
+      newPsi = tmpPsi;
+    }
+    
+  }
+  return(newPsi);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ///// [[Rcpp::export]]
 ///Rcpp::List getPosteriorLayer2(
