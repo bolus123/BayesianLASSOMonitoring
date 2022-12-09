@@ -10,7 +10,7 @@ lambda2 <- 100
 K <- 5
 p <- 5
 
-n <- 30
+n <- 365
 
 a1 <- 1
 a2 <- a1
@@ -18,7 +18,7 @@ b1 <- a2
 b2 <- b1
 
 Y <- arima.sim(list(ar = 0.5), n = n)
-#Y[20] <- 3
+Y[21:30] <- Y[21:30] + 3
 #Y[1:50] <- Y[1:50] + 1
 #Y[51:100] <- Y[51:100] + 5
 #Y[101:150] <- Y[101:150] + 10
@@ -76,6 +76,10 @@ loglik1out <- matrix(NA, nrow = nsim, ncol = n)
 loglikout <- matrix(NA, nrow = nsim, ncol = n)
 
 loglikratio <- rep(NA, nsim)
+
+fit0out <- matrix(NA, nrow = nsim, ncol = n)
+fit1out <- matrix(NA, nrow = nsim, ncol = n)
+
 
 cnt <- 0
 for (i in 1:(nsim + burnin)) {
@@ -144,6 +148,9 @@ for (i in 1:(nsim + burnin)) {
     
     Uout[, , cnt] <- U
     probout[, , cnt] <- tmpUList$prob
+    
+    fit0out[cnt, ] <- post1$fit0
+    fit1out[cnt, ] <- post1$fit1
   }
   
 

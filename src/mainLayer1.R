@@ -1,24 +1,28 @@
 library(GIGrvg)
 library(breakfast)
+library(pscl)
 
 tol <- 1e-6
 
 nsim <- 1000
-burnin <- 200
+burnin <- 100
 
 lambda2 <- 100
 K <- 5
 p <- 5
 
-n <- 30
+n <- 365
 
 a1 <- 1
 a2 <- a1
 b1 <- a2
 b2 <- b1
 
+d1 <- 1
+d2 <- d1
+
 V <- arima.sim(list(ar = 0.5), n = n)
-#Y[20] <- 3
+V[21:60] <  V[21:60] + 3
 #Y[1:50] <- Y[1:50] + 1
 #Y[51:100] <- Y[51:100] + 5
 #Y[101:150] <- Y[101:150] + 10
@@ -31,135 +35,145 @@ omega <- 0.5
 mu <- exp(V)
 
 Y <- rnbinom(n, psi, mu = mu)
+TY <- getT(Y, p)
 
-TT <- getT(V, p)
+##########################
 
-Uvec <- idetect_rcpp(V, K - 1)
-U <- getU(Uvec, n, K)
-gamma <- colMeans(U)
+dat <- data.frame(Y, TY)
 
-init1 <- initializeGaussianPosterior(V, lambda2, T = TT, U = U);
+initModel <- zeroinfl(Y ~ ., data = dat, dist = 'negbin')
+V1 <- rnorm(n, cbind(1, TY) %*% initModel$coefficients$count, sqrt(initModel$vcov[1, 1]))
+V2 <- rnorm(n, cbind(1, TY) %*% initModel$coefficients$zero, sqrt(initModel$vcov[7, 7]))
+
+mu <- getMu(V1)
+omega <- getOmega(V2)
+
+Uvec1 <- idetect_rcpp(V1, K - 1)
+U1 <- getU(Uvec1, n, K)
+gamma1 <- colMeans(U1)
+
+Uvec2 <- idetect_rcpp(V2, K - 1)
+U2 <- getU(Uvec2, n, K)
+gamma2 <- colMeans(U2)
+
+psi <- initModel$theta
+
+TT1 <- getT(V1, p)
+
+init1 <- initializeGaussianPosterior(V1, lambda2, T = TT1, U = U1);
 betadelta1 <- init1$betadelta
 tau2all1 <- init1$tau2all
 sigma21 <- init1$sigma2
-sigma21resi <- sigma21
-lambda21 <- lambda2
+
+TT2 <- getT(V2, p)
+
+init2 <- initializeGaussianPosterior(V2, lambda2, T = TT2, U = U2);
+betadelta2 <- init2$betadelta
+tau2all2 <- init2$tau2all
+sigma22 <- init2$sigma2
 
 
-test <- getV(Y, psi, omega, 
-               betadelta1[1], sigma21, 5, 50,
-               V = V,
-               U=U,
-               beta2=betadelta1[2:6], 
-               delta0=betadelta1[7:11]) 
-
-getOmega(Y, V, psi, omega, 50)
-getPsi(Y, V, psi, omega, 50)
-
-a <- rep(NA, 100000)
-b <- rep(NA, 100000)
-for (i in 1:100000) {
-  a[i] <- rzfnbinom(0.5, 1, 1);
-  b[i] <- rnbinom(1, 1, mu = 1);
-}
-
-
-
-betadelta0out <- matrix(NA, nrow = nsim, ncol = 6)
 betadelta1out <- matrix(NA, nrow = nsim, ncol = 11)
-tau2all0out <- matrix(NA, nrow = nsim, ncol = 6)
+betadelta2out <- matrix(NA, nrow = nsim, ncol = 11)
 tau2all1out <- matrix(NA, nrow = nsim, ncol = 11)
-sigma20out <- rep(NA, nsim)
+tau2all2out <- matrix(NA, nrow = nsim, ncol = 11)
 sigma21out <- rep(NA, nsim)
-sigma20resiout <- rep(NA, nsim)
-sigma21resiout <- rep(NA, nsim)
-lambda20out <- rep(NA, nsim)
-lambda21out <- rep(NA, nsim)
-lambda20simout <- rep(NA, nsim)
-lambda21simout <- rep(NA, nsim)
+sigma22out <- rep(NA, nsim)
+lambda2out <- rep(NA, nsim)
 
-Uout <- array(NA, dim = c(n, K, nsim))
-probout <- array(NA, dim = c(n, K, nsim))
+U1out <- array(NA, dim = c(n, K, nsim))
+prob1out <- array(NA, dim = c(n, K, nsim))
 
-rss0out <- matrix(NA, nrow = nsim, ncol = n)
-rss1out <- matrix(NA, nrow = nsim, ncol = n)
+U2out <- array(NA, dim = c(n, K, nsim))
+prob2out <- array(NA, dim = c(n, K, nsim))
 
-rssdif <- rep(NA, nsim)
+V1out <- matrix(NA, nrow = nsim, ncol = n)
+V2out <- matrix(NA, nrow = nsim, ncol = n)
 
-loglik0out <- matrix(NA, nrow = nsim, ncol = n)
-loglik1out <- matrix(NA, nrow = nsim, ncol = n)
+fit10out <- matrix(NA, nrow = nsim, ncol = n)
+fit11out <- matrix(NA, nrow = nsim, ncol = n)
 
-loglikout <- matrix(NA, nrow = nsim, ncol = n)
+fit20out <- matrix(NA, nrow = nsim, ncol = n)
+fit21out <- matrix(NA, nrow = nsim, ncol = n)
 
-loglikratio <- rep(NA, nsim)
+fit0out <- matrix(NA, nrow = nsim, ncol = n)
+fit1out <- matrix(NA, nrow = nsim, ncol = n)
+
+psiout <- rep(NA, nsim)
 
 cnt <- 0
 for (i in 1:(nsim + burnin)) {
   
-  #cat(i, "\n")
   
-  post0 <- getGaussianPosterior(Y, betaldelta0[1], tau2all0[1],
-                                sigma20resi, lambda20, T = TT, beta2=betaldelta0[2:6],
-                                tau2beta2 = tau2all0[2:6])
-  betadelta0 <- post0$betadelta
-  tau2all0 <- post0$tau2all
-  sigma20 <- getSigma2(Y - post0$fit1, post0$betadelta, post0$tau2all, a1, a2)
-  sigma20resi <- mean((Y - post0$fit1) ^ 2)
-  lambda20 <- getLambda2EM(post0$expectedtau2all)
-  #lambda20 <- getLambda2(post0$tau2all, b1, b2)
-  lambda20out[cnt] <- lambda20
-  lambda20simout[cnt] <- getLambda2(post0$tau2all, b1, b2)
+  V1 <- getV1(Y, psi, V1, omega, betadelta1[1], sigma21, p, burnin, U = U1, 
+              beta2 = betadelta1[2:6], delta0 = betadelta1[7:11])
   
-  post1 <- getGaussianPosterior(Y, betadelta1[1], tau2all1[1],
-                                sigma21resi, lambda21, T = TT, U = U,
+  TT1 <- getT(V1, p)
+  
+  post1 <- getGaussianPosterior(V1, betadelta1[1], tau2all1[1],
+                                sigma21, lambda2, T = TT1, U = U1,
                                 beta2=betadelta1[2:6], delta0 = betadelta1[7:11],
                                 tau2beta2=tau2all1[2:6], tau2delta0 = tau2all1[7:11])
   betadelta1 <- post1$betadelta
   tau2all1 <- post1$tau2all
-  sigma21 <- getSigma2(Y - post1$fit1, post1$betadelta, post1$tau2all, a1, a2)
-  sigma21resi <- mean((Y - post1$fit1) ^ 2)
-  lambda21 <- getLambda2EM(post1$expectedtau2all)
-  #lambda21 <- getLambda2(post1$tau2all, b1, b2)
+  sigma21 <- mean((V1 - post1$fit1) ^ 2)
+
+  tmpUList1 <- getUWithoutW(V1 - post1$fit0, K, post1$delta0, sigma21, gamma1)
+  U1 <- tmpUList1$U
+  prob1 <- tmpUList1$prob
   
+  V2 <- getV2(Y, psi, mu, V2, betadelta2[1], sigma22, p, burnin, U = U2, 
+              beta2 = betadelta2[2:6], delta0 = betadelta2[7:11])
   
+  TT2 <- getT(V2, p)
   
-  tmpUList <- getUWithoutW(Y - post1$fit0, K, post1$delta0, sigma21, gamma)
-  U <- tmpUList$U
+  post2 <- getGaussianPosterior(V2, betadelta2[1], tau2all2[1],
+                                sigma22, lambda2, T = TT2, U = U2,
+                                beta2=betadelta2[2:6], delta0 = betadelta2[7:11],
+                                tau2beta2=tau2all2[2:6], tau2delta0 = tau2all2[7:11])
+  betadelta2 <- post2$betadelta
+  tau2all2 <- post2$tau2all
+  sigma22 <- mean((V2 - post2$fit1) ^ 2)
   
+  tmpUList2 <- getUWithoutW(V2 - post2$fit0, K, post2$delta0, sigma22, gamma2)
+  U2 <- tmpUList2$U
+  prob2 <- tmpUList2$prob
   
+  lambda2 <- getLambda2EM(c(post1$expectedtau2all, post2$expectedtau2all))
+  
+  omega <- getOmega(V2)
+  mu <- getMu(V1)
+  
+  psi <- getPsi(Y, mu, psi, omega, burnin, d1, d2)
   
   if (i > burnin) {
     cnt = cnt + 1
     
-    lambda21out[cnt] <- lambda21
-    lambda21simout[cnt] <- getLambda2(post1$tau2all, b1, b2)
-    
-    rss0out[cnt, ] <- (Y - post1$fit0) ^ 2
-    rss1out[cnt, ] <- (Y - post1$fit1) ^ 2
-    
-    rssdif[cnt] <- (sum(rss0out[cnt, ]) - sum(rss1out[cnt, ])) / sigma21
-    
-    loglik0out[cnt, ] <- loglikelihood(Y - post1$fit0, sigma21)
-    loglik1out[cnt, ] <- loglikelihood(Y - post1$fit1, sigma21)
-    
-    loglikout[cnt, ] <- loglik1out[cnt, ] - loglik0out[cnt, ]
-    
-    loglikratio[cnt] <- sum(loglikout[cnt, ])
-    
-    betadelta0out[cnt, ] <- betadelta0
-    tau2all0out[cnt, ] <- tau2all0
-    sigma20out[cnt] <- sigma20
-    sigma20resiout[cnt] <- sigma20resi
-    lambda20out[cnt] <- lambda20
+    lambda2out[cnt] <- lambda2
+    psiout[cnt] <- psi
     
     betadelta1out[cnt, ] <- betadelta1
     tau2all1out[cnt, ] <- tau2all1
     sigma21out[cnt] <- sigma21
-    sigma21resiout[cnt] <- sigma21resi
-    lambda21out[cnt] <- lambda21
     
-    Uout[, , cnt] <- U
-    probout[, , cnt] <- tmpUList$prob
+    U1out[, , cnt] <- U1
+    prob1out[, , cnt] <- prob1
+    
+    betadelta2out[cnt, ] <- betadelta2
+    tau2all2out[cnt, ] <- tau2all2
+    sigma22out[cnt] <- sigma22
+    
+    U2out[, , cnt] <- U2
+    prob2out[, , cnt] <- prob2
+    
+    fit10out[cnt, ] <- post1$fit0
+    fit11out[cnt, ] <- post1$fit1
+    
+    fit20out[cnt, ] <- post2$fit0
+    fit21out[cnt, ] <- post2$fit1
+    
+    fit0out[cnt, ] <- (1 - getOmega(post2$fit0)) * getMu(post1$fit0)
+    fit1out[cnt, ] <- (1 - getOmega(post2$fit1)) * getMu(post1$fit1)
   }
   
   
