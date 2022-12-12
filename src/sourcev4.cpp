@@ -1274,317 +1274,97 @@ arma::rowvec getTvec(arma::vec V, int p, int i) {
   
 }
 
+
 // [[Rcpp::export]]
-double dzinbinom(double Yi, double psi, double omegai, double mui){
- 
- double out;
-  //double expVi = exp(Vi);
+double dzinfbinom(double Yi, double V1i, double V2i, double psi) {
   
-  if (Yi == 0) {
-    out = omegai;
-  } else {
-    out = 0;
+  double omega = 1 / (1 + exp(-V2i));
+  double mu = exp(V1i);
+  double out = 0.0;
+  
+  if (Yi == 0.0) {
+    out = out * omega;
   }
-  out = out + (1 - omegai) * (R::gammafn(Yi + psi) / R::gammafn(Yi + 1) / R::gammafn(psi)) *
-    pow(mui / (mui + psi), Yi) * pow(psi / (mui + psi), psi);
   
-  return(out);
+  out = out + (1 - omega) * (R::gammafn(Yi + psi) / R::gammafn(Yi + 1) / R::gammafn(psi)) * 
+    pow(mu / (mu + psi), Yi) * pow(psi/ (mu + psi), psi);
   
-}
-
-// [[Rcpp::export]]
-double getV1Target(double Yi, double psi, double omegai, double sigma2,
-                     double Vi, double Vhati) {
-  
-  double expVi = exp(Vi);
-  double out = dzinbinom(Yi, psi, omegai, expVi);
-  out = out * exp(- 1.0 / 2.0 / sigma2 * pow((Vi - Vhati), 2));
-  return(out);
-  
-}
-
-// [[Rcpp::export]]
-double getV2Target(double Yi, double psi, double mui, double sigma2,
-                   double Vi, double Vhati) {
-  
-  double invLogitVi = 1 / (1 + exp(-Vi));
-  double out = dzinbinom(Yi, psi, invLogitVi, mui);
-  out = out * exp(- 1.0 / 2.0 / sigma2 * pow((Vi - Vhati), 2));
-  return(out);
-  
-}
-
-// [[Rcpp::export]]
-arma::vec getOmega(arma::vec V2) {
-  arma::vec out = 1 / (1 + arma::exp(-V2));
   return(out);
 }
 
 // [[Rcpp::export]]
-arma::vec getMu(arma::vec V1) {
-  arma::vec out = arma::exp(V1);
-  return(out);
-}
-
-
-// [[Rcpp::export]]
-arma::vec getV1(arma::vec Y, double psi, arma::vec V1, arma::vec omega,
-               arma::vec beta0, double sigma2, int p, int burnin,
-               Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
-               Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
-               Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
-               Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
-               Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
-               Rcpp::Nullable<Rcpp::NumericVector> delta0=R_NilValue, 
-               Rcpp::Nullable<Rcpp::NumericVector> delta1=R_NilValue) {
+double rV1i(double Yi, double V1i, double V2i, double psi, double V1ihat, double sigma21, int burnin) {
   
-  int n = Y.n_elem;
-  int i;
-  int sim;
-  arma::vec newV1 = V1;
-  
-  double tmpV;
-  arma::rowvec Tvec;
-  
-  int q;
-  int K;
-  int r;
-  
-  arma::mat X_;
-  arma::mat T_;
-  arma::mat U_;
-  arma::mat W_;
-  arma::mat UW_;
-  
-  arma::vec beta1_;
-  arma::vec beta2_;
-  arma::vec delta0_;
-  arma::vec delta1_;
-  
+  double newV1 = V1i;
+  double tmpV1;
+  double tmppb;
   double a;
-  double tmpprob;
   
-  if (X.isNotNull()) {
-    X_ = Rcpp::as<arma::mat>(X);
-    beta1_ = Rcpp::as<arma::vec>(beta1);
-    q = X_.n_cols;
-  } else {
-    q = 0;
-  }
-  if (p > 0) {
-    beta2_ = Rcpp::as<arma::vec>(beta2);
-  } else {
-    p = 0;
-  }
-  if (U.isNotNull()) {
-    U_ = Rcpp::as<arma::mat>(U);
-    delta0_ = Rcpp::as<arma::vec>(delta0);
-    K = U_.n_cols;
-    if (W.isNotNull()) {
-      W_ = Rcpp::as<arma::mat>(W);
-      delta1_ = Rcpp::as<arma::vec>(delta1);
-      r = W_.n_cols;
-      UW_ = getUW(U_, W_);
-    } else {
-      r = 0;
-    }
-  } else {
-    K = 0;
+  for (int i = 0; i < burnin; i++) {
+    tmpV1 = R::rnorm(newV1, sqrt(sigma21));
+    tmppb = R::runif(0.0, 1.0);
+    a = dzinfbinom(Yi, tmpV1, V2i, psi) * exp(- 1.0 / 2.0 / sigma21 * pow(tmpV1 - V1ihat, 2)) / 
+      dzinfbinom(Yi, newV1, V2i, psi) * exp(- 1.0 / 2.0 / sigma21 * pow(newV1 - V1ihat, 2));
+    if (tmppb < a) {
+      newV1 = tmpV1;
+    } 
   }
   
-  arma::vec fit;
-  
-  
-  for (i = 0; i < n; i++) {
-    if (p > 0) {
-      Tvec = getTvec(newV1, p, i);
-    }
-    
-    
-    // get the fit
-    fit = 1 * beta0;
-    if (q > 0) {
-      fit = fit + X_.row(i) * beta1_;
-    }
-    //Rcpp::Rcout << 3 << std::endl;
-    if (p > 0) {
-      fit = fit + Tvec * beta2_;
-    }
-    //Rcpp::Rcout << 4 << std::endl;
-    if (K > 0) {
-      fit = fit + U_.row(i) * delta0_;
-      //Rcpp::Rcout << 5 << std::endl;
-      if (r > 0) {
-        fit = fit + UW_.row(i) * delta1_;
-       //Rcpp::Rcout << 6 << std::endl;
-      }
-    }
-    //Rcpp::Rcout << 7 << std::endl;
-      // get the fit
-      
-      
-      
-      //get V using Metropolis-Hastings
-    for (sim = 0; sim < burnin; sim++) {
-      tmpV = R::rnorm(newV1(i), sqrt(sigma2));
-      tmpprob = R::runif(0, 1);
-      a = getV1Target(Y(i), psi, omega(i), sigma2, tmpV, fit(0)) / 
-        getV1Target(Y(i), psi, omega(i), sigma2, newV1(i), fit(0)); 
-      if (a > 1.0) {
-        a = 1.0;
-      }
-      if (tmpprob < a) {
-        newV1(i) = tmpV;
-      }
-    }
-    
-    //Rcpp::Rcout << 4 << std::endl;
-    
-  }
   return(newV1);
 }
 
-
 // [[Rcpp::export]]
-arma::vec getV2(arma::vec Y, double psi, arma::vec mu, arma::vec V2,
-                arma::vec beta0, double sigma2, int p, int burnin,
-                Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
-                Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
-                Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
-                Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
-                Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
-                Rcpp::Nullable<Rcpp::NumericVector> delta0=R_NilValue, 
-                Rcpp::Nullable<Rcpp::NumericVector> delta1=R_NilValue) {
+arma::vec getV1(arma::vec Y, arma::vec V1, arma::vec V2, double psi, arma::vec V1hat, double sigma21, int burnin) {
   
   int n = Y.n_elem;
-  int i;
-  int sim;
-  arma::vec newV2 = V2;
+  arma::vec newV1(n);
   
-  double tmpV;
-  arma::rowvec Tvec;
+  //Rcpp::Rcout << 1 << std::endl;
   
-  int q;
-  int K;
-  int r;
+  for (int i = 0; i < n; i++) {
+    //Rcpp::Rcout << i << std::endl;
+    newV1(i) = rV1i(Y(i), V1(i), V2(i), psi, V1hat(i), sigma21, burnin);
+  }
   
-  arma::mat X_;
-  arma::mat T_;
-  arma::mat U_;
-  arma::mat W_;
-  arma::mat UW_;
+  //Rcpp::Rcout << 2 << std::endl;
   
-  arma::vec beta1_;
-  arma::vec beta2_;
-  arma::vec delta0_;
-  arma::vec delta1_;
+  return(newV1);
   
+}
+
+// [[Rcpp::export]]
+double rV2i(double Yi, double V1i, double V2i, double psi, double V2ihat, double sigma22, int burnin) {
+  
+  double newV2 = V2i;
+  double tmpV2;
+  double tmppb;
   double a;
-  double tmpprob;
   
-  if (X.isNotNull()) {
-    X_ = Rcpp::as<arma::mat>(X);
-    beta1_ = Rcpp::as<arma::vec>(beta1);
-    q = X_.n_cols;
-  } else {
-    q = 0;
-  }
-  if (p > 0) {
-    beta2_ = Rcpp::as<arma::vec>(beta2);
-  } else {
-    p = 0;
-  }
-  if (U.isNotNull()) {
-    U_ = Rcpp::as<arma::mat>(U);
-    delta0_ = Rcpp::as<arma::vec>(delta0);
-    K = U_.n_cols;
-    if (W.isNotNull()) {
-      W_ = Rcpp::as<arma::mat>(W);
-      delta1_ = Rcpp::as<arma::vec>(delta1);
-      r = W_.n_cols;
-      UW_ = getUW(U_, W_);
-    } else {
-      r = 0;
-    }
-  } else {
-    K = 0;
+  for (int i = 0; i < burnin; i++) {
+    tmpV2 = R::rnorm(newV2, sqrt(sigma22));
+    tmppb = R::runif(0.0, 1.0);
+    a = dzinfbinom(Yi, V1i, tmpV2, psi) * exp(- 1.0 / 2.0 / sigma22 * pow(tmpV2 - V2ihat, 2)) / 
+      dzinfbinom(Yi, V1i, newV2, psi) * exp(- 1.0 / 2.0 / sigma22 * pow(newV2 - V2ihat, 2));
+    if (tmppb < a) {
+      newV2 = tmpV2;
+    } 
   }
   
-  arma::vec fit;
-  
-  
-  for (i = 0; i < n; i++) {
-    if (p > 0) {
-      Tvec = getTvec(newV2, p, i);
-    }
-    
-    
-    // get the fit
-    fit = 1 * beta0;
-    if (q > 0) {
-      fit = fit + X_.row(i) * beta1_;
-    }
-    //Rcpp::Rcout << 3 << std::endl;
-    if (p > 0) {
-      fit = fit + Tvec * beta2_;
-    }
-    //Rcpp::Rcout << 4 << std::endl;
-    if (K > 0) {
-      fit = fit + U_.row(i) * delta0_;
-      //Rcpp::Rcout << 5 << std::endl;
-      if (r > 0) {
-        fit = fit + UW_.row(i) * delta1_;
-        //Rcpp::Rcout << 6 << std::endl;
-      }
-    }
-    //Rcpp::Rcout << 7 << std::endl;
-    // get the fit
-    
-    
-    
-    //get V using Metropolis-Hastings
-    for (sim = 0; sim < burnin; sim++) {
-      tmpV = R::rnorm(newV2(i), sqrt(sigma2));
-      tmpprob = R::runif(0, 1);
-      a = getV2Target(Y(i), psi, tmpV, sigma2, mu(i), fit(0)) / 
-        getV2Target(Y(i), psi, newV2(i), sigma2, mu(i), fit(0)); 
-      if (a > 1.0) {
-        a = 1.0;
-      }
-      if (tmpprob < a) {
-        newV2(i) = tmpV;
-      }
-    }
-    
-    //Rcpp::Rcout << 4 << std::endl;
-    
-  }
   return(newV2);
 }
 
-
 // [[Rcpp::export]]
-double rzinbinom(double omega, double mu, double psi) {
+arma::vec getV2(arma::vec Y, arma::vec V1, arma::vec V2, double psi, arma::vec V2hat, double sigma22, int burnin) {
   
-  double tmpprob = R::runif(0, 1);
-  double out;
-  
-  if (tmpprob < omega) {
-    out = 0;
-  } else {
-    out = R::rnbinom(psi, psi / (mu + psi));
-  }
-  return(out);
-}
-
-// [[Rcpp::export]]
-double sumlogdzinbinom(arma::vec Y, arma::vec mu, double psi, arma::vec omega) {
   int n = Y.n_elem;
-  double out = 0;
+  arma::vec newV2(n);
+  
   for (int i = 0; i < n; i++) {
-    out = out + log(dzinbinom(Y(i), psi, omega(i), mu(i)));
+    newV2(i) = rV2i(Y(i), V1(i), V2(i), psi, V2hat(i), sigma22, burnin);
   }
-  return(out);
+  
+  return(newV2);
+  
 }
 
 // [[Rcpp::export]]
@@ -1596,671 +1376,36 @@ arma::vec getGammaParm(double mean, double var) {
 }
 
 // [[Rcpp::export]]
-double getPsi(arma::vec Y, arma::vec mu, double psi, arma::vec omega, int burnin, 
-              double d1, double d2) {
-
-  double newPsi = psi;
-  double tmpPsi;
-  arma::vec tmoparm1(2);
-  arma::vec tmoparm2(2);
-  double tmppb;
-  double a;
+double sumdiflogdzinbinom(arma::vec Y, arma::vec V1, arma::vec V2, double psi, double oldpsi) {
+  int n = Y.n_elem;
+  double tmp = 0.0;
   
-  for (int sim = 0; sim < burnin; sim++) {
-    tmoparm1 = getGammaParm(newPsi, newPsi);
-    tmpPsi = R::rgamma(tmoparm1(0), tmoparm1(1));
-    tmoparm2 = getGammaParm(tmpPsi, tmpPsi);
-    a = exp(sumlogdzinbinom(Y, mu, tmpPsi, omega) + log(R::dgamma(tmpPsi, d1, d2, false)) - 
-      sumlogdzinbinom(Y, mu, newPsi, omega) - R::dgamma(newPsi, d1, d2, false)) *
-      R::dgamma(newPsi, tmoparm2(0), tmoparm2(1), false) /
-        R::dgamma(tmpPsi, tmoparm1(0), tmoparm1(1), false);
-    
-    tmppb = R::runif(0, 1);
-    if (tmppb < a) {
-      newPsi = tmpPsi;
-    }
-    
+  for (int i = 0; i < n; i++) {
+    tmp = tmp + log(dzinfbinom(Y(i), V1(i), V2(i), psi)) - log(dzinfbinom(Y(i), V1(i), V2(i), oldpsi));
   }
-  return(newPsi);
+  return(tmp);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///// [[Rcpp::export]]
-///Rcpp::List getPosteriorLayer2(
-///    arma::vec V, 
-///    int p, double a1, double a2, double b1, double b2,
-///    int nsim, int burnin, int maxsim, bool simlambda = true,
-///    Rcpp::Nullable<double> lambda=R_NilValue,
-///    Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
-///    Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
-///    Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
-///    Rcpp::Nullable<int> K=R_NilValue,
-///    Rcpp::Nullable<Rcpp::NumericVector> gamma=R_NilValue
-///) {
-///  
-///  double lambda_;
-///  double lambda2;
-///  
-///  if (lambda.isNotNull()) {
-///    lambda_ = Rcpp::as<double>(lambda);
-///    lambda2 = lambda_ * lambda_;  
-///  } else {
-///    lambda2 = 10000; //temporary value which needs to be modified.
-///  }
-///  
-///  //// initialize the input
-///  //Rcpp::Rcout << 1 << std::endl;
-///  
-///  int n = V.n_elem;
-///  int q;
-///  arma::mat X_;
-///  int r;
-///  arma::mat W_;
-///  arma::mat T_;
-///  arma::mat U_;
-///  arma::vec gamma_;
-///  arma::mat UW_;
-///  int i;
-///  arma::mat input;
-///  int KK = 0;
-///  arma::vec Uvec;
-///  int indxU;
-///  int lastindxU;
-///  input = arma::ones(n);
-///  
-///  if (X.isNotNull()) {
-///    X_ = Rcpp::as<arma::vec>(X);
-///    input = arma::join_rows(input, X_);
-///  } else {
-///    q = 0;
-///  }
-///  if (W.isNotNull()) {
-///    W_ = Rcpp::as<arma::vec>(W);
-///  } else {
-///    r = 0;
-///  }
-///  if (p > 0) {
-///    T_ = getT(V, p);
-///    input = arma::join_rows(input, T_);
-///  }
-///  
-///  //Rcpp::Rcout << 2 << std::endl;
-///  
-///  if (K.isNull() & U.isNull()) {
-///    Rcpp::Rcout << "error" << std::endl;
-///  } else if (U.isNotNull() & K.isNull()) {
-///    U_ = Rcpp::as<arma::mat>(U);
-///    KK = U_.n_cols;
-///  } else if (K.isNotNull() & U.isNull()) {
-///    //Rcpp::Rcout << 3 << std::endl;
-///    
-///    KK = Rcpp::as<int>(K);
-///    
-///    //Rcpp::Rcout << KK << std::endl;
-///    
-///    Uvec = arma::sort(idetect_rcpp(V, KK - 1)); //this is just an example and 
-///                                //other change point detection methods can also be used
-///    
-///    //Rcpp::Rcout << Uvec << std::endl;
-///    //Rcpp::Rcout << n << std::endl;
-///    U_.zeros(n, KK);
-///    indxU = 0;
-///    
-///    if (KK > 1) {
-///      for (i = 0; i < (KK - 1); i++) {
-///        lastindxU = Uvec(i) - 1;
-///        
-///        //Rcpp::Rcout << indxU << std::endl;
-///        //Rcpp::Rcout << lastindxU << std::endl;
-///        
-///        U_.submat(indxU, i, lastindxU, i).ones();
-///        indxU = Uvec(i);
-///      }
-///    }
-///    
-///    //Rcpp::Rcout << 1 << std::endl;
-///    //Rcpp::Rcout << U_ << std::endl;
-///    
-///    U_.submat(indxU, KK - 1, (n - 1), KK - 1).ones();
-///    //Rcpp::Rcout << 1 << std::endl;
-///    
-///  } else if (U.isNotNull() & U.isNotNull()) {
-///    U_ = Rcpp::as<arma::mat>(U);
-///    KK = Rcpp::as<int>(K);
-///  }
-///  
-///  if (gamma.isNotNull()) {
-///    gamma_ = Rcpp::as<arma::vec>(gamma);
-///  } else {
-///    gamma_ = arma::trans(arma::mean(U_, 0));
-///  }
-///  
-///  //Rcpp::Rcout << U_ << std::endl;
-///  //Rcpp::Rcout << gamma_ << std::endl;
-///  
-///  
-///  
-///  if (KK > 0) {
-///    input = arma::join_rows(input, U_);
-///    if (r > 0) {
-///      UW_ = getUW(U_, W_);
-///      input = arma::join_rows(input, UW_);
-///    }
-///  }
-///  
-///  
-///  //// initialize the beta and delta
-///  //Rcpp::Rcout << 2 << std::endl;
-///  
-///  int m = input.n_cols;
-///  arma::vec betadelta;
-///  double sigma2;
-///  double beta0;
-///  arma::vec beta1;
-///  arma::vec beta2;
-///  arma::vec delta0;
-///  arma::vec delta1;
-///  int indx;
-///  
-///  betadelta.zeros(m);
-///  betadelta(0) = arma::mean(V);
-///  betadelta = optim_rcpp(betadelta, V, input);
-///  sigma2 = obj_fun_rcpp(betadelta, V, input) / n;
-///  
-///  beta0 = betadelta(0);
-///  indx = 1;
-///  if (q > 0) {
-///    beta1 = betadelta.subvec(indx, indx + q - 1);
-///    indx = indx + q;
-///    //Rcpp::Rcout << "beta1" << beta1 << std::endl;
-///  }
-///  if (p > 0) {
-///    beta2 = betadelta.subvec(indx, indx + p - 1);
-///    indx = indx + p;
-///    //Rcpp::Rcout << "beta2" << beta2 << std::endl;
-///  }
-///  if (KK > 0) {
-///    delta0 = betadelta.subvec(indx, indx + KK - 1);
-///    indx = indx + KK;
-///    //Rcpp::Rcout << "delta0" << delta0 << std::endl;
-///    if (r > 0) {
-///      delta1 = betadelta.subvec(indx, indx + KK * r - 1);
-///      indx = indx + KK * r;
-///      //Rcpp::Rcout << "delta1" << delta1 << std::endl;
-///    }
-///  }
-///  
-///  
-///  
-///  //Rcpp::Rcout << "K" << K << std::endl;
-///  //Rcpp::Rcout << "p" << p << std::endl;
-///  //Rcpp::Rcout << "q" << q << std::endl;
-///  //Rcpp::Rcout << "r" << r << std::endl;
-///  //Rcpp::Rcout << "n" << n << std::endl;
-///
-///  
-///  
-///  //// initialize other parameters
-///  //Rcpp::Rcout << 3 << std::endl;
-///  
-///  Rcpp::List tmpList;
-///  arma::mat prob;
-///  
-///  arma::vec tmpbeta0(1);
-///  tmpbeta0 = beta0;
-///  arma::vec zeta0(n);
-///  arma::vec tau20;
-///  
-///  arma::vec zeta1(n);
-///  arma::vec tau21;
-///  
-///  arma::vec zeta2(n);
-///  arma::vec tau22;
-///  
-///  arma::vec zetadelta0(n);
-///  arma::vec tau2delta0;
-///  
-///  arma::vec zetadelta1(n);
-///  arma::vec tau2delta1;
-///  
-///  arma::vec zetadelta(n);
-///  arma::vec theta;
-///  arma::vec eta;
-///  
-///  arma::vec tau2;
-///  
-///  arma::vec resi;
-///  
-///  int cnt = 0;
-///  arma::mat beta0out(nsim, 1);
-///  beta0out.zeros();
-///  arma::mat beta1out;
-///  if (q > 0) {
-///    beta1out.zeros(nsim, q);
-///  }
-///  arma::mat beta2out;
-///  if (p > 0) {
-///    beta2out.zeros(nsim, p);
-///  }
-///  arma::mat delta0out;
-///  arma::mat delta1out;
-///  arma::cube Uout;
-///  arma::cube probout;
-///  if (KK > 0) {
-///    delta0out.zeros(nsim, KK);
-///    Uout.zeros(n, KK, nsim);
-///    probout.zeros(n, KK, nsim);
-///    if (r > 0) {
-///      delta1out.zeros(nsim, KK * r);
-///    }
-///  }
-///  
-///  arma::vec sigma2out(nsim);
-///  arma::vec lambdaout(nsim);
-///  
-///  arma::vec fit0;
-///  arma::vec fit1;
-///  arma::mat fit0out(nsim, n);
-///  arma::mat fit1out(nsim, n);
-///  
-///  arma::vec fit0beta0;
-///  arma::vec fit1beta0;
-///  arma::mat fit0beta0out(nsim, n);
-///  arma::mat fit1beta0out(nsim, n);
-///  
-///  arma::vec oneBeta0 = arma::ones(n) * beta0;
-///  arma::vec XBeta1;
-///  if (q > 0) {
-///    XBeta1 = X_ * beta1;
-///  }
-///  arma::vec TBeta2;
-///  if (p > 0) {
-///    TBeta2 = T_ * beta2;
-///  }
-///  arma::vec UDelta0;
-///  arma::vec UWDelta1;
-///  if (KK > 0) {
-///    UDelta0 = U_ * delta0;
-///    if (r > 0) {
-///      UWDelta1 = UW_ * delta1;
-///    }
-///  }
-///  
-///  
-///  //Rcpp::Rcout << 3 << std::endl;
-///  
-///  if (maxsim >= nsim) {
-///    for (int sim = 0; sim < (maxsim + burnin); sim++) {
-///      //// update tau2
-///      //Rcpp::Rcout << "sim:" << sim << std::endl;
-///      //Rcpp::Rcout << "cnt:" << cnt << std::endl;
-///      //Rcpp::Rcout << 4 << std::endl;
-///      
-///      //Rcpp::Rcout << tmpbeta0 << std::endl;
-///      tau20 = getTau2(tmpbeta0, sigma2, lambda2);
-///      tau2 = tau20;
-///      if (q > 0) {
-///        tau21 = getTau2(beta1, sigma2, lambda2);
-///        tau2 = arma::join_cols(tau2, tau21);
-///      }
-///      if (p > 0) {
-///        tau22 = getTau2(beta2, sigma2, lambda2);
-///        tau2 = arma::join_cols(tau2, tau22);
-///      }
-///      if (KK > 0) {
-///        tau2delta0 = getTau2(delta0, sigma2, lambda2);
-///        tau2 = arma::join_cols(tau2, tau2delta0);
-///        if (r > 0) {
-///          tau2delta1 = getTau2(delta1, sigma2, lambda2);
-///          tau2 = arma::join_cols(tau2, tau2delta1);
-///        }
-///      }
-///
-///      //Rcpp::Rcout << tau2 << std::endl;
-///      
-///      //// update lambda2
-///      //Rcpp::Rcout << 5 << std::endl;
-///      
-///      if (simlambda == true) {
-///        lambda2 = getLambda2(tau2, b1, b2);
-///      }
-///      
-///      //Rcpp::Rcout << "lambda2:" << lambda2 << std::endl;
-///      
-///      //// update U
-///      //Rcpp::Rcout << 6 << std::endl;
-///      
-///      if (KK > 0) {
-///        zetadelta = V - oneBeta0;
-///        //Rcpp::Rcout << 6.1 << std::endl;
-///        
-///        if (q > 0) {
-///          //Rcpp::Rcout << 6.2 << std::endl;
-///          zetadelta = zetadelta - XBeta1;
-///        }
-///        if (p > 0) {
-///          zetadelta = zetadelta - TBeta2;
-///        }
-///        
-///        //Rcpp::Rcout << zetadelta << std::endl;
-///        //Rcpp::Rcout << K << std::endl;
-///        //Rcpp::Rcout << sigma2 << std::endl;
-///        //Rcpp::Rcout << gamma << std::endl;
-///        
-///        if (r > 0) {
-///          //Rcpp::Rcout << 6.4 << std::endl;
-///          tmpList = getUWithW(zetadelta, W_, KK, 
-///                         delta0, delta1, sigma2, 
-///                         gamma_);
-///          //Rcpp::Rcout << 6.41 << std::endl;
-///        } else {
-///          //Rcpp::Rcout << 6.5 << std::endl;
-///          tmpList = getUWithoutW(zetadelta, KK, 
-///                         delta0, sigma2, 
-///                         gamma_);
-///          //Rcpp::Rcout << 6.51 << std::endl;
-///        }
-///        
-///        //Rcpp::Rcout << tmpList["U"] << std::endl;
-///        //Rcpp::Rcout << tmpList["prob"] << std::endl;
-///        
-///        //Rcpp::Rcout << 6.6 << std::endl;
-///        U_ = Rcpp::as<arma::mat>(tmpList["U"]);
-///        
-///        //Rcpp::Rcout << 6.7 << std::endl;
-///        prob = Rcpp::as<arma::mat>(tmpList["prob"]);
-///        
-///        //Rcpp::Rcout << 6.8 << std::endl;
-///        UW_ = getUW(U_, W_);
-///        
-///        UDelta0 = U_ * delta0;
-///        UWDelta1 = UW_ * delta1;
-///      }
-///
-///      //Rcpp::Rcout << U_ << std::endl;
-///      //Rcpp::Rcout << prob << std::endl;
-///      
-///      //// update beta0
-///      //Rcpp::Rcout << 7 << std::endl;
-///      //Rcpp::Rcout << zeta0 << std::endl;
-///      //Rcpp::Rcout << V << std::endl;
-///      zeta0 = V;
-///      //Rcpp::Rcout << zeta0 << std::endl;
-///      if (q > 0) {
-///        //Rcpp::Rcout << 7.01 << std::endl;
-///        zeta0 = zeta0 - XBeta1;
-///        //Rcpp::Rcout << 7.1 << std::endl;
-///      }
-///      if (p > 0) {
-///        //Rcpp::Rcout << 7.02 << std::endl;
-///        //Rcpp::Rcout << TBeta2 << std::endl;
-///        zeta0 = zeta0 - TBeta2;
-///        //Rcpp::Rcout << 7.2 << std::endl;
-///      }
-///      if (KK > 0) {
-///        //Rcpp::Rcout << 7.03 << std::endl;
-///        zeta0 = zeta0 - UDelta0;
-///        //Rcpp::Rcout << 7.3 << std::endl;
-///        if (r > 0) {
-///          //Rcpp::Rcout << 7.04 << std::endl;
-///          zeta0 = zeta0 - UWDelta1;
-///          //Rcpp::Rcout << 7.4 << std::endl;
-///        }
-///      }
-///      
-///      //Rcpp::Rcout << 7.05 << std::endl;
-///      //Rcpp::Rcout << zeta0 << std::endl;
-///      //Rcpp::Rcout << tau20 << std::endl;
-///      //Rcpp::Rcout << sigma2 << std::endl;
-///      tmpbeta0 = getBetaNonMonotonicity(zeta0, arma::ones(n), tau20, sigma2);
-///      
-///      //Rcpp::Rcout << "beta0" << tmpbeta0 << std::endl;
-///      
-///      //Rcpp::Rcout << 7.5 << std::endl;
-///      oneBeta0 = arma::ones(n) * tmpbeta0;
-///      //Rcpp::Rcout << 7.6 << std::endl;
-///      betadelta = tmpbeta0;
-///      //Rcpp::Rcout << 7.7 << std::endl;
-///      
-///      //// update beta1
-///      //Rcpp::Rcout << 8 << std::endl;
-///      
-///      if (q > 0) {
-///        zeta1 = V - oneBeta0;
-///        if (p > 0) {
-///          zeta1 = zeta1 - TBeta2;
-///        }
-///        if (KK > 0) {
-///          zeta1 = zeta1 - UDelta0;
-///          if (r > 0) {
-///            zeta1 = zeta1 - UWDelta1;
-///          }
-///        }
-///        
-///        beta1 = getBetaNonMonotonicity(zeta1, X_, tau21, sigma2);
-///        XBeta1 = X_ * beta1;
-///        betadelta = arma::join_cols(betadelta, beta1);
-///        
-///        //Rcpp::Rcout << "beta1" << beta1 << std::endl;
-///        
-///      }
-///           
-///      //// update beta2
-///      //Rcpp::Rcout << 9 << std::endl;
-///      
-///      if (p > 0) {
-///        zeta2 = V - oneBeta0;
-///        if (q > 0) {
-///          zeta2 = zeta2 - XBeta1;
-///        }
-///        if (KK > 0) {
-///          zeta2 = zeta2 - UDelta0;
-///          if (r > 0) {
-///            zeta2 = zeta2 - UWDelta1;
-///          }
-///        }
-///        
-///        beta2 = getBetaMonotonicity(zeta2, T_, tau22, sigma2);
-///        TBeta2 = T_ * beta2;
-///        betadelta = arma::join_cols(betadelta, beta2);
-///        
-///        //Rcpp::Rcout << "beta2" << beta2 << std::endl;
-///        
-///      }
-///      
-///      //// update delta0
-///     //Rcpp::Rcout << 10 << std::endl;
-///      
-///      if (KK > 0) {
-///        zetadelta0 = V - oneBeta0;
-///        if (p > 0) {
-///          zetadelta0 = zetadelta0 - TBeta2;
-///        }
-///        if (q > 0) {
-///          zetadelta0 = zetadelta0 - XBeta1;
-///        }
-///        if (r > 0) {
-///          zetadelta0 = zetadelta0 - UWDelta1;
-///        }
-///        delta0 = getBetaNonMonotonicity(zetadelta0, U_, tau2delta0, sigma2);
-///        UDelta0 = U_ * delta0;
-///        betadelta = arma::join_cols(betadelta, delta0);
-///        
-///        //Rcpp::Rcout << "delta0" << delta0 << std::endl;
-///        
-///        //// update delta1
-///        //Rcpp::Rcout << 11 << std::endl;
-///        
-///        if (r > 0) {
-///          zetadelta1 = V - oneBeta0;
-///          if (p > 0) {
-///            zetadelta1 = zetadelta1 - TBeta2;
-///          }
-///          if (q > 0) {
-///            zetadelta1 = zetadelta1 - XBeta1;
-///          }
-///          
-///          zetadelta1 = zetadelta1 - UDelta0;
-///          
-///          delta1 = getBetaNonMonotonicity(zetadelta1, UW_, tau2delta1, sigma2);
-///          
-///          Rcpp::Rcout << delta1 << std::endl;
-///          
-///          UWDelta1 = UW_ * delta1;
-///          betadelta = arma::join_cols(betadelta, delta1);
-///          
-///          //Rcpp::Rcout << "delta1" << delta1 << std::endl;
-///          
-///        }
-///      }
-///
-///      //Rcpp::Rcout << betadelta << std::endl;
-///      
-///      //// update sigma2
-///      //Rcpp::Rcout << 12 << std::endl;
-///      
-///      fit0 = oneBeta0;
-///      //Rcpp::Rcout << 1 << std::endl;
-///      fit0beta0 = fit0;
-///      //Rcpp::Rcout << 2 << std::endl;
-///      resi = V - oneBeta0;
-///      //Rcpp::Rcout << 3 << std::endl;
-///      if (q > 0) {
-///        fit0beta0 = fit0beta0 + XBeta1;
-///        fit0 = fit0 + XBeta1;
-///        //Rcpp::Rcout << 4 << std::endl;
-///        resi = resi - XBeta1;
-///        //Rcpp::Rcout << 5 << std::endl;
-///      }
-///      if (p > 0) {
-///        fit0 = fit0 + TBeta2;
-///        //Rcpp::Rcout << 6 << std::endl;
-///        resi = resi - TBeta2;
-///        //Rcpp::Rcout << 7 << std::endl;
-///      }
-///      if (KK > 0) {
-///        fit1beta0 = fit0beta0 + UDelta0;
-///        //Rcpp::Rcout << 8 << std::endl;
-///        fit1 = fit0 + UDelta0;
-///        //Rcpp::Rcout << 9 << std::endl;
-///        resi = resi - UDelta0;
-///        //Rcpp::Rcout << 10 << std::endl;
-///        if (r > 0) {
-///          fit1beta0 = fit1beta0 + UWDelta1;
-///          //Rcpp::Rcout << 11 << std::endl;
-///          fit1 = fit1 + UWDelta1;
-///          //Rcpp::Rcout << 12 << std::endl;
-///          resi = resi - UWDelta1;
-///          //Rcpp::Rcout << 13 << std::endl;
-///        }
-///      }
-///      
-///      sigma2 = getSigma2(resi, betadelta, tau2, a1, a2);
-///      
-///      //// record simulated parameters
-///      //Rcpp::Rcout << 11 << std::endl;
-///      
-///      //Rcpp::Rcout << "fit0:" << fit0 << std::endl;
-///      //Rcpp::Rcout << "fit1:" << fit1 << std::endl;
-///      
-///      //Rcpp::Rcout << "sim:" << sim << std::endl;
-///      if (sim >= burnin) {
-///        
-///        //Rcpp::Rcout << "cnt:" << cnt << std::endl;
-///      
-///        beta0out.row(cnt) = arma::trans(tmpbeta0);
-///        //Rcpp::Rcout << "a" << std::endl;
-///        if (q > 0) {
-///          beta1out.row(cnt) = arma::trans(beta1);
-///          //Rcpp::Rcout << "b" << std::endl;
-///        }
-///        
-///        if (p > 0) {
-///          beta2out.row(cnt) = arma::trans(beta2);
-///          //Rcpp::Rcout << "c" << std::endl;
-///        }
-///        
-///        
-///        if (KK > 0) {
-///          //Rcpp::Rcout << delta0 << std::endl;
-///          //Rcpp::Rcout << delta0out << std::endl;
-///          delta0out.row(cnt) = arma::trans(delta0);
-///          //Rcpp::Rcout << "d" << std::endl;
-///          if (r > 0) {
-///            delta1out.row(cnt) = arma::trans(delta1);
-///            //Rcpp::Rcout << "e" << std::endl;
-///          }
-///        }
-///        
-///        //Rcpp::Rcout << sigma2<< std::endl;
-///        //Rcpp::Rcout << sigma2out<< std::endl;
-///        sigma2out(cnt) = sigma2;
-///        //Rcpp::Rcout << "f" << std::endl;
-///        lambdaout(cnt) = sqrt(lambda2);
-///        //Rcpp::Rcout << "g" << std::endl;
-///        
-///        if (KK > 0) {
-///          Uout.slice(cnt) = U_;
-///          //Rcpp::Rcout << "h" << std::endl;
-///          probout.slice(cnt) = prob;
-///          //Rcpp::Rcout << "i" << std::endl;
-///        }
-///        
-///        
-///        fit0out.row(cnt) = arma::trans(fit0);
-///        //Rcpp::Rcout << "j" << std::endl;
-///        
-///        fit1out.row(cnt) = arma::trans(fit1);
-///        //Rcpp::Rcout << "k" << std::endl;
-///        
-///        fit0beta0out.row(cnt) = arma::trans(fit0beta0);
-///        //Rcpp::Rcout << "l" << std::endl;
-///        
-///        fit1beta0out.row(cnt) = arma::trans(fit1beta0);
-///        //Rcpp::Rcout << "m" << std::endl;
-///        
-///        cnt = cnt + 1;
-///        
-///        if (cnt == nsim) {
-///          break;
-///        }
-///      }
-///      
-///    }
-///  }
-///  
-///  Rcpp::List out;
-///  out = Rcpp::List::create(
-///    Rcpp::_["beta0"] = beta0out,
-///    Rcpp::_["beta1"] = beta1out,
-///    Rcpp::_["beta2"] = beta2out,
-///    Rcpp::_["delta0"] = delta0out,
-///    Rcpp::_["delta1"] = delta1out,
-///    Rcpp::_["sigma2"] = sigma2out,
-///    Rcpp::_["lambda"] = lambdaout,
-///    Rcpp::_["U"] = Uout,
-///    Rcpp::_["prob"] = probout,
-///    Rcpp::_["fit0"] = fit0out,
-///    Rcpp::_["fit1"] = fit1out,
-///    Rcpp::_["fit0beta0"] = fit0beta0out,
-///    Rcpp::_["fit1beta0"] = fit1beta0out
-///  );
-/// return(out); 
-///}
-///
+// [[Rcpp::export]]
+double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, double d1, double d2) {
+  
+  double a;
+  
+  double newpsi = psi;
+  arma::vec tmppars;
+  double tmppsi;
+  double tmppb;
+  
+  for (int i = 0; i < burnin; i++) {
+    tmppars = getGammaParm(newpsi, newpsi);
+    tmppsi = R::rgamma(tmppars(0), tmppars(1));
+    tmppb = R::runif(0.0, 1.0);
+    a = sumdiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
+    a = a + log(pow(tmppsi, d1 - 1) * exp(- tmppsi / d2)) - log(pow(newpsi, d1 - 1) * exp(- newpsi / d2));
+    a = exp(a);
+    if (tmppb < a) {
+      newpsi = tmppsi;
+    }
+  }
+  return(newpsi);
+}
