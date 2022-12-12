@@ -22,7 +22,7 @@ d1 <- 1
 d2 <- d1
 
 V <- arima.sim(list(ar = 0.5), n = n)
-V[21:60] <  V[21:60] + 3
+V[21:60] <-  V[21:60] + 3
 #Y[1:50] <- Y[1:50] + 1
 #Y[51:100] <- Y[51:100] + 5
 #Y[101:150] <- Y[101:150] + 10
@@ -35,43 +35,33 @@ omega <- 0.5
 mu <- exp(V)
 
 Y <- rnbinom(n, psi, mu = mu)
-TY <- getT(Y, p)
 
 ##########################
 
-dat <- data.frame(Y, TY)
+V1 <- log(Y + 0.5)
+TT <- getT(V1, p)
 
-initModel <- zeroinfl(Y ~ ., data = dat, dist = 'negbin')
-V1 <- rnorm(n, cbind(1, TY) %*% initModel$coefficients$count, sqrt(initModel$vcov[1, 1]))
-V2 <- rnorm(n, cbind(1, TY) %*% initModel$coefficients$zero, sqrt(initModel$vcov[7, 7]))
-
-mu <- getMu(V1)
-omega <- getOmega(V2)
-
-Uvec1 <- idetect_rcpp(V1, K - 1)
-U1 <- getU(Uvec1, n, K)
+Uvec <- idetect_rcpp(V1, K)
+U1 <- getU(Uvec, n, K)
 gamma1 <- colMeans(U1)
 
-Uvec2 <- idetect_rcpp(V2, K - 1)
-U2 <- getU(Uvec2, n, K)
-gamma2 <- colMeans(U2)
+init1 <- initializeGaussianPosterior(V1, lambda2, T = TT, U = U1);
+psi <- exp(init1$sigma2)
 
-psi <- initModel$theta
+omega <-rep(0, n)#getOmega(V2)
 
-TT1 <- getT(V1, p)
 
-init1 <- initializeGaussianPosterior(V1, lambda2, T = TT1, U = U1);
 betadelta1 <- init1$betadelta
 tau2all1 <- init1$tau2all
 sigma21 <- init1$sigma2
 
-TT2 <- getT(V2, p)
-
-init2 <- initializeGaussianPosterior(V2, lambda2, T = TT2, U = U2);
-betadelta2 <- init2$betadelta
-tau2all2 <- init2$tau2all
-sigma22 <- init2$sigma2
-
+#TT2 <- getT(V2, p)
+#
+#init2 <- initializeGaussianPosterior(V2, lambda2, T = TT2, U = U2);
+#betadelta2 <- init2$betadelta
+#tau2all2 <- init2$tau2all
+#sigma22 <- init2$sigma2
+#
 
 betadelta1out <- matrix(NA, nrow = nsim, ncol = 11)
 betadelta2out <- matrix(NA, nrow = nsim, ncol = 11)
@@ -101,6 +91,9 @@ fit1out <- matrix(NA, nrow = nsim, ncol = n)
 
 psiout <- rep(NA, nsim)
 
+df0out <- rep(NA, nsim)
+df1out <- rep(NA, nsim)
+
 cnt <- 0
 for (i in 1:(nsim + burnin)) {
   
@@ -122,26 +115,26 @@ for (i in 1:(nsim + burnin)) {
   U1 <- tmpUList1$U
   prob1 <- tmpUList1$prob
   
-  V2 <- getV2(Y, psi, mu, V2, betadelta2[1], sigma22, p, burnin, U = U2, 
-              beta2 = betadelta2[2:6], delta0 = betadelta2[7:11])
+  #V2 <- getV2(Y, psi, mu, V2, betadelta2[1], sigma22, p, burnin, U = U2, 
+  #            beta2 = betadelta2[2:6], delta0 = betadelta2[7:11])
+  #
+  #TT2 <- getT(V2, p)
+  #
+  #post2 <- getGaussianPosterior(V2, betadelta2[1], tau2all2[1],
+  #                              sigma22, lambda2, T = TT2, U = U2,
+  #                              beta2=betadelta2[2:6], delta0 = betadelta2[7:11],
+  #                              tau2beta2=tau2all2[2:6], tau2delta0 = tau2all2[7:11])
+  #betadelta2 <- post2$betadelta
+  #tau2all2 <- post2$tau2all
+  #sigma22 <- mean((V2 - post2$fit1) ^ 2)
+  #
+  #tmpUList2 <- getUWithoutW(V2 - post2$fit0, K, post2$delta0, sigma22, gamma2)
+  #U2 <- tmpUList2$U
+  #prob2 <- tmpUList2$prob
+  #
+  lambda2 <- getLambda2EM(c(post1$expectedtau2all))
   
-  TT2 <- getT(V2, p)
-  
-  post2 <- getGaussianPosterior(V2, betadelta2[1], tau2all2[1],
-                                sigma22, lambda2, T = TT2, U = U2,
-                                beta2=betadelta2[2:6], delta0 = betadelta2[7:11],
-                                tau2beta2=tau2all2[2:6], tau2delta0 = tau2all2[7:11])
-  betadelta2 <- post2$betadelta
-  tau2all2 <- post2$tau2all
-  sigma22 <- mean((V2 - post2$fit1) ^ 2)
-  
-  tmpUList2 <- getUWithoutW(V2 - post2$fit0, K, post2$delta0, sigma22, gamma2)
-  U2 <- tmpUList2$U
-  prob2 <- tmpUList2$prob
-  
-  lambda2 <- getLambda2EM(c(post1$expectedtau2all, post2$expectedtau2all))
-  
-  omega <- getOmega(V2)
+  #omega <- getOmega(V2)
   mu <- getMu(V1)
   
   psi <- getPsi(Y, mu, psi, omega, burnin, d1, d2)
@@ -159,22 +152,64 @@ for (i in 1:(nsim + burnin)) {
     U1out[, , cnt] <- U1
     prob1out[, , cnt] <- prob1
     
-    betadelta2out[cnt, ] <- betadelta2
-    tau2all2out[cnt, ] <- tau2all2
-    sigma22out[cnt] <- sigma22
-    
-    U2out[, , cnt] <- U2
-    prob2out[, , cnt] <- prob2
+    #betadelta2out[cnt, ] <- betadelta2
+    #tau2all2out[cnt, ] <- tau2all2
+    #sigma22out[cnt] <- sigma22
+    #
+    #U2out[, , cnt] <- U2
+    #prob2out[, , cnt] <- prob2
     
     fit10out[cnt, ] <- post1$fit0
     fit11out[cnt, ] <- post1$fit1
     
-    fit20out[cnt, ] <- post2$fit0
-    fit21out[cnt, ] <- post2$fit1
+    #fit20out[cnt, ] <- post2$fit0
+    #fit21out[cnt, ] <- post2$fit1
     
-    fit0out[cnt, ] <- (1 - getOmega(post2$fit0)) * getMu(post1$fit0)
-    fit1out[cnt, ] <- (1 - getOmega(post2$fit1)) * getMu(post1$fit1)
+    #fit0out[cnt, ] <- (1 - getOmega(post2$fit0)) * getMu(post1$fit0)
+    #fit1out[cnt, ] <- (1 - getOmega(post2$fit1)) * getMu(post1$fit1)
+    
+    fit0out[cnt, ] <- getMu(post1$fit0)
+    fit1out[cnt, ] <- getMu(post1$fit1)
+    
+    df0out[cnt] <- sum(abs(betadelta1[1:6]) > tol)
+    df1out[cnt] <- sum(abs(betadelta1) > tol)
   }
   
   
 }
+
+
+#plot(Y, type = "l")
+#
+#for (i in 1:1000){
+#  points(fit1out[i, ], col = 'blue')
+#}
+#
+#for (i in 1:1000){
+#  points(fit0out[i, ], col = 'red')
+#}
+#
+#betadeltalikelihood <- rep(NA, 11)
+#
+#for (i in 1:11) {
+#  betadeltalikelihood[i] <- median(betadelta1out[, i])
+#}
+#
+#df0 <- sum(abs(betadeltalikelihood[1:6]) > tol)
+#df1 <- sum(abs(betadeltalikelihood) > tol)
+#
+#fit0likelihood <- rep(NA, 365)
+#fit1likelihood <- rep(NA, 365)
+#
+#for (i in 1:365) {
+#  fit0likelihood[i] <- median(fit0out[, i])
+#  fit1likelihood[i] <- median(fit1out[, i])
+#}
+#
+#mean((fit0likelihood - fit1likelihood)^2) / median(sigma21out)
+#
+#qchisq(0.95, df1 - df0)
+#
+#
+#dd <- density(betadelta1out[, 11])
+#dd$x[which.max(dd$y)]
