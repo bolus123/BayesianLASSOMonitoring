@@ -110,7 +110,8 @@ for (i in 1:(nsim + burnin)) {
   betadelta1 <- post1$betadelta
   tau2all1 <- post1$tau2all
   sigma21 <- mean((V1 - post1$fit1) ^ 2)
-
+  fit1 <- post1$fit1
+  
   tmpUList1 <- getUWithoutW(V1 - post1$fit0, K, post1$delta0, sigma21, gamma1)
   U1 <- tmpUList1$U
   prob1 <- tmpUList1$prob
@@ -167,7 +168,7 @@ for (i in 1:(nsim + burnin)) {
     #fit1out[cnt, ] <- (1 - getOmega(post2$fit1)) * getMu(post1$fit1)
     
     fit0out[cnt, ] <- exp(post1$fit0)
-    fit1out[cnt, ] <- exp(post1$fit1)
+    fit1out[cnt, ] <- exp(V1)
     
     df0out[cnt] <- sum(abs(betadelta1[1:6]) > tol)
     df1out[cnt] <- sum(abs(betadelta1) > tol)

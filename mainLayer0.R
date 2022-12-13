@@ -209,8 +209,8 @@ for (i in 1:(nsim + burnin)) {
     fit20out[cnt, ] <- post2$fit0
     fit21out[cnt, ] <- post2$fit1
     
-    fit0out[cnt, ] <- exp(-post2$fit0) / (1 +  exp(-post2$fit0)) * exp(post1$fit0)
-    fit1out[cnt, ] <- exp(-post2$fit1) / (1 +  exp(-post2$fit1)) * exp(post1$fit1)
+    fit0out[cnt, ] <- (1 - 1 / (1 + exp(-post2$fit0))) * exp(post1$fit0)
+    fit1out[cnt, ] <- (1 - 1 / (1 + exp(-V2))) * exp(V1)
     
     
     df0out[cnt] <- sum(abs(betadelta1[1:6]) > tol) + sum(abs(betadelta2[1:6]) > tol)

@@ -1240,7 +1240,7 @@ arma::mat getU(arma::vec Uvec, int n, int K) {
   
   for (int i = 0; i < K; i++) {
     
-    if (0 < i & i < (K - 1)) {
+    if ((0 < i) & (i < (K - 1))) {
       startidx = Uvec_(i - 1) + 1;
       endidx = Uvec_(i);
     } else if (i == 0) {
@@ -1261,7 +1261,6 @@ arma::mat getU(arma::vec Uvec, int n, int K) {
 // [[Rcpp::export]]
 arma::rowvec getTvec(arma::vec V, int p, int i) {
   
-  int n = V.n_elem;
   arma::rowvec Tvec(p);
   
     for (int j = 0; j < p; j++) {
@@ -1392,17 +1391,20 @@ double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, d
   double a;
   
   double newpsi = psi;
-  arma::vec tmppars;
+  arma::vec tmpparsnew;
+  arma::vec tmpparsold;
   double tmppsi;
   double tmppb;
   
   for (int i = 0; i < burnin; i++) {
-    tmppars = getGammaParm(newpsi, newpsi);
-    tmppsi = R::rgamma(tmppars(0), tmppars(1));
+    tmpparsold = getGammaParm(newpsi, newpsi);
+    tmppsi = R::rgamma(tmpparsold(0), tmpparsold(1));
+    tmpparsnew = getGammaParm(tmppsi, tmppsi);
     tmppb = R::runif(0.0, 1.0);
     a = sumdiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
     a = a + log(pow(tmppsi, d1 - 1) * exp(- tmppsi / d2)) - log(pow(newpsi, d1 - 1) * exp(- newpsi / d2));
-    a = exp(a);
+    a = exp(a) * (R::dgamma(newpsi, tmpparsnew(0), tmpparsnew(1), false) / 
+      R::dgamma(tmppsi, tmpparsold(0), tmpparsold(1), false));
     if (tmppb < a) {
       newpsi = tmppsi;
     }
