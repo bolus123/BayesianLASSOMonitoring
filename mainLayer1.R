@@ -225,8 +225,6 @@ for (i in 1:(nsim + burnin)) {
     V1out[cnt, ] <- V1
     V2out[cnt, ] <- V2
     
-    test[cnt] <- quadzinfnb(post1$betadelta[7:11], post2$betadelta[7:11], 
-                            post1$tau2all[7:11], post2$tau2all[7:11], sigma21, sigma22)
     
     df0out[cnt] <- sum(abs(betadelta1[1:6]) > tol) + sum(abs(betadelta2[1:6]) > tol)
     df1out[cnt] <- sum(abs(betadelta1) > tol) + sum(abs(betadelta2) > tol)
