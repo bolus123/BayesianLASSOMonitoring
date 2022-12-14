@@ -1282,7 +1282,7 @@ double dzinfbinom(double Yi, double V1i, double V2i, double psi) {
   double out = 0.0;
   
   if (Yi == 0.0) {
-    out = out * omega;
+    out = omega;
   }
   
   out = out + (1 - omega) * (R::gammafn(Yi + psi) / R::gammafn(Yi + 1) / R::gammafn(psi)) * 
@@ -1303,7 +1303,7 @@ double rV1i(double Yi, double V1i, double V2i, double psi, double V1ihat, double
     tmpV1 = R::rnorm(newV1, sqrt(sigma21));
     tmppb = R::runif(0.0, 1.0);
     a = dzinfbinom(Yi, tmpV1, V2i, psi) * exp(- 1.0 / 2.0 / sigma21 * pow(tmpV1 - V1ihat, 2)) / 
-      dzinfbinom(Yi, newV1, V2i, psi) * exp(- 1.0 / 2.0 / sigma21 * pow(newV1 - V1ihat, 2));
+      (dzinfbinom(Yi, newV1, V2i, psi) * exp(- 1.0 / 2.0 / sigma21 * pow(newV1 - V1ihat, 2)));
     if (tmppb < a) {
       newV1 = tmpV1;
     } 
@@ -1343,7 +1343,7 @@ double rV2i(double Yi, double V1i, double V2i, double psi, double V2ihat, double
     tmpV2 = R::rnorm(newV2, sqrt(sigma22));
     tmppb = R::runif(0.0, 1.0);
     a = dzinfbinom(Yi, V1i, tmpV2, psi) * exp(- 1.0 / 2.0 / sigma22 * pow(tmpV2 - V2ihat, 2)) / 
-      dzinfbinom(Yi, V1i, newV2, psi) * exp(- 1.0 / 2.0 / sigma22 * pow(newV2 - V2ihat, 2));
+      (dzinfbinom(Yi, V1i, newV2, psi) * exp(- 1.0 / 2.0 / sigma22 * pow(newV2 - V2ihat, 2)));
     if (tmppb < a) {
       newV2 = tmpV2;
     } 
@@ -1375,12 +1375,13 @@ arma::vec getGammaParm(double mean, double var) {
 }
 
 // [[Rcpp::export]]
-double sumdiflogdzinbinom(arma::vec Y, arma::vec V1, arma::vec V2, double psi, double oldpsi) {
+double proddiflogdzinbinom(arma::vec Y, arma::vec V1, arma::vec V2, double psi, double oldpsi) {
   int n = Y.n_elem;
   double tmp = 0.0;
   
   for (int i = 0; i < n; i++) {
-    tmp = tmp + log(dzinfbinom(Y(i), V1(i), V2(i), psi)) - log(dzinfbinom(Y(i), V1(i), V2(i), oldpsi));
+    //tmp = tmp + log(dzinfbinom(Y(i), V1(i), V2(i), psi)) - log(dzinfbinom(Y(i), V1(i), V2(i), oldpsi));
+    tmp = tmp * (dzinfbinom(Y(i), V1(i), V2(i), psi) / dzinfbinom(Y(i), V1(i), V2(i), oldpsi)) ;
   }
   return(tmp);
 }
@@ -1401,8 +1402,9 @@ double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, d
     tmppsi = R::rgamma(tmpparsold(0), tmpparsold(1));
     tmpparsnew = getGammaParm(tmppsi, tmppsi);
     tmppb = R::runif(0.0, 1.0);
-    a = sumdiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
-    a = a + log(pow(tmppsi, d1 - 1) * exp(- tmppsi / d2)) - log(pow(newpsi, d1 - 1) * exp(- newpsi / d2));
+    a = proddiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
+    //a = a + log(pow(tmppsi, d1 - 1) * exp(- tmppsi / d2)) - log(pow(newpsi, d1 - 1) * exp(- newpsi / d2));
+    a = a * pow(tmppsi, d1 - 1) * exp(- tmppsi / d2) / pow(newpsi, d1 - 1) / exp(- newpsi / d2);
     a = exp(a) * (R::dgamma(newpsi, tmpparsnew(0), tmpparsnew(1), false) / 
       R::dgamma(tmppsi, tmpparsold(0), tmpparsold(1), false));
     if (tmppb < a) {
@@ -1411,3 +1413,99 @@ double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, d
   }
   return(newpsi);
 }
+
+//// [[Rcpp::export]]
+//double quad(arma::vec beta, arma::vec tau2, double sigma2) {
+//  int n = beta.n_elem;
+//  arma::mat Tau2(n, n);
+//  Tau2 = arma::diagmat(tau2) * sigma2;
+//  arma::vec tmp = arma::trans(beta) * Tau2 * beta;
+//  double out = tmp(0);
+//  return(out);
+//}
+//
+//// [[Rcpp::export]]
+//double quadzinfnb(arma::vec beta1, arma::vec beta2, 
+//            arma::vec tau21, arma::vec tau22, 
+//            double sigma21, double sigma22) {
+//  int n1 = beta1.n_elem;
+//  int n2 = beta2.n_elem;
+//  arma::mat Tau21(n1, n1);
+//  arma::mat Tau22(n2, n2);
+//  Tau21 = arma::diagmat(tau21) / sigma21;
+//  Tau22 = arma::diagmat(tau22) / sigma22;
+//  arma::vec tmp = arma::trans(beta1) * Tau21 * beta1  + 
+//    arma::trans(beta2) * Tau22 * beta2;
+//  double out = tmp(0);
+//  return(out);
+//}
+
+//// [[Rcpp::export]]
+//double KL(double mu1, double mu2, double sigma21, double sigma22) {
+//  
+//  double KL = log(sqrt(sigma22) / sqrt(sigma21)) + (sigma21 + pow(mu1 - mu2, 2)) / 2.0 / sigma22 - 1.0 / 2.0;
+//  return(KL);
+//  
+//}
+
+// [[Rcpp::export]]
+double loglikelihoodLayer3(arma::vec V, arma::vec fit, double sigma2) {
+  
+  int n = V.n_elem;
+  double tmp = 0;
+  
+  for (int i = 0; i < n; i++) {
+    tmp = tmp + log(R::dnorm4(V(i), fit(i), sqrt(sigma2), false));
+  }
+  
+  return(tmp);
+}
+
+// [[Rcpp::export]]
+double loglikelihoodLayer2(arma::vec Y, arma::vec V, double psi) {
+  
+  int n = Y.n_elem;
+  double tmp = 0;
+  double mu;
+  double pb;
+  
+  for (int i = 0; i < n; i++) {
+    mu = exp(V(i));
+    pb = psi / (mu + psi);
+    tmp = tmp + log(R::dnbinom(Y(i), psi, pb, false));
+  }
+  
+  return(tmp);
+}
+
+// [[Rcpp::export]]
+double loglikelihoodLayer1(arma::vec Y, arma::vec V1, arma::vec V2, double psi) {
+  
+  int n = Y.n_elem;
+  double tmp = 0;
+
+  for (int i = 0; i < n; i++) {
+    tmp = tmp + log(dzinfbinom(Y(i), V1(i), V2(i), psi));
+  }
+  
+  return(tmp);
+}
+
+//
+//// [[Rcpp::export]]
+//double loglikelihoodRatioLayer31(arma::vec V, arma::vec fit0, arma::vec fit1, 
+//                                double sigma2, arma::mat U, arma::vec gamma) {
+//  
+//  int n = V.n_elem;
+//  double tmp = 0;
+//  arma::rowvec Uvec;
+//
+//  
+//  for (int i = 0; i < n; i++) {
+//
+//    tmp = tmp + (-2.0) * (log(R::dnorm4(V(i), fit0(i), sqrt(sigma2), false))
+//                            - log(R::dnorm4(V(i), fit1(i), sqrt(sigma2), false)));
+//  }
+//  
+//  return(tmp);
+//}

@@ -155,3 +155,15 @@ for (i in 1:(nsim + burnin)) {
   
 
 }
+
+
+
+plot(Y, type = "l")
+
+for (i in 1:nsim){
+  points(fit1out[i, ], col = 'blue')
+}
+
+for (i in 1:nsim){
+  points(fit0out[i, ], col = 'red')
+}
