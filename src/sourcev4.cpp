@@ -96,17 +96,38 @@ double rtrnormCpp(double mean, double var, double lower, double upper) {
     Z = z1 - z2;
     out = R::qnorm5(tmp * Z + z2, 0, 1, true, false) * sd + mean;
   } else {
-      z1 = R::plnorm(exp(b), 0, 1, true, false);
-      z2 = R::plnorm(exp(a), 0, 1, true, false);
-      
-      if (z1 != z2) {
-        Z = z1 - z2;
-        out = log(R::qlnorm(tmp * Z + z2, 0, 1, true, false)) * sd + mean;
-      } else {
-        out = R::runif(lower, upper);
-      }
+        out = R::runif(lower, upper); //// Taylor series first order
   }
   
+  
+  return(out);
+}
+
+
+// [[Rcpp::export]]
+double dtrnormCpp(double x, double mean, double var, double lower, double upper) {
+  double sd = sqrt(var);
+  double a = (lower - mean) / sd;
+  double b = (upper - mean) / sd;
+  
+  double z1 = R::pnorm5(b, 0, 1, true, false);
+  double z2 = R::pnorm5(a, 0, 1, true, false);
+  
+  double Z;
+  double out;
+  
+  if ((lower <= x) & (x <= upper)) {
+    
+    if (z1 != z2) {
+      Z = z1 - z2;
+      out = R::dnorm4(x, mean, sd, false) / Z;
+    } else {
+      out = R::dunif(x, lower, upper, false); //// Taylor series first order
+    }
+    
+  } else {
+    out = 0;
+  }
   
   return(out);
 }
@@ -1449,13 +1470,137 @@ double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, d
 //}
 
 // [[Rcpp::export]]
-double loglikelihoodLayer3(arma::vec V, arma::vec fit, double sigma2) {
+double loglikelihoodLayer3(arma::vec V, arma::vec beta0, arma::vec tau2beta0,
+                           double sigma2, double lambda2, 
+                           arma::vec gamma,
+                           Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericMatrix> T=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
+                           Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
+                           Rcpp::Nullable<Rcpp::NumericVector> delta0=R_NilValue, 
+                           Rcpp::Nullable<Rcpp::NumericVector> delta1=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericVector> tau2beta1=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericVector> tau2beta2=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericVector> tau2delta0=R_NilValue,
+                           Rcpp::Nullable<Rcpp::NumericVector> tau2delta1=R_NilValue) {
   
   int n = V.n_elem;
-  double tmp = 0;
+  int m = 1;
+  arma::vec dim = checkDim(X, T, U, W);
+  int q = dim(0);
+  int p = dim(1);
+  int K = dim(2);
+  int r = dim(3);
+  
+  arma::mat X_;
+  arma::mat T_;
+  arma::mat U_;
+  arma::mat W_;
+  arma::vec beta0_ = beta0;
+  arma::vec beta1_;
+  arma::vec beta2_;
+  arma::vec delta0_;
+  arma::vec delta1_;
+  arma::vec tau2beta0_ = tau2beta0;
+  arma::vec tau2beta1_;
+  arma::vec tau2beta2_;
+  arma::vec tau2delta0_;
+  arma::vec tau2delta1_;
+  
+  if (q > 0) {
+    X_ = Rcpp::as<arma::mat>(X);
+    beta1_ = Rcpp::as<arma::vec>(beta1);
+    tau2beta1_ = Rcpp::as<arma::vec>(tau2beta1);
+  }
+  
+  if (p > 0) {
+    T_ = Rcpp::as<arma::mat>(T);
+    beta2_ = Rcpp::as<arma::vec>(beta2);
+    tau2beta2_ = Rcpp::as<arma::vec>(tau2beta2);
+  } 
+  
+  if (K > 0) {
+    U_ = Rcpp::as<arma::mat>(U);
+    delta0_ = Rcpp::as<arma::vec>(delta0);
+    tau2delta0_ = Rcpp::as<arma::vec>(tau2delta0);
+  } 
+  
+  if (r > 0) {
+    W_ = Rcpp::as<arma::mat>(W);
+    delta1_ = Rcpp::as<arma::vec>(delta1);
+    tau2delta1_ = Rcpp::as<arma::vec>(tau2delta1);
+  }
+  
+  arma::mat UW_;
+  if (K > 0) {
+    if (r > 0) {
+      UW_ = getUW(U_, W_);
+    }
+  }
+  
+  m = m + q + p + K + K * r;
+  
+  // initialize all vectors;
+  
+  arma::vec zeta;
+  arma::vec Onebeta0;
+  Onebeta0.zeros(n);
+  arma::vec Xbeta1;
+  Xbeta1.zeros(n);
+  arma::vec Tbeta2;
+  Tbeta2.zeros(n);
+  arma::vec Udelta0;
+  Udelta0.zeros(n);
+  arma::vec UWdelta1;
+  UWdelta1.zeros(n);
+  arma::vec on = arma::ones(n);
+  
+  arma::vec betadelta;
+  arma::vec tau2all;
+  
+  arma::vec fit(n);
+  
+  // update beta0;
+  
+  Onebeta0 = on * beta0_;
+  
+  fit = Onebeta0;
+  
+  if (q > 0) {
+    Xbeta1 = X_ * beta1_;
+    fit = fit + Xbeta1;
+  }
+  
+  if (p > 0) {
+    Tbeta2 = T_ * beta2_;
+    fit = fit + Tbeta2;
+  }
+  
+  if (K > 0) {
+    Udelta0 = U_ * delta0_;
+    fit = fit + Udelta0;
+    if (r > 0) {
+      UWdelta1 = UW_ * delta1_;
+      fit = fit + UWdelta1;
+    }
+  }
+  
+  //
+  
+  double tmp = 0.0;
+  arma::rowvec Uvec;
+  arma::vec llU(1);
   
   for (int i = 0; i < n; i++) {
-    tmp = tmp + log(R::dnorm4(V(i), fit(i), sqrt(sigma2), false));
+    llU(0) = 0.0;
+    if (K > 0) {
+      Uvec = U_.row(i);
+      llU = Uvec * log(gamma);
+    }
+    tmp = tmp + log(R::dnorm4(V(i), fit(i), sqrt(sigma2), false)) + 
+      llU(0);
   }
   
   return(tmp);

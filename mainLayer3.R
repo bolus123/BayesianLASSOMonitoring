@@ -18,7 +18,7 @@ b1 <- a2
 b2 <- b1
 
 Y <- arima.sim(list(ar = 0.5), n = n)
-Y[21:30] <- Y[21:30] + 3
+#Y[21:30] <- Y[21:30] + 3
 #Y[1:50] <- Y[1:50] + 1
 #Y[51:100] <- Y[51:100] + 5
 #Y[101:150] <- Y[101:150] + 10
@@ -149,7 +149,7 @@ for (i in 1:(nsim + burnin)) {
     Uout[, , cnt] <- U
     probout[, , cnt] <- tmpUList$prob
     
-    fit0out[cnt, ] <- post1$fit0
+    fit0out[cnt, ] <- post0$fit0
     fit1out[cnt, ] <- post1$fit1
   }
   
@@ -166,4 +166,13 @@ for (i in 1:nsim){
 
 for (i in 1:nsim){
   points(fit0out[i, ], col = 'red')
+}
+
+ll0 <- rep(NA, nsim)
+ll1 <- rep(NA, nsim)
+
+for (i in 1:nsim) {
+  
+  ll0[i] <- loglikelihoodLayer3(Y, fit0out[i, ], sigma20resiout[i])
+  ll1[i] <- loglikelihoodLayer3(Y, fit1out[i, ], sigma21resiout[i])
 }
