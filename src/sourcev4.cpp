@@ -819,18 +819,19 @@ arma::vec checkDim(Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
 // [[Rcpp::export]]
 Rcpp::List getGaussianPosterior(arma::vec V, arma::vec beta0, arma::vec tau2beta0,
                                 double sigma2, double lambda2, 
-                                Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericMatrix> T=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
-                                Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
-                                Rcpp::Nullable<Rcpp::NumericVector> delta0=R_NilValue, 
-                                Rcpp::Nullable<Rcpp::NumericVector> delta1=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericVector> tau2beta1=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericVector> tau2beta2=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericVector> tau2delta0=R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericVector> tau2delta1=R_NilValue) {
+                                arma::mat X,
+                                arma::mat T,
+                                arma::mat U,
+                                arma::mat W,
+                                arma::vec beta1, 
+                                arma::vec beta2, 
+                                arma::vec delta0, 
+                                arma::vec delta1,
+                                arma::vec tau2beta1,
+                                arma::vec tau2beta2,
+                                arma::vec tau2delta0,
+                                arma::vec tau2delta1,
+                                int q, int p, int K, int r) {
   
   // initialize all vectors;
   
@@ -838,59 +839,23 @@ Rcpp::List getGaussianPosterior(arma::vec V, arma::vec beta0, arma::vec tau2beta
   
   int n = V.n_elem;
   int m = 1;
-  arma::vec dim = checkDim(X, T, U, W);
-  int q = dim(0);
-  int p = dim(1);
-  int K = dim(2);
-  int r = dim(3);
   
   //Rcpp::Rcout << 0.1 << std::endl;
   
-  arma::mat X_;
-  arma::mat T_;
-  arma::mat U_;
-  arma::mat W_;
+  arma::mat X_ = X;
+  arma::mat T_ = T;
+  arma::mat U_ = U;
+  arma::mat W_ = W;
   arma::vec beta0_ = beta0;
-  arma::vec beta1_;
-  arma::vec beta2_;
-  arma::vec delta0_;
-  arma::vec delta1_;
+  arma::vec beta1_ = beta1;
+  arma::vec beta2_ = beta2;
+  arma::vec delta0_ = delta0;
+  arma::vec delta1_ = delta1;
   arma::vec tau2beta0_ = tau2beta0;
-  arma::vec tau2beta1_;
-  arma::vec tau2beta2_;
-  arma::vec tau2delta0_;
-  arma::vec tau2delta1_;
-  
-  if (q > 0) {
-    X_ = Rcpp::as<arma::mat>(X);
-    beta1_ = Rcpp::as<arma::vec>(beta1);
-    tau2beta1_ = Rcpp::as<arma::vec>(tau2beta1);
-  }
-  
-  //Rcpp::Rcout << 0.11 << std::endl;
-  
-  if (p > 0) {
-    T_ = Rcpp::as<arma::mat>(T);
-    beta2_ = Rcpp::as<arma::vec>(beta2);
-    tau2beta2_ = Rcpp::as<arma::vec>(tau2beta2);
-  } 
-  
-  //Rcpp::Rcout << 0.12 << std::endl;
-  
-  if (K > 0) {
-    U_ = Rcpp::as<arma::mat>(U);
-    delta0_ = Rcpp::as<arma::vec>(delta0);
-    tau2delta0_ = Rcpp::as<arma::vec>(tau2delta0);
-    //Rcpp::Rcout << U_ << std::endl;
-  } 
-  
-  //Rcpp::Rcout << 0.13 << std::endl;
-  
-  if (r > 0) {
-    W_ = Rcpp::as<arma::mat>(W);
-    delta1_ = Rcpp::as<arma::vec>(delta1);
-    tau2delta1_ = Rcpp::as<arma::vec>(tau2delta1);
-  }
+  arma::vec tau2beta1_ = tau2beta1;
+  arma::vec tau2beta2_ = tau2beta2;
+  arma::vec tau2delta0_ = tau2delta0;
+  arma::vec tau2delta1_ = tau2delta1;
   
   //Rcpp::Rcout << 0.14 << std::endl;
   
@@ -1108,6 +1073,7 @@ Rcpp::List readbetadelta(arma::vec betadelta,
   );
   return(out); 
 }
+
 
 // [[Rcpp::export]]
 Rcpp::List readtau2all(arma::vec tau2all, 
@@ -1456,7 +1422,7 @@ double proddiflogdzinbinom(arma::vec Y, arma::vec V1, arma::vec V2, double psi, 
 }
 
 // [[Rcpp::export]]
-double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, double d1, double d2) {
+double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, double c1, double c2) {
   
   double a;
   
@@ -1473,7 +1439,7 @@ double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, d
     tmppb = R::runif(0.0, 1.0);
     a = proddiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
     //a = a + log(pow(tmppsi, d1 - 1) * exp(- tmppsi / d2)) - log(pow(newpsi, d1 - 1) * exp(- newpsi / d2));
-    a = a * pow(tmppsi, d1 - 1) * exp(- tmppsi / d2) / pow(newpsi, d1 - 1) / exp(- newpsi / d2);
+    a = a * pow(tmppsi, c1 - 1) * exp(- tmppsi / c2) / pow(newpsi, c1 - 1) / exp(- newpsi / c2);
     a = exp(a) * (R::dgamma(newpsi, tmpparsnew(0), tmpparsnew(1), false) / 
       R::dgamma(tmppsi, tmpparsold(0), tmpparsold(1), false));
     if (tmppb < a) {
@@ -1532,9 +1498,6 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
   arma::vec lambda2out;
   arma::mat fit0out;
   arma::mat fit1out;
-  
-  Rcpp::Nullable<Rcpp::NumericVector> delta0out_;
-  Rcpp::Nullable<Rcpp::NumericVector> delta1out_;
     
   arma::vec tmpbetadelta;
   arma::vec tmptau2all;
@@ -1557,8 +1520,58 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
   
   int m = 1 + q + p + K + K * r;
   
-  Rcpp::Nullable<Rcpp::NumericMatrix> U_ = U;
-  Rcpp::Nullable<Rcpp::NumericMatrix> prob_;
+  arma::mat X_;
+  arma::mat T_;
+  arma::mat U_;
+  arma::mat W_;
+  arma::mat prob_;
+  
+  arma::vec beta0_ = beta0;
+  arma::vec tau2beta0_ = tau2beta0;
+  
+  arma::vec beta1_;
+  arma::vec tau2beta1_;
+  arma::vec beta2_;
+  arma::vec tau2beta2_;
+  arma::vec delta0_;
+  arma::vec tau2delta0_;
+  arma::vec delta1_;
+  arma::vec tau2delta1_;
+  
+  if (q > 0) {
+    X_ = Rcpp::as<arma::mat>(X);
+    beta1_ = Rcpp::as<arma::vec>(beta1);
+    tau2beta1_ = Rcpp::as<arma::vec>(tau2beta1);
+  }
+  
+  if (p > 0) {
+    T_ = Rcpp::as<arma::mat>(T);
+    beta2_ = Rcpp::as<arma::vec>(beta2);
+    tau2beta2_ = Rcpp::as<arma::vec>(tau2beta2);
+  }
+  
+  if (K > 0) {
+    U_ = Rcpp::as<arma::mat>(U);
+    delta0_ = Rcpp::as<arma::vec>(delta0);
+    tau2delta0_ = Rcpp::as<arma::vec>(tau2delta0);
+    
+    if (r > 0) {
+      W_ = Rcpp::as<arma::mat>(W);
+      delta1_ = Rcpp::as<arma::vec>(delta1);
+      tau2delta1_ = Rcpp::as<arma::vec>(tau2delta1);
+    }
+  }
+  
+  arma::vec sigma2_(1);
+  sigma2_(0) = sigma2;
+  double itersigma2 = sigma2;
+  
+  arma::vec lambda2_(1);
+  lambda2_(0) = lambda2;
+  double iterlambda2 = lambda2;
+  
+  ////////////////////////
+  
   arma::cube Uout;
   arma::cube probout;
   arma::vec zetadelta;
@@ -1576,25 +1589,6 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
     }
   }
   
-  arma::vec beta0_ = beta0;
-  Rcpp::Nullable<Rcpp::NumericVector> beta1_ = beta1;
-  Rcpp::Nullable<Rcpp::NumericVector> beta2_ = beta2;
-  Rcpp::Nullable<Rcpp::NumericVector> delta0_ = delta0;
-  Rcpp::Nullable<Rcpp::NumericVector> delta1_ = delta1;
-  
-  arma::vec tau2beta0_ = tau2beta0;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2beta1_ = tau2beta1;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2beta2_ = tau2beta2;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2delta0_ = tau2delta0;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2delta1_ = tau2delta1;
-  
-  arma::vec sigma2_(1);
-  sigma2_(0) = sigma2;
-  double itersigma2 = sigma2;
-  
-  arma::vec lambda2_(1);
-  lambda2_(0) = lambda2;
-  double iterlambda2 = lambda2;
   
   arma::vec fit0_;
   arma::vec fit1_;
@@ -1611,11 +1605,10 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
     
     tmplist = getGaussianPosterior(V, beta0_, tau2beta0_,
                                    itersigma2, iterlambda2, 
-                                   X, T, U_, W, 
+                                   X_, T_, U_, W_, 
                                    beta1_, beta2_, delta0_, delta1_, 
                                    tau2beta1_, tau2beta2_, 
-                                   tau2delta0_, tau2delta1_);
-    
+                                   tau2delta0_, tau2delta1_, q, p, K, r);
     
     tmpbetadelta = Rcpp::as<arma::vec>(tmplist["betadelta"]);
     tmptau2all = Rcpp::as<arma::vec>(tmplist["tau2all"]);
@@ -1629,25 +1622,23 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
     tau2beta0_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta0"]);
     
     if (q > 0) {
-      beta1_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmpbetadeltalist["beta1"]);
-      tau2beta1_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmptau2alllist["tau2beta1"]);
+      beta1_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta1"]);
+      tau2beta1_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta1"]);
     }
     
     if (p > 0) {
-      beta2_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmpbetadeltalist["beta2"]);
-      tau2beta2_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmptau2alllist["tau2beta2"]);
+      beta2_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta2"]);
+      tau2beta2_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta2"]);
     }
     
     if (K > 0) {
-      delta0_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmpbetadeltalist["delta0"]);
-      tau2delta0_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmptau2alllist["tau2delta0"]);
+      delta0_ = Rcpp::as<arma::vec>(tmpbetadeltalist["delta0"]);
+      tau2delta0_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2delta0"]);
       if (r > 0) {
-        delta1_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmpbetadeltalist["delta1"]);
-        tau2delta1_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmptau2alllist["tau2delta1"]);
+        delta1_ = Rcpp::as<arma::vec>(tmpbetadeltalist["delta1"]);
+        tau2delta1_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2delta1"]);
       }
     }
-    
-    
     
     fit0_ = Rcpp::as<arma::vec>(tmplist["fit0"]);
     fit1_ = Rcpp::as<arma::vec>(tmplist["fit1"]);
@@ -1661,14 +1652,14 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
       
     if (K > 0) {
       if (r == 0) {
-        tmpUlist = getUWithoutW(zetadelta, K, Rcpp::as<arma::vec>(delta0_), itersigma2, gamma_);
+        tmpUlist = getUWithoutW(zetadelta, K, delta0_, itersigma2, gamma_);
       } else {
-        tmpUlist = getUWithW(zetadelta, Rcpp::as<arma::mat>(W), K, 
-                  Rcpp::as<arma::vec>(delta0_), Rcpp::as<arma::vec>(delta1_), 
+        tmpUlist = getUWithW(zetadelta, W_, K, 
+                  delta0_, delta1_, 
                   itersigma2, gamma_);
       }
-      U_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericMatrix>>(tmpUlist["U"]);
-      prob_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericMatrix>>(tmpUlist["prob"]);
+      U_ = Rcpp::as<arma::mat>(tmpUlist["U"]);
+      prob_ = Rcpp::as<arma::mat>(tmpUlist["prob"]);
     }
       
     if (updatelambda2 == true) {
@@ -1698,8 +1689,8 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
         fit1out = arma::trans(fit1_);
       }
       
-      Uout.slice(cnt) = Rcpp::as<arma::mat>(U_);
-      probout.slice(cnt) = Rcpp::as<arma::mat>(prob_);
+      Uout.slice(cnt) = U_;
+      probout.slice(cnt) = prob_;
       cnt++;
     }
     
@@ -1729,16 +1720,17 @@ Rcpp::List getPosteriorLayer2Shift(arma::vec V, arma::vec beta0, arma::vec tau2b
 
 
 
+
 // [[Rcpp::export]]
 Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau2beta0, 
-                               double sigma2, double lambda2, 
-                               bool updatelambda2 = true, int burnin = 50, int nsim = 100,
-                               Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
-                               Rcpp::Nullable<Rcpp::NumericMatrix> T=R_NilValue,
-                               Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
-                               Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
-                               Rcpp::Nullable<Rcpp::NumericVector> tau2beta1=R_NilValue,
-                               Rcpp::Nullable<Rcpp::NumericVector> tau2beta2=R_NilValue) {
+                                   double sigma2, double lambda2, 
+                                   bool updatelambda2 = true, int burnin = 50, int nsim = 100,
+                                   Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericMatrix> T=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
+                                   Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
+                                   Rcpp::Nullable<Rcpp::NumericVector> tau2beta1=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericVector> tau2beta2=R_NilValue) {
   
   int n = V.n_elem;
   
@@ -1750,42 +1742,72 @@ Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau
   arma::mat fit0out;
   arma::mat fit1out;
   
-  
   arma::vec tmpbetadelta;
   arma::vec tmptau2all;
   arma::vec tmpexpectedtau2all;
   arma::vec tmpsigma2;
   arma::vec tmpfit0;
   arma::vec tmpfit1;
-  arma::vec tmpdelta0;
-  arma::vec tmpdelta1;
   
-  Rcpp::Nullable<Rcpp::NumericMatrix> U = R_NilValue;
-  Rcpp::Nullable<Rcpp::NumericMatrix> W = R_NilValue;
+  arma::mat X_;
+  arma::mat T_;
   
-  arma::vec dim = checkDim(X, T, U, W);
+  //Rcpp::Rcout << 0.1 << std::endl;
+  
+  int q;
+  int p;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    q = X_.n_cols;
+  } else {
+    q = 0;
+  }
+  
+  //Rcpp::Rcout << q << std::endl;
+  
+  //Rcpp::Rcout << 0.2 << std::endl;
+  
+  if (T.isNotNull()) {
+    T_ = Rcpp::as<arma::mat>(T);
+    p = T_.n_cols;
+  } else {
+    p = 0;
+  }
+  
+  //Rcpp::Rcout << p << std::endl;
+  
+  //Rcpp::Rcout << 0.3 << std::endl;
   
   Rcpp::List tmpbetadeltalist;
   Rcpp::List tmptau2alllist;
   
-  int q = dim(0);
-  int p = dim(1);
-  int K = dim(2);
-  int r = dim(3);
   
-  int m = 1 + q + p + K + K * r;
+  int m = 1 + q + p;
   
   arma::vec beta0_ = beta0;
-  Rcpp::Nullable<Rcpp::NumericVector> beta1_ = beta1;
-  Rcpp::Nullable<Rcpp::NumericVector> beta2_ = beta2;
-  Rcpp::Nullable<Rcpp::NumericVector> delta0_ = R_NilValue;
-  Rcpp::Nullable<Rcpp::NumericVector> delta1_ = R_NilValue;
-  
   arma::vec tau2beta0_ = tau2beta0;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2beta1_ = tau2beta1;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2beta2_ = tau2beta2;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2delta0_ = R_NilValue;
-  Rcpp::Nullable<Rcpp::NumericVector> tau2delta1_ = R_NilValue;
+  
+  arma::vec beta1_;
+  arma::vec tau2beta1_;
+  arma::vec beta2_;
+  arma::vec tau2beta2_;
+  
+  //Rcpp::Rcout << 0.4 << std::endl;
+  
+  if (q > 0) {
+    beta1_ = Rcpp::as<arma::vec>(beta1);
+    tau2beta1_ = Rcpp::as<arma::vec>(tau2beta1);
+    //Rcpp::Rcout << 0.41 << std::endl;
+  }
+  
+  if (p > 0) {
+    beta2_ = Rcpp::as<arma::vec>(beta2);
+    tau2beta2_ = Rcpp::as<arma::vec>(tau2beta2);
+    //Rcpp::Rcout << 0.42 << std::endl;
+  }
+  
+  //Rcpp::Rcout << 0.5 << std::endl;
   
   arma::vec sigma2_(1);
   sigma2_(0) = sigma2;
@@ -1794,6 +1816,17 @@ Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau
   arma::vec lambda2_(1);
   lambda2_(0) = lambda2;
   double iterlambda2 = lambda2;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  ////////////////////////
+  
+  arma::mat U_;
+  arma::mat W_;
+  arma::vec delta0_;
+  arma::vec delta1_;
+  arma::vec tau2delta0_;
+  arma::vec tau2delta1_;
   
   arma::vec fit0_;
   arma::vec fit1_;
@@ -1806,52 +1839,39 @@ Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau
   
   int cnt = 0;
   
-  //Rcpp::Rcout << "V" << V << std::endl;
-  //Rcpp::Rcout << "beta0_" << beta0_ << std::endl;
-  //Rcpp::Rcout << "tau2beta0_" << tau2beta0_ << std::endl;
-  //Rcpp::Rcout << "itersigma2" << itersigma2 << std::endl;
-  //Rcpp::Rcout << "iterlambda2" << iterlambda2 << std::endl;
-  //Rcpp::Rcout << "updatelambda2" << updatelambda2 << std::endl;
-  //Rcpp::Rcout << "X" << X << std::endl;
-  //Rcpp::Rcout << "T" << T << std::endl;
-  //Rcpp::Rcout << "beta1_" << beta1_ << std::endl;
-  //Rcpp::Rcout << "beta2_" << beta2_<< std::endl;
-  //Rcpp::Rcout << "tau2beta1_" << tau2beta1_ << std::endl;
-  //Rcpp::Rcout << "tau2beta2_" << tau2beta2_ << std::endl;
-  
+  //Rcpp::Rcout << 2 << std::endl;
   
   for (int sim = 0; sim < (burnin + nsim); sim++) {
     
     tmplist = getGaussianPosterior(V, beta0_, tau2beta0_,
                                    itersigma2, iterlambda2, 
-                                   X, T, U, W, 
+                                   X_, T_, U_, W_, 
                                    beta1_, beta2_, delta0_, delta1_, 
                                    tau2beta1_, tau2beta2_, 
-                                   tau2delta0_, tau2delta1_);
+                                   tau2delta0_, tau2delta1_, q, p, 0, 0);
     
+    //Rcpp::Rcout << 3 << std::endl;
     
     tmpbetadelta = Rcpp::as<arma::vec>(tmplist["betadelta"]);
     tmptau2all = Rcpp::as<arma::vec>(tmplist["tau2all"]);
     
-    tmpbetadeltalist = readbetadelta(tmpbetadelta, q, p, K, r);
-    tmptau2alllist = readtau2all(tmptau2all, q, p, K, r);
-    
-    tmpbetadeltalist = readbetadelta(tmpbetadelta, q, p, K, r);
+    tmpbetadeltalist = readbetadelta(tmpbetadelta, q, p, 0, 0);
+    tmptau2alllist = readtau2all(tmptau2all, q, p, 0, 0);
     
     beta0_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta0"]);
     tau2beta0_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta0"]);
     
     if (q > 0) {
-      beta1_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmpbetadeltalist["beta1"]);
-      tau2beta1_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmptau2alllist["tau2beta1"]);
+      beta1_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta1"]);
+      tau2beta1_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta1"]);
     }
     
     if (p > 0) {
-      beta2_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmpbetadeltalist["beta2"]);
-      tau2beta2_ = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(tmptau2alllist["tau2beta2"]);
+      beta2_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta2"]);
+      tau2beta2_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta2"]);
     }
     
-    
+    //Rcpp::Rcout << 4 << std::endl;
     
     fit0_ = Rcpp::as<arma::vec>(tmplist["fit0"]);
     fit1_ = Rcpp::as<arma::vec>(tmplist["fit1"]);
@@ -1865,6 +1885,8 @@ Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau
     if (updatelambda2 == true) {
       iterlambda2 = getLambda2EM(tmpexpectedtau2all);
     }
+    
+    //Rcpp::Rcout << 5 << std::endl;
     
     if (sim >= burnin) {
       
@@ -1892,6 +1914,8 @@ Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau
       cnt++;
     }
     
+    //Rcpp::Rcout << 6 << std::endl;
+    
   }
   
   
@@ -1907,6 +1931,295 @@ Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau
     Rcpp::_["m"] = m,
     Rcpp::_["q"] = q,
     Rcpp::_["p"] = p,
+    Rcpp::_["K"] = 0,
+    Rcpp::_["r"] = 0
+  );
+  return(out);
+  
+}
+
+
+
+
+// [[Rcpp::export]]
+Rcpp::List getPosteriorLayer1NBShift(arma::vec Y, arma::vec V, arma::vec Vhat, 
+                                   arma::vec beta0, arma::vec tau2beta0, 
+                                   double sigma2, double psi, double lambda2, int p,
+                                   bool updatelambda2 = true, bool updatepsi = true,
+                                   int c1 = 1, int c2 = 1,
+                                   int burnin1 = 50, int burnin2 = 50, int nsim = 100,
+                                   Rcpp::Nullable<Rcpp::NumericVector> gamma=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
+                                   Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
+                                   Rcpp::Nullable<Rcpp::NumericVector> delta0=R_NilValue, 
+                                   Rcpp::Nullable<Rcpp::NumericVector> delta1=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericVector> tau2beta1=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericVector> tau2beta2=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericVector> tau2delta0=R_NilValue,
+                                   Rcpp::Nullable<Rcpp::NumericVector> tau2delta1=R_NilValue) {
+  
+  int n = Y.n_elem;
+  
+  arma::mat betadeltaout;
+  arma::mat tau2allout;
+  arma::mat expectedtau2allout;
+  arma::vec sigma2out;
+  arma::vec psiout;
+  arma::vec lambda2out;
+  arma::mat fit0out;
+  arma::mat fit1out;
+  arma::mat Vout;
+  
+  
+  arma::vec tmpbetadelta;
+  arma::vec tmptau2all;
+  arma::vec tmpexpectedtau2all;
+  arma::vec tmpsigma2;
+  arma::vec tmpfit0;
+  arma::vec tmpfit1;
+  arma::vec tmpdelta0;
+  arma::vec tmpdelta1;
+  
+  arma::vec beta1_;
+  arma::vec tau2beta1_;
+  arma::vec beta2_;
+  arma::vec tau2beta2_;
+  arma::vec delta0_;
+  arma::vec tau2delta0_;
+  arma::vec delta1_;
+  arma::vec tau2delta1_;
+  
+  arma::mat X_;
+  arma::mat T_;
+  arma::mat U_;
+  arma::mat W_;
+  arma::mat prob_;
+  
+  int q = 0;
+  int K = 0;
+  int r = 0;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    beta1_ = Rcpp::as<arma::vec>(beta1);
+    tau2beta1_ = Rcpp::as<arma::vec>(tau2beta1);
+    q = X_.n_cols;
+    //Rcpp::Rcout << 0.41 << std::endl;
+  }
+  
+  if (p > 0) {
+    beta2_ = Rcpp::as<arma::vec>(beta2);
+    tau2beta2_ = Rcpp::as<arma::vec>(tau2beta2);
+  }
+  
+  if (U.isNotNull()) {
+    U_ = Rcpp::as<arma::mat>(U);
+    delta0_ = Rcpp::as<arma::vec>(delta0);
+    tau2delta0_ = Rcpp::as<arma::vec>(tau2delta0);
+    K = U_.n_cols;
+    if (W.isNotNull()) {
+      W_ = Rcpp::as<arma::mat>(W);
+      delta1_ = Rcpp::as<arma::vec>(delta1);
+      tau2delta1_ = Rcpp::as<arma::vec>(tau2delta1);
+      r = W_.n_cols;
+    } 
+  }
+  
+  
+  Rcpp::List tmpbetadeltalist;
+  Rcpp::List tmptau2alllist;
+  
+  int m = 1 + q + p + K + K * r;
+  
+  
+  
+  arma::vec beta0_ = beta0;
+  arma::vec tau2beta0_ = tau2beta0;
+  
+  
+  arma::vec sigma2_(1);
+  sigma2_(0) = sigma2;
+  double itersigma2 = sigma2;
+  
+  arma::vec psi_(1);
+  psi_(0) = psi;
+  double iterpsi = psi;
+  
+  arma::vec lambda2_(1);
+  lambda2_(0) = lambda2;
+  double iterlambda2 = lambda2;
+
+  ////////////////////////
+  
+  arma::cube Uout;
+  arma::cube probout;
+  
+  
+  arma::vec zetadelta;
+  
+  arma::vec gamma_;
+  
+  if (K > 0) {
+    Uout.zeros(n, K, nsim);
+    probout.zeros(n, K, nsim);
+    if (gamma.isNotNull()) {
+      gamma_ = Rcpp::as<arma::vec>(gamma);
+    } else {
+      gamma_.zeros(K);
+      gamma_.fill(1.0/K);
+    }
+  }
+  
+  
+  arma::vec fit0_;
+  arma::vec fit1_ = Vhat;
+  
+  arma::vec resi;
+  
+  Rcpp::List tmplist;
+  
+  Rcpp::List tmpUlist;
+  
+  arma::vec V1 = V;
+  arma::vec V2(n);
+  V2.fill(-arma::datum::inf);
+  
+  int cnt = 0;
+  
+  for (int sim1 = 0; sim1 < (burnin1 + nsim); sim1++) {
+    
+    V1 = getV1(Y, V1, V2, iterpsi, fit1_, itersigma2, burnin1);
+    T_ = getT(V1, p);
+    
+    
+    for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
+      
+      tmplist = getGaussianPosterior(V1, beta0_, tau2beta0_,
+                                     itersigma2, iterlambda2, 
+                                     X_, T_, U_, W_, 
+                                     beta1_, beta2_, delta0_, delta1_, 
+                                     tau2beta1_, tau2beta2_, 
+                                     tau2delta0_, tau2delta1_, q, p, K, r);
+      
+      tmpbetadelta = Rcpp::as<arma::vec>(tmplist["betadelta"]);
+      tmptau2all = Rcpp::as<arma::vec>(tmplist["tau2all"]);
+      
+      tmpbetadeltalist = readbetadelta(tmpbetadelta, q, p, K, r);
+      tmptau2alllist = readtau2all(tmptau2all, q, p, K, r);
+      
+      beta0_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta0"]);
+      tau2beta0_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta0"]);
+      
+      if (q > 0) {
+        beta1_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta1"]);
+        tau2beta1_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta1"]);
+      }
+      
+      if (p > 0) {
+        beta2_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta2"]);
+        tau2beta2_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta2"]);
+      }
+      
+      if (K > 0) {
+        delta0_ = Rcpp::as<arma::vec>(tmpbetadeltalist["delta0"]);
+        tau2delta0_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2delta0"]);
+        if (r > 0) {
+          delta1_ = Rcpp::as<arma::vec>(tmpbetadeltalist["delta1"]);
+          tau2delta1_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2delta1"]);
+        }
+      }
+      
+      fit0_ = Rcpp::as<arma::vec>(tmplist["fit0"]);
+      fit1_ = Rcpp::as<arma::vec>(tmplist["fit1"]);
+      
+      resi = V1 - fit1_;
+      itersigma2 = arma::accu(arma::pow(resi, 2)) / n;
+      
+      tmpexpectedtau2all = Rcpp::as<arma::vec>(tmplist["expectedtau2all"]);
+      
+      zetadelta = V1 - fit0_;
+      
+      if (K > 0) {
+        if (r == 0) {
+          tmpUlist = getUWithoutW(zetadelta, K, delta0_, itersigma2, gamma_);
+        } else {
+          tmpUlist = getUWithW(zetadelta, W_, K, 
+                               delta0_, delta1_, 
+                               itersigma2, gamma_);
+        }
+        U_ = Rcpp::as<arma::mat>(tmpUlist["U"]);
+        prob_ = Rcpp::as<arma::mat>(tmpUlist["prob"]);
+      }
+      
+    }
+    
+    
+    if (updatepsi == true) {
+      iterpsi = getPsi(Y, V1, V2, iterpsi, burnin1, c1, c2);
+    }
+    
+    
+    if (updatelambda2 == true) {
+      iterlambda2 = getLambda2EM(tmpexpectedtau2all);
+    }
+    
+    if (sim1 >= burnin1) {
+      
+      sigma2_(0) = itersigma2;
+      lambda2_(0) = iterlambda2;
+      psi_(0) = iterpsi;
+      
+      if (cnt > 0) {
+        betadeltaout = arma::join_cols(betadeltaout, arma::trans(tmpbetadelta));
+        tau2allout = arma::join_cols(tau2allout, arma::trans(tmptau2all));
+        expectedtau2allout = arma::join_cols(expectedtau2allout, arma::trans(tmpexpectedtau2all));
+        sigma2out = arma::join_cols(sigma2out, sigma2_);
+        psiout = arma::join_cols(psiout, psi_);
+        lambda2out = arma::join_cols(lambda2out, lambda2_);
+        fit0out = arma::join_cols(fit0out, arma::trans(fit0_));
+        fit1out = arma::join_cols(fit1out, arma::trans(fit1_));
+        Vout = arma::join_cols(Vout, arma::trans(V1));
+      } else {
+        betadeltaout = arma::trans(tmpbetadelta);
+        tau2allout = arma::trans(tmptau2all);
+        expectedtau2allout = arma::trans(tmpexpectedtau2all);
+        sigma2out = sigma2_;
+        psiout = psi_;
+        lambda2out = lambda2_;
+        fit0out = arma::trans(fit0_);
+        fit1out = arma::trans(fit1_);
+        Vout = arma::trans(V1);
+      }
+      
+      Uout.slice(cnt) = U_;
+      probout.slice(cnt) = prob_;
+      cnt++;
+    }
+    
+  }
+  
+  
+  // output;
+  Rcpp::List out;
+  out = Rcpp::List::create(
+    Rcpp::_["betadelta"] = betadeltaout,
+    Rcpp::_["tau2all"] = tau2allout,
+    Rcpp::_["psi"] = psiout,
+    Rcpp::_["sigma2"] = sigma2out,
+    Rcpp::_["lambda2"] = lambda2out,
+    Rcpp::_["fit0"] = fit0out,
+    Rcpp::_["fit1"] = fit1out,
+    Rcpp::_["V"] = Vout,
+    Rcpp::_["U"] = Uout,
+    Rcpp::_["prob"] = probout,
+    Rcpp::_["fit0"] = arma::exp(fit0out),
+    Rcpp::_["fit1"] = arma::exp(fit1out),
+    Rcpp::_["m"] = m,
+    Rcpp::_["q"] = q,
+    Rcpp::_["p"] = p,
     Rcpp::_["K"] = K,
     Rcpp::_["r"] = r
   );
@@ -1914,19 +2227,1133 @@ Rcpp::List getPosteriorLayer2NoShift(arma::vec V, arma::vec beta0, arma::vec tau
   
 }
 
+
+
+
+
 // [[Rcpp::export]]
-Rcpp::NumericMatrix ConvertARMAMatToRcppNumericMatrix(arma::mat x) {
-  int n = x.n_rows;
-  int m = x.n_cols;
-  Rcpp::NumericMatrix out(n, m);
+Rcpp::List getPosteriorLayer1NBNoShift(arma::vec Y, arma::vec V, arma::vec Vhat, 
+                                     arma::vec beta0, arma::vec tau2beta0, 
+                                     double sigma2, double psi, double lambda2, int p,
+                                     bool updatelambda2 = true, bool updatepsi = true,
+                                     int c1 = 1, int c2 = 1,
+                                     int burnin1 = 50, int burnin2 = 50, int nsim = 100,
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> beta1=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> beta2=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2beta1=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2beta2=R_NilValue) {
   
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < m; j++) {
-      out(i, j) = x(i, j);
+  int n = Y.n_elem;
+  
+  arma::mat betadeltaout;
+  arma::mat tau2allout;
+  arma::mat expectedtau2allout;
+  arma::vec sigma2out;
+  arma::vec psiout;
+  arma::vec lambda2out;
+  arma::mat fit0out;
+  arma::mat fit1out;
+  arma::mat Vout;
+  
+  
+  arma::vec tmpbetadelta;
+  arma::vec tmptau2all;
+  arma::vec tmpexpectedtau2all;
+  arma::vec tmpsigma2;
+  arma::vec tmpfit0;
+  arma::vec tmpfit1;
+  
+  arma::vec beta1_;
+  arma::vec tau2beta1_;
+  arma::vec beta2_;
+  arma::vec tau2beta2_;
+  
+  arma::mat X_;
+  arma::mat T_;
+  arma::mat prob_;
+  
+  int q = 0;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    beta1_ = Rcpp::as<arma::vec>(beta1);
+    tau2beta1_ = Rcpp::as<arma::vec>(tau2beta1);
+    q = X_.n_cols;
+    //Rcpp::Rcout << 0.41 << std::endl;
+  }
+  
+  if (p > 0) {
+    beta2_ = Rcpp::as<arma::vec>(beta2);
+    tau2beta2_ = Rcpp::as<arma::vec>(tau2beta2);
+  }
+  
+  
+  Rcpp::List tmpbetadeltalist;
+  Rcpp::List tmptau2alllist;
+  
+  int m = 1 + q + p;
+  
+  arma::vec beta0_ = beta0;
+  arma::vec tau2beta0_ = tau2beta0;
+  
+  
+  arma::vec sigma2_(1);
+  sigma2_(0) = sigma2;
+  double itersigma2 = sigma2;
+  
+  arma::vec psi_(1);
+  psi_(0) = psi;
+  double iterpsi = psi;
+  
+  arma::vec lambda2_(1);
+  lambda2_(0) = lambda2;
+  double iterlambda2 = lambda2;
+  
+  ////////////////////////
+  
+  arma::mat U_;
+  arma::mat W_;
+  arma::vec delta0_;
+  arma::vec delta1_;
+  arma::vec tau2delta0_;
+  arma::vec tau2delta1_;
+  
+  arma::vec fit0_;
+  arma::vec fit1_ = Vhat;
+  
+  arma::vec resi;
+  
+  Rcpp::List tmplist;
+  
+  Rcpp::List tmpUlist;
+  
+  arma::vec V1 = V;
+  arma::vec V2(n);
+  V2.fill(-arma::datum::inf);
+  
+  int cnt = 0;
+  
+  for (int sim1 = 0; sim1 < (burnin1 + nsim); sim1++) {
+    
+    V1 = getV1(Y, V1, V2, iterpsi, fit1_, itersigma2, burnin1);
+    T_ = getT(V1, p);
+    
+    
+    for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
+      
+      tmplist = getGaussianPosterior(V1, beta0_, tau2beta0_,
+                                     itersigma2, iterlambda2, 
+                                     X_, T_, U_, W_, 
+                                     beta1_, beta2_, delta0_, delta1_, 
+                                     tau2beta1_, tau2beta2_, 
+                                     tau2delta0_, tau2delta1_, q, p, 0, 0);
+      
+      tmpbetadelta = Rcpp::as<arma::vec>(tmplist["betadelta"]);
+      tmptau2all = Rcpp::as<arma::vec>(tmplist["tau2all"]);
+      
+      tmpbetadeltalist = readbetadelta(tmpbetadelta, q, p, 0, 0);
+      tmptau2alllist = readtau2all(tmptau2all, q, p, 0, 0);
+      
+      beta0_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta0"]);
+      tau2beta0_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta0"]);
+      
+      if (q > 0) {
+        beta1_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta1"]);
+        tau2beta1_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta1"]);
+      }
+      
+      if (p > 0) {
+        beta2_ = Rcpp::as<arma::vec>(tmpbetadeltalist["beta2"]);
+        tau2beta2_ = Rcpp::as<arma::vec>(tmptau2alllist["tau2beta2"]);
+      }
+      
+      
+      fit0_ = Rcpp::as<arma::vec>(tmplist["fit0"]);
+      fit1_ = Rcpp::as<arma::vec>(tmplist["fit1"]);
+      
+      resi = V1 - fit1_;
+      itersigma2 = arma::accu(arma::pow(resi, 2)) / n;
+      
+      tmpexpectedtau2all = Rcpp::as<arma::vec>(tmplist["expectedtau2all"]);
+      
+    }
+    
+    
+    if (updatepsi == true) {
+      iterpsi = getPsi(Y, V1, V2, iterpsi, burnin1, c1, c2);
+    }
+    
+    
+    if (updatelambda2 == true) {
+      iterlambda2 = getLambda2EM(tmpexpectedtau2all);
+    }
+    
+    if (sim1 >= burnin1) {
+      
+      sigma2_(0) = itersigma2;
+      lambda2_(0) = iterlambda2;
+      psi_(0) = iterpsi;
+      
+      if (cnt > 0) {
+        betadeltaout = arma::join_cols(betadeltaout, arma::trans(tmpbetadelta));
+        tau2allout = arma::join_cols(tau2allout, arma::trans(tmptau2all));
+        expectedtau2allout = arma::join_cols(expectedtau2allout, arma::trans(tmpexpectedtau2all));
+        sigma2out = arma::join_cols(sigma2out, sigma2_);
+        psiout = arma::join_cols(psiout, psi_);
+        lambda2out = arma::join_cols(lambda2out, lambda2_);
+        fit0out = arma::join_cols(fit0out, arma::trans(fit0_));
+        fit1out = arma::join_cols(fit1out, arma::trans(fit1_));
+        Vout = arma::join_cols(Vout, arma::trans(V1));
+      } else {
+        betadeltaout = arma::trans(tmpbetadelta);
+        tau2allout = arma::trans(tmptau2all);
+        expectedtau2allout = arma::trans(tmpexpectedtau2all);
+        sigma2out = sigma2_;
+        psiout = psi_;
+        lambda2out = lambda2_;
+        fit0out = arma::trans(fit0_);
+        fit1out = arma::trans(fit1_);
+        Vout = arma::trans(V1);
+      }
+      
+      cnt++;
+    }
+    
+  }
+  
+  
+  // output;
+  Rcpp::List out;
+  out = Rcpp::List::create(
+    Rcpp::_["betadelta"] = betadeltaout,
+    Rcpp::_["tau2all"] = tau2allout,
+    Rcpp::_["psi"] = psiout,
+    Rcpp::_["sigma2"] = sigma2out,
+    Rcpp::_["lambda2"] = lambda2out,
+    Rcpp::_["fit0"] = fit0out,
+    Rcpp::_["fit1"] = fit1out,
+    Rcpp::_["V"] = Vout,
+    Rcpp::_["Yfit0"] = arma::exp(fit0out),
+    Rcpp::_["Yfit1"] = arma::exp(fit1out),
+    Rcpp::_["m"] = m,
+    Rcpp::_["q"] = q,
+    Rcpp::_["p"] = p,
+    Rcpp::_["K"] = 0,
+    Rcpp::_["r"] = 0
+  );
+  return(out);
+  
+}
+
+
+
+
+
+// [[Rcpp::export]]
+Rcpp::List getPosteriorLayer1ZinfNBNoShift(arma::vec Y, 
+                                       arma::vec V1, arma::vec V1hat, 
+                                       arma::vec V2, arma::vec V2hat, 
+                                       arma::vec beta01, arma::vec tau2beta01, 
+                                       arma::vec beta02, arma::vec tau2beta02, 
+                                       double sigma21, double sigma22, double psi, double lambda2, int p,
+                                       bool updatelambda2 = true, bool updatepsi = true,
+                                       int c1 = 1, int c2 = 1,
+                                       int burnin1 = 50, int burnin2 = 50, int nsim = 100,
+                                       Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> beta11=R_NilValue, 
+                                       Rcpp::Nullable<Rcpp::NumericVector> beta21=R_NilValue, 
+                                       Rcpp::Nullable<Rcpp::NumericVector> tau2beta11=R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> tau2beta21=R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> beta12=R_NilValue, 
+                                       Rcpp::Nullable<Rcpp::NumericVector> beta22=R_NilValue, 
+                                       Rcpp::Nullable<Rcpp::NumericVector> tau2beta12=R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> tau2beta22=R_NilValue) {
+  
+  int n = Y.n_elem;
+  
+  arma::mat betadelta1out;
+  arma::mat tau2all1out;
+  arma::mat expectedtau2all1out;
+  arma::vec sigma21out;
+  arma::mat fit01out;
+  arma::mat fit11out;
+  arma::mat V1out;
+  
+  arma::mat betadelta2out;
+  arma::mat tau2all2out;
+  arma::mat expectedtau2all2out;
+  arma::vec sigma22out;
+  arma::mat fit02out;
+  arma::mat fit12out;
+  arma::mat V2out;
+  
+  arma::vec psiout;
+  arma::vec lambda2out;
+  
+  arma::vec tmpbetadelta1;
+  arma::vec tmptau2all1;
+  arma::vec tmpexpectedtau2all1;
+  arma::vec tmpsigma21;
+  arma::vec tmpfit01;
+  arma::vec tmpfit11;
+  
+  arma::vec tmpbetadelta2;
+  arma::vec tmptau2all2;
+  arma::vec tmpexpectedtau2all2;
+  arma::vec tmpsigma22;
+  arma::vec tmpfit02;
+  arma::vec tmpfit12;
+  
+  arma::vec beta11_;
+  arma::vec tau2beta11_;
+  arma::vec beta21_;
+  arma::vec tau2beta21_;
+  
+  arma::vec beta12_;
+  arma::vec tau2beta12_;
+  arma::vec beta22_;
+  arma::vec tau2beta22_;
+  
+  arma::mat X_;
+  arma::mat T1_;
+  arma::mat T2_;
+  
+  int q = 0;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    beta11_ = Rcpp::as<arma::vec>(beta11);
+    tau2beta11_ = Rcpp::as<arma::vec>(tau2beta11);
+    beta12_ = Rcpp::as<arma::vec>(beta12);
+    tau2beta12_ = Rcpp::as<arma::vec>(tau2beta12);
+    q = X_.n_cols;
+    //Rcpp::Rcout << 0.41 << std::endl;
+  }
+  
+  if (p > 0) {
+    beta21_ = Rcpp::as<arma::vec>(beta21);
+    tau2beta21_ = Rcpp::as<arma::vec>(tau2beta22);
+    beta22_ = Rcpp::as<arma::vec>(beta22);
+    tau2beta22_ = Rcpp::as<arma::vec>(tau2beta22);
+  }
+  
+  
+  Rcpp::List tmpbetadelta1list;
+  Rcpp::List tmptau2all1list;
+  Rcpp::List tmpbetadelta2list;
+  Rcpp::List tmptau2all2list;
+  
+  int m = 1 + q + p;
+  
+  arma::vec beta01_ = beta01;
+  arma::vec tau2beta01_ = tau2beta01;
+  arma::vec beta02_ = beta02;
+  arma::vec tau2beta02_ = tau2beta02;
+  
+  arma::vec sigma21_(1);
+  sigma21_(0) = sigma21;
+  double itersigma21 = sigma21;
+  
+  arma::vec sigma22_(1);
+  sigma22_(0) = sigma22;
+  double itersigma22 = sigma22;
+  
+  arma::vec psi_(1);
+  psi_(0) = psi;
+  double iterpsi = psi;
+  
+  arma::vec lambda2_(1);
+  lambda2_(0) = lambda2;
+  double iterlambda2 = lambda2;
+  
+  ////////////////////////
+  
+  arma::mat U1_;
+  arma::mat U2_;
+  arma::mat W_;
+  arma::vec delta01_;
+  arma::vec delta11_;
+  arma::vec tau2delta01_;
+  arma::vec tau2delta11_;
+  arma::vec delta02_;
+  arma::vec delta12_;
+  arma::vec tau2delta02_;
+  arma::vec tau2delta12_;
+  
+  arma::vec fit01_;
+  arma::vec fit11_ = V1hat;
+  
+  arma::vec fit02_;
+  arma::vec fit12_ = V2hat;
+  
+  arma::vec resi1;
+  arma::vec resi2;
+  
+  Rcpp::List tmp1list;
+  Rcpp::List tmpU1list;
+  Rcpp::List tmp2list;
+  Rcpp::List tmpU2list;
+  
+  arma::vec V1_ = V1;
+  arma::vec V2_ = V2;
+  
+  int cnt = 0;
+  
+  for (int sim1 = 0; sim1 < (burnin1 + nsim); sim1++) {
+    
+    //// update V1 and T1
+    V1_ = getV1(Y, V1_, V2_, iterpsi, fit11_, itersigma21, burnin1);
+    T1_ = getT(V1_, p);
+    
+    for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
+      
+      //// update beta, delta and tau2
+      
+      tmp1list = getGaussianPosterior(V1_, beta01_, tau2beta01_,
+                                     itersigma21, iterlambda2, 
+                                     X_, T1_, U1_, W_, 
+                                     beta11_, beta21_, delta01_, delta11_, 
+                                     tau2beta11_, tau2beta21_, 
+                                     tau2delta01_, tau2delta11_, q, p, 0, 0);
+      
+      tmpbetadelta1 = Rcpp::as<arma::vec>(tmp1list["betadelta"]);
+      tmptau2all1 = Rcpp::as<arma::vec>(tmp1list["tau2all"]);
+      
+      tmpbetadelta1list = readbetadelta(tmpbetadelta1, q, p, 0, 0);
+      tmptau2all1list = readtau2all(tmptau2all1, q, p, 0, 0);
+      
+      beta01_ = Rcpp::as<arma::vec>(tmpbetadelta1list["beta0"]);
+      tau2beta01_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2beta0"]);
+      
+      if (q > 0) {
+        beta11_ = Rcpp::as<arma::vec>(tmpbetadelta1list["beta1"]);
+        tau2beta11_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2beta1"]);
+      }
+      
+      if (p > 0) {
+        beta21_ = Rcpp::as<arma::vec>(tmpbetadelta1list["beta2"]);
+        tau2beta21_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2beta2"]);
+      }
+      
+      //// update fit
+      
+      fit01_ = Rcpp::as<arma::vec>(tmp1list["fit0"]);
+      fit11_ = Rcpp::as<arma::vec>(tmp1list["fit1"]);
+      
+      //// update sigma2
+      
+      resi1 = V1_ - fit11_;
+      itersigma21 = arma::accu(arma::pow(resi1, 2)) / n;
+      
+      tmpexpectedtau2all1 = Rcpp::as<arma::vec>(tmp1list["expectedtau2all"]);
+      
+    }
+    
+    //// update V2 and T2
+    V2_ = getV2(Y, V1_, V2_, iterpsi, fit12_, itersigma22, burnin1);
+    T2_ = getT(V2_, p);
+    
+    for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
+      
+      //// update beta, delta and tau2
+      
+      tmp2list = getGaussianPosterior(V2_, beta02_, tau2beta02_,
+                                      itersigma22, iterlambda2, 
+                                      X_, T2_, U2_, W_, 
+                                      beta12_, beta22_, delta02_, delta12_, 
+                                      tau2beta12_, tau2beta22_, 
+                                      tau2delta02_, tau2delta12_, q, p, 0, 0);
+      
+      tmpbetadelta2 = Rcpp::as<arma::vec>(tmp2list["betadelta"]);
+      tmptau2all2 = Rcpp::as<arma::vec>(tmp2list["tau2all"]);
+      
+      tmpbetadelta2list = readbetadelta(tmpbetadelta2, q, p, 0, 0);
+      tmptau2all2list = readtau2all(tmptau2all2, q, p, 0, 0);
+      
+      beta02_ = Rcpp::as<arma::vec>(tmpbetadelta2list["beta0"]);
+      tau2beta02_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2beta0"]);
+      
+      if (q > 0) {
+        beta12_ = Rcpp::as<arma::vec>(tmpbetadelta2list["beta1"]);
+        tau2beta12_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2beta1"]);
+      }
+      
+      if (p > 0) {
+        beta22_ = Rcpp::as<arma::vec>(tmpbetadelta2list["beta2"]);
+        tau2beta22_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2beta2"]);
+      }
+      
+      //// update fit
+      fit02_ = Rcpp::as<arma::vec>(tmp2list["fit0"]);
+      fit12_ = Rcpp::as<arma::vec>(tmp2list["fit1"]);
+      
+      
+      //// update sigma2
+      resi2 = V2_ - fit12_;
+      itersigma22 = arma::accu(arma::pow(resi2, 2)) / n;
+      
+      tmpexpectedtau2all2 = Rcpp::as<arma::vec>(tmp1list["expectedtau2all"]);
+      
+    }
+    
+    
+    //// update psi
+    if (updatepsi == true) {
+      iterpsi = getPsi(Y, V1_, V2_, iterpsi, burnin1, c1, c2);
+    }
+    
+    //// update lambda2
+    if (updatelambda2 == true) {
+      iterlambda2 = getLambda2EM(arma::join_cols(tmpexpectedtau2all1, tmpexpectedtau2all2));
+    }
+    
+    if (sim1 >= burnin1) {
+      
+      sigma21_(0) = itersigma21;
+      sigma22_(0) = itersigma22;
+      lambda2_(0) = iterlambda2;
+      psi_(0) = iterpsi;
+      
+      if (cnt > 0) {
+        betadelta1out = arma::join_cols(betadelta1out, arma::trans(tmpbetadelta1));
+        tau2all1out = arma::join_cols(tau2all1out, arma::trans(tmptau2all1));
+        expectedtau2all1out = arma::join_cols(expectedtau2all1out, arma::trans(tmpexpectedtau2all1));
+        sigma21out = arma::join_cols(sigma21out, sigma21_);
+        fit01out = arma::join_cols(fit01out, arma::trans(fit01_));
+        fit11out = arma::join_cols(fit11out, arma::trans(fit11_));
+        V1out = arma::join_cols(V1out, arma::trans(V1_));
+        
+        betadelta2out = arma::join_cols(betadelta2out, arma::trans(tmpbetadelta2));
+        tau2all2out = arma::join_cols(tau2all2out, arma::trans(tmptau2all2));
+        expectedtau2all2out = arma::join_cols(expectedtau2all2out, arma::trans(tmpexpectedtau2all2));
+        sigma22out = arma::join_cols(sigma22out, sigma22_);
+        fit02out = arma::join_cols(fit02out, arma::trans(fit02_));
+        fit12out = arma::join_cols(fit12out, arma::trans(fit12_));
+        V2out = arma::join_cols(V2out, arma::trans(V2_));
+        
+        psiout = arma::join_cols(psiout, psi_);
+        lambda2out = arma::join_cols(lambda2out, lambda2_);
+      } else {
+        betadelta1out = arma::trans(tmpbetadelta1);
+        tau2all1out = arma::trans(tmptau2all1);
+        expectedtau2all1out = arma::trans(tmpexpectedtau2all1);
+        sigma21out = sigma21_;
+        fit01out = arma::trans(fit01_);
+        fit11out = arma::trans(fit11_);
+        V1out = arma::trans(V1_);
+        
+        betadelta2out = arma::trans(tmpbetadelta2);
+        tau2all2out = arma::trans(tmptau2all2);
+        expectedtau2all2out = arma::trans(tmpexpectedtau2all2);
+        sigma22out = sigma22_;
+        fit02out = arma::trans(fit02_);
+        fit12out = arma::trans(fit12_);
+        V2out = arma::trans(V2_);
+        
+        psiout = psi_;
+        lambda2out = lambda2_;
+      }
+      
+      cnt++;
+    }
+    
+  }
+  
+  
+  // output;
+  Rcpp::List out;
+  out = Rcpp::List::create(
+    Rcpp::_["betadelta1"] = betadelta1out,
+    Rcpp::_["tau2all1"] = tau2all1out,
+    Rcpp::_["sigma21"] = sigma21out,
+    Rcpp::_["fit01"] = fit01out,
+    Rcpp::_["fit11"] = fit11out,
+    Rcpp::_["V1"] = V1out,
+    Rcpp::_["betadelta2"] = betadelta2out,
+    Rcpp::_["tau2all2"] = tau2all2out,
+    Rcpp::_["sigma22"] = sigma22out,
+    Rcpp::_["fit02"] = fit02out,
+    Rcpp::_["fit12"] = fit12out,
+    Rcpp::_["V2"] = V2out,
+    Rcpp::_["psi"] = psiout,
+    Rcpp::_["lambda2"] = lambda2out,
+    Rcpp::_["Yfit0"] = (1.0 - 1.0 / (1.0 + arma::exp(-fit02out))) % arma::exp(fit01out),
+    Rcpp::_["Yfit1"] = (1.0 - 1.0 / (1.0 + arma::exp(-fit12out))) % arma::exp(fit11out),
+    Rcpp::_["q"] = q,
+    Rcpp::_["p"] = p,
+    Rcpp::_["K"] = 0,
+    Rcpp::_["r"] = 0
+  );
+  return(out);
+  
+}
+
+
+
+template <typename T>
+inline void set_item_impl( List& target, int i, const T& obj, CharacterVector& names, traits::true_type ){
+  target[i] = obj.object ;
+  names[i] = obj.name ;
+}
+
+template <typename T>
+inline void set_item_impl( List& target, int i, const T& obj, CharacterVector&, traits::false_type ){
+  target[i] = obj ;
+}
+
+template <typename T>
+inline void set_item( List& target, int i, const T& obj, CharacterVector& names){
+  set_item_impl( target, i, obj, names, typename traits::is_named<T>::type() ) ;
+}
+
+class SequentialInserter{
+public:
+  SequentialInserter( List& target_, CharacterVector& names_ ) : target(target_), names(names_), index(0){}
+  
+  class SequentialInserterProxy{
+  public:
+    SequentialInserterProxy( SequentialInserter& parent_, const char* name_ ) : parent(parent_), name(name_){}
+    
+    template <typename T>
+    void operator=( const T& obj){
+      parent.set( name, obj ) ;
+    }  
+    
+  private:
+    SequentialInserter& parent ;
+    const char* name ;
+  } ;
+  
+  inline SequentialInserterProxy operator[]( const char* name){
+    return SequentialInserterProxy( *this, name );    
+  }
+  
+  template <typename T>
+  void set( const char* name, const T& obj){
+    target[index] = obj ;
+    names[index] = name ;
+    index++ ;
+  }
+  
+private:
+  List& target ;
+  CharacterVector& names;
+  int index ;
+  
+} ;
+
+
+
+
+// [[Rcpp::export]]
+Rcpp::List getPosteriorLayer1ZinfNBShift(arma::vec Y,
+                                     arma::vec V1, arma::vec V1hat, 
+                                     arma::vec V2, arma::vec V2hat, 
+                                     arma::vec beta01, arma::vec tau2beta01, 
+                                     arma::vec beta02, arma::vec tau2beta02, 
+                                     double sigma21, double sigma22, 
+                                     double psi, double lambda2, int p,
+                                     bool updatelambda2 = true, bool updatepsi = true,
+                                     int c1 = 1, int c2 = 1,
+                                     int burnin1 = 50, int burnin2 = 50, int nsim = 100,
+                                     Rcpp::Nullable<Rcpp::NumericVector> gamma1=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> gamma2=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> U1=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> U2=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> beta11=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> beta21=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2beta11=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2beta21=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> beta12=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> beta22=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2beta12=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2beta22=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> delta01=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> delta11=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> delta02=R_NilValue, 
+                                     Rcpp::Nullable<Rcpp::NumericVector> delta12=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2delta01=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2delta11=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2delta02=R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> tau2delta12=R_NilValue) {
+  
+  int n = Y.n_elem;
+  
+  arma::mat betadelta1out;
+  arma::mat tau2all1out;
+  arma::mat expectedtau2all1out;
+  arma::vec sigma21out;
+  arma::mat fit01out;
+  arma::mat fit11out;
+  arma::mat V1out;
+  
+  arma::mat betadelta2out;
+  arma::mat tau2all2out;
+  arma::mat expectedtau2all2out;
+  arma::vec sigma22out;
+  arma::mat fit02out;
+  arma::mat fit12out;
+  arma::mat V2out;
+  
+  arma::vec psiout;
+  arma::vec lambda2out;
+  
+  arma::vec tmpbetadelta1;
+  arma::vec tmptau2all1;
+  arma::vec tmpexpectedtau2all1;
+  arma::vec tmpsigma21;
+  arma::vec tmpfit01;
+  arma::vec tmpfit11;
+  arma::vec tmpdelta01;
+  arma::vec tmpdelta11;
+  
+  arma::vec tmpbetadelta2;
+  arma::vec tmptau2all2;
+  arma::vec tmpexpectedtau2all2;
+  arma::vec tmpsigma22;
+  arma::vec tmpfit02;
+  arma::vec tmpfit12;
+  arma::vec tmpdelta02;
+  arma::vec tmpdelta12;
+  
+  arma::vec beta11_;
+  arma::vec tau2beta11_;
+  arma::vec beta21_;
+  arma::vec tau2beta21_;
+  arma::vec delta01_;
+  arma::vec tau2delta01_;
+  arma::vec delta11_;
+  arma::vec tau2delta11_;
+  
+  arma::vec beta12_;
+  arma::vec tau2beta12_;
+  arma::vec beta22_;
+  arma::vec tau2beta22_;
+  arma::vec delta02_;
+  arma::vec tau2delta02_;
+  arma::vec delta12_;
+  arma::vec tau2delta12_;
+  
+  arma::mat X_;
+  arma::mat T1_;
+  arma::mat U1_;
+  arma::mat T2_;
+  arma::mat U2_;
+  arma::mat W_;
+  arma::mat prob1_;
+  arma::mat prob2_;
+  
+  int q = 0;
+  int K = 0;
+  int r = 0;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    beta11_ = Rcpp::as<arma::vec>(beta11);
+    tau2beta11_ = Rcpp::as<arma::vec>(tau2beta11);
+    beta12_ = Rcpp::as<arma::vec>(beta12);
+    tau2beta12_ = Rcpp::as<arma::vec>(tau2beta12);
+    q = X_.n_cols;
+    //Rcpp::Rcout << 0.41 << std::endl;
+  }
+  
+  if (p > 0) {
+    beta21_ = Rcpp::as<arma::vec>(beta21);
+    tau2beta21_ = Rcpp::as<arma::vec>(tau2beta21);
+    beta22_ = Rcpp::as<arma::vec>(beta22);
+    tau2beta22_ = Rcpp::as<arma::vec>(tau2beta22);
+  }
+  
+  int K1;
+  int K2;
+  
+  if (U1.isNotNull()) {
+    U1_ = Rcpp::as<arma::mat>(U1);
+    delta01_ = Rcpp::as<arma::vec>(delta01);
+    tau2delta01_ = Rcpp::as<arma::vec>(tau2delta01);
+    K1 = U1_.n_cols;
+  }
+  
+  if (U2.isNotNull()) {
+    U2_ = Rcpp::as<arma::mat>(U2);
+    delta02_ = Rcpp::as<arma::vec>(delta02);
+    tau2delta02_ = Rcpp::as<arma::vec>(tau2delta02);
+    K2 = U2_.n_cols;
+  }
+  
+  if (K1 > K2) {
+    K = K2;
+  } else {
+    K = K1;
+  }
+  
+  if (K > 0) {
+    if (W.isNotNull()) {
+      W_ = Rcpp::as<arma::mat>(W);
+      delta11_ = Rcpp::as<arma::vec>(delta11);
+      tau2delta11_ = Rcpp::as<arma::vec>(tau2delta11);
+      delta12_ = Rcpp::as<arma::vec>(delta12);
+      tau2delta12_ = Rcpp::as<arma::vec>(tau2delta12);
+      r = W_.n_cols;
+    } 
+  }
+  
+  
+  Rcpp::List tmpbetadelta1list;
+  Rcpp::List tmptau2all1list;
+  
+  Rcpp::List tmpbetadelta2list;
+  Rcpp::List tmptau2all2list;
+  
+  int m = 1 + q + p + K + K * r;
+  
+  arma::vec beta01_ = beta01;
+  arma::vec tau2beta01_ = tau2beta01;
+  
+  arma::vec beta02_ = beta02;
+  arma::vec tau2beta02_ = tau2beta02;
+  
+  arma::vec sigma21_(1);
+  sigma21_(0) = sigma21;
+  double itersigma21 = sigma21;
+  
+  arma::vec sigma22_(1);
+  sigma22_(0) = sigma22;
+  double itersigma22 = sigma22;
+  
+  arma::vec psi_(1);
+  psi_(0) = psi;
+  double iterpsi = psi;
+  
+  arma::vec lambda2_(1);
+  lambda2_(0) = lambda2;
+  double iterlambda2 = lambda2;
+  
+  ////////////////////////
+  
+  arma::cube U1out;
+  arma::cube prob1out;
+  arma::vec zetadelta1;
+  arma::vec gamma1_;
+  
+  arma::cube U2out;
+  arma::cube prob2out;
+  arma::vec zetadelta2;
+  arma::vec gamma2_;
+  
+  if (K > 0) {
+    
+    U1out.zeros(n, K, nsim);
+    prob1out.zeros(n, K, nsim);
+    U2out.zeros(n, K, nsim);
+    prob2out.zeros(n, K, nsim);
+    
+    if (gamma1.isNotNull()) {
+      gamma1_ = Rcpp::as<arma::vec>(gamma1);
+    } else {
+      gamma1_.zeros(K);
+      gamma1_.fill(1.0/K);
+    }
+    
+    if (gamma2.isNotNull()) {
+      gamma2_ = Rcpp::as<arma::vec>(gamma2);
+    } else {
+      gamma2_.zeros(K);
+      gamma2_.fill(1.0/K);
     }
   }
+  
+  arma::vec fit01_;
+  arma::vec fit11_ = V1hat;
+  arma::vec resi1;
+  
+  arma::vec fit02_;
+  arma::vec fit12_ = V2hat;
+  arma::vec resi2;
+  
+  Rcpp::List tmp1list;
+  Rcpp::List tmpU1list;
+  
+  Rcpp::List tmp2list;
+  Rcpp::List tmpU2list;
+  
+  arma::vec V1_ = V1;
+  arma::vec V2_ = V2;
+  
+  int cnt = 0;
+  
+  for (int sim1 = 0; sim1 < (burnin1 + nsim); sim1++) {
+    
+    V1_ = getV1(Y, V1_, V2_, iterpsi, fit11_, itersigma21, burnin1);
+    T1_ = getT(V1_, p);
+    
+    
+    for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
+      
+      tmp1list = getGaussianPosterior(V1_, beta01_, tau2beta01_,
+                                     itersigma21, iterlambda2, 
+                                     X_, T1_, U1_, W_, 
+                                     beta11_, beta21_, delta01_, delta11_, 
+                                     tau2beta11_, tau2beta21_, 
+                                     tau2delta01_, tau2delta11_, q, p, K, r);
+      
+      tmpbetadelta1 = Rcpp::as<arma::vec>(tmp1list["betadelta"]);
+      tmptau2all1 = Rcpp::as<arma::vec>(tmp1list["tau2all"]);
+      
+      tmpbetadelta1list = readbetadelta(tmpbetadelta1, q, p, K, r);
+      tmptau2all1list = readtau2all(tmptau2all1, q, p, K, r);
+      
+      beta01_ = Rcpp::as<arma::vec>(tmpbetadelta1list["beta0"]);
+      tau2beta01_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2beta0"]);
+      
+      if (q > 0) {
+        beta11_ = Rcpp::as<arma::vec>(tmpbetadelta1list["beta1"]);
+        tau2beta11_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2beta1"]);
+      }
+      
+      if (p > 0) {
+        beta21_ = Rcpp::as<arma::vec>(tmpbetadelta1list["beta2"]);
+        tau2beta21_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2beta2"]);
+      }
+      
+      if (K > 0) {
+        delta01_ = Rcpp::as<arma::vec>(tmpbetadelta1list["delta0"]);
+        tau2delta01_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2delta0"]);
+        if (r > 0) {
+          delta11_ = Rcpp::as<arma::vec>(tmpbetadelta1list["delta1"]);
+          tau2delta11_ = Rcpp::as<arma::vec>(tmptau2all1list["tau2delta1"]);
+        }
+      }
+      
+      fit01_ = Rcpp::as<arma::vec>(tmp1list["fit0"]);
+      fit11_ = Rcpp::as<arma::vec>(tmp1list["fit1"]);
+      
+      resi1 = V1_ - fit11_;
+      itersigma21 = arma::accu(arma::pow(resi1, 2)) / n;
+      
+      tmpexpectedtau2all1 = Rcpp::as<arma::vec>(tmp1list["expectedtau2all"]);
+      
+      zetadelta1 = V1_ - fit01_;
+      
+      if (K > 0) {
+        if (r == 0) {
+          tmpU1list = getUWithoutW(zetadelta1, K, delta01_, itersigma21, gamma1_);
+        } else {
+          tmpU1list = getUWithW(zetadelta1, W_, K, 
+                               delta01_, delta11_, 
+                               itersigma21, gamma1_);
+        }
+        U1_ = Rcpp::as<arma::mat>(tmpU1list["U"]);
+        prob1_ = Rcpp::as<arma::mat>(tmpU1list["prob"]);
+      }
+      
+    }
+    
+    ///////////////
+    
+    V2_ = getV2(Y, V1_, V2_, iterpsi, fit12_, itersigma22, burnin1);
+    T2_ = getT(V2_, p);
+    
+    for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
+      
+      tmp2list = getGaussianPosterior(V2_, beta02_, tau2beta02_,
+                                     itersigma22, iterlambda2, 
+                                     X_, T2_, U2_, W_, 
+                                     beta12_, beta22_, delta02_, delta12_, 
+                                     tau2beta12_, tau2beta22_, 
+                                     tau2delta02_, tau2delta12_, q, p, K, r);
+      
+      tmpbetadelta2 = Rcpp::as<arma::vec>(tmp2list["betadelta"]);
+      tmptau2all2 = Rcpp::as<arma::vec>(tmp2list["tau2all"]);
+      
+      tmpbetadelta2list = readbetadelta(tmpbetadelta2, q, p, K, r);
+      tmptau2all2list = readtau2all(tmptau2all2, q, p, K, r);
+      
+      beta02_ = Rcpp::as<arma::vec>(tmpbetadelta2list["beta0"]);
+      tau2beta02_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2beta0"]);
+      
+      if (q > 0) {
+        beta12_ = Rcpp::as<arma::vec>(tmpbetadelta2list["beta1"]);
+        tau2beta12_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2beta1"]);
+      }
+      
+      if (p > 0) {
+        beta22_ = Rcpp::as<arma::vec>(tmpbetadelta2list["beta2"]);
+        tau2beta22_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2beta2"]);
+      }
+      
+      if (K > 0) {
+        delta02_ = Rcpp::as<arma::vec>(tmpbetadelta2list["delta0"]);
+        tau2delta02_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2delta0"]);
+        if (r > 0) {
+          delta12_ = Rcpp::as<arma::vec>(tmpbetadelta2list["delta1"]);
+          tau2delta12_ = Rcpp::as<arma::vec>(tmptau2all2list["tau2delta1"]);
+        }
+      }
+      
+      fit02_ = Rcpp::as<arma::vec>(tmp2list["fit0"]);
+      fit12_ = Rcpp::as<arma::vec>(tmp2list["fit1"]);
+      
+      resi2 = V2_ - fit12_;
+      itersigma22 = arma::accu(arma::pow(resi2, 2)) / n;
+      
+      tmpexpectedtau2all2 = Rcpp::as<arma::vec>(tmp2list["expectedtau2all"]);
+      
+      zetadelta2 = V2_ - fit02_;
+      
+      if (K > 0) {
+        if (r == 0) {
+          tmpU2list = getUWithoutW(zetadelta2, K, delta02_, itersigma22, gamma2_);
+        } else {
+          tmpU2list = getUWithW(zetadelta2, W_, K, 
+                               delta02_, delta12_, 
+                               itersigma22, gamma2_);
+        }
+        U2_ = Rcpp::as<arma::mat>(tmpU2list["U"]);
+        prob2_ = Rcpp::as<arma::mat>(tmpU2list["prob"]);
+      }
+      
+    }
+    
+    ///////////////
+    
+    if (updatepsi == true) {
+      iterpsi = getPsi(Y, V1_, V2_, iterpsi, burnin1, c1, c2);
+    }
+    
+    if (updatelambda2 == true) {
+      iterlambda2 = getLambda2EM(arma::join_cols(tmpexpectedtau2all1, tmpexpectedtau2all2));
+    }
+    
+    if (sim1 >= burnin1) {
+      
+      sigma21_(0) = itersigma21;
+      sigma22_(0) = itersigma22;
+      lambda2_(0) = iterlambda2;
+      psi_(0) = iterpsi;
+      
+      if (cnt > 0) {
+        betadelta1out = arma::join_cols(betadelta1out, arma::trans(tmpbetadelta1));
+        tau2all1out = arma::join_cols(tau2all1out, arma::trans(tmptau2all1));
+        expectedtau2all1out = arma::join_cols(expectedtau2all1out, arma::trans(tmpexpectedtau2all1));
+        sigma21out = arma::join_cols(sigma21out, sigma21_);
+        fit01out = arma::join_cols(fit01out, arma::trans(fit01_));
+        fit11out = arma::join_cols(fit11out, arma::trans(fit11_));
+        V1out = arma::join_cols(V1out, arma::trans(V1_));
+        
+        betadelta2out = arma::join_cols(betadelta2out, arma::trans(tmpbetadelta2));
+        tau2all2out = arma::join_cols(tau2all2out, arma::trans(tmptau2all2));
+        expectedtau2all2out = arma::join_cols(expectedtau2all2out, arma::trans(tmpexpectedtau2all2));
+        sigma22out = arma::join_cols(sigma22out, sigma22_);
+        fit02out = arma::join_cols(fit02out, arma::trans(fit02_));
+        fit12out = arma::join_cols(fit12out, arma::trans(fit12_));
+        V2out = arma::join_cols(V2out, arma::trans(V2_));
+        
+        psiout = arma::join_cols(psiout, psi_);
+        lambda2out = arma::join_cols(lambda2out, lambda2_);
+      } else {
+        betadelta1out = arma::trans(tmpbetadelta1);
+        tau2all1out = arma::trans(tmptau2all1);
+        expectedtau2all1out = arma::trans(tmpexpectedtau2all1);
+        sigma21out = sigma21_;
+        fit01out = arma::trans(fit01_);
+        fit11out = arma::trans(fit11_);
+        V1out = arma::trans(V1_);
+        
+        betadelta2out = arma::trans(tmpbetadelta2);
+        tau2all2out = arma::trans(tmptau2all2);
+        expectedtau2all2out = arma::trans(tmpexpectedtau2all2);
+        sigma22out = sigma22_;
+        fit02out = arma::trans(fit02_);
+        fit12out = arma::trans(fit12_);
+        V2out = arma::trans(V2_);
+        
+        psiout = psi_;
+        lambda2out = lambda2_;
+      }
+      
+      U1out.slice(cnt) = U1_;
+      prob1out.slice(cnt) = prob1_;
+      
+      U2out.slice(cnt) = U2_;
+      prob2out.slice(cnt) = prob2_;
+      
+      cnt++;
+    }
+    
+  }
+  
+  arma::mat Yfit0 =  (1 - 1 / (1 + arma::exp(-fit02out))) % arma::exp(fit01out);
+  arma::mat Yfit1 =  (1 - 1 / (1 + arma::exp(-fit12out))) % arma::exp(fit11out);
+  
+  // output;
+  Rcpp::List out(25);
+  Rcpp::CharacterVector names(25);
+  SequentialInserter inserter(out, names);
+  
+  inserter["betadelta1"] = betadelta1out;
+  inserter["tau2all1"] = tau2all1out;
+  inserter["sigma21"] = sigma21out;
+  inserter["fit01"] = fit01out;
+  inserter["fit11"] = fit11out;
+  inserter["V1"] = V1out;
+  inserter["U1"] = U1out;
+  inserter["prob1"] = prob1out;
+  inserter["betadelta2"] = betadelta2out;
+  inserter["tau2all2"] = tau2all2out;
+  inserter["sigma22"] = sigma22out;
+  inserter["fit02"] = fit02out;
+  inserter["fit12"] = fit12out;
+  inserter["V2"] = V2out;
+  inserter["U2"] = U2out;
+  inserter["prob2"] = prob2out;
+  inserter["psi"] = psiout;
+  inserter["lambda2"] = lambda2out;
+  inserter["Yfit0"] = Yfit0;
+  inserter["Yfit1"] = Yfit1;
+  inserter["m"] = m;
+  inserter["q"] = q;
+  inserter["p"] = p;
+  inserter["K"] = K;
+  inserter["r"] = r;
+  out.names() = names;
+  
+  //out = Rcpp::List::create(
+  //  Rcpp::_["betadelta1"] = betadelta1out,
+  //  Rcpp::_["tau2all1"] = tau2all1out,
+  //  Rcpp::_["sigma21"] = sigma21out,
+  //  Rcpp::_["fit01"] = fit01out,
+  //  Rcpp::_["fit11"] = fit11out,
+  //  Rcpp::_["V1"] = V1out,
+  //  Rcpp::_["U1"] = U1out,
+  //  Rcpp::_["prob1"] = prob1out,
+  //  Rcpp::_["betadelta2"] = betadelta2out,
+  //  Rcpp::_["tau2all2"] = tau2all2out,
+  //  Rcpp::_["sigma22"] = sigma22out,
+  //  Rcpp::_["fit02"] = fit02out,
+  //  Rcpp::_["fit12"] = fit12out,
+  //  Rcpp::_["V2"] = V2out,
+  //  Rcpp::_["U2"] = U2out,
+  //  Rcpp::_["prob2"] = prob2out,
+  //  Rcpp::_["psi"] = psiout,
+  //  Rcpp::_["lambda2"] = lambda2out,
+  //  Rcpp::_["Yfit0"] = Yfit0,
+  //  Rcpp::_["Yfit1"] = Yfit1,
+  //  Rcpp::_["m"] = m,
+  //  Rcpp::_["q"] = q,
+  //  Rcpp::_["p"] = p,
+  //  Rcpp::_["K"] = K,
+  //  Rcpp::_["r"] = r
+  //);
   return(out);
+  
 }
+
+
+
 
 
 //// [[Rcpp::export]]

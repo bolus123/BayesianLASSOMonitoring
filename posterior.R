@@ -65,7 +65,7 @@ assignTau2 <- function(list, q, p, K, r) {
   )
 }
 
-posteriorLayer2 <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
+posteriorGaussian <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
                             updatelambda = TRUE, 
                             clustering = "kmeans", spl = 0.9, 
                             changepoint = "idetect", 
@@ -125,6 +125,7 @@ posteriorLayer2 <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
     X = X, T = TT, beta1 = tmpbetadelta$beta1, beta2 = tmpbetadelta$beta2, 
     tau2beta1 = tmptau2all$tau2beta1, tau2beta2 = tmptau2all$tau2beta2
   )
+  
   
   ## get the model for the shifted situation
   
@@ -197,7 +198,7 @@ posteriorLayer2 <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
         
         layer2Shift <- getPosteriorLayer2Shift(
           V = Y, beta0 = tmpbetadelta$beta0, tau2beta0 = tmptau2all$tau2beta0, 
-          sigma2 = initShift$sigma2, lambda2 = lambda2, updatelambda2 = updatelambda, 
+          sigma2 = layer2Shift$sigma2[nsim], lambda2 = layer2Shift$lambda2[nsim], updatelambda2 = updatelambda, 
           burnin = burnin, nsim = nsim,
           gamma = tmpgamma,
           X = X, T = TT, U = tmpU, W = W, 
@@ -226,7 +227,7 @@ posteriorLayer2 <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
 }
 
 
-posteriorLayer2NB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
+posteriorNB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
                             c1 = 1, c2 = 1,
                             updatelambda = TRUE, 
                             updatepsi = TRUE, 
@@ -248,7 +249,7 @@ posteriorLayer2NB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
   
   if (K > 0) {
     if (changepoint == "idetect") {
-      Uvec <- idetect_rcpp(Y, K - 1)
+      Uvec <- idetect_rcpp(V, K - 1)
       U <- getU(Uvec, n, K)
       gamma <- colMeans(U)
     }
@@ -275,13 +276,14 @@ posteriorLayer2NB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
   
   initNoShift <- initializeGaussianPosterior(V = V1, lambda2 = lambda2, X = X, T = TT);
   
-  beta0 <- initNoShift$betadelta[1]
-  tau2beta0 <- initNoShift$tau2all[1]
-  sigma2 <- initNoShift$sigma2
-  
+  #mu <- exp(initNoShift$fit1)
+  #EY <- mean(mu)
+  #VarY <- mean((Y - EY) ^ 2)
+  #
+  #pp <- EY / VarY
+  #
+  #psi <- EY * (pp / (1 - pp))
   psi <- exp(initNoShift$sigma2)
-  
-  fit0 <- initNoShift$fit0
   
   tmpbetadelta <- readbetadelta(initNoShift$betadelta, q, p, 0, 0)
   tmpbetadelta <- assignBetadelta(tmpbetadelta, q, p, 0, 0)
@@ -289,77 +291,462 @@ posteriorLayer2NB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
   tmptau2all <- readtau2all(initNoShift$tau2all, q, p, 0, 0)
   tmptau2all <- assignTau2(tmptau2all, q, p, 0, 0)
   
-  V2 <- rep(-Inf, length(Y))
+  #########################
+  
+  ## get the model for the no-shift situation
+  
+  layer1NoShift <- getPosteriorLayer1NBNoShift(Y, V1, initNoShift$fit0, 
+                                    tmpbetadelta$beta0, tmptau2all$tau2beta0, 
+                              initNoShift$sigma2, psi, lambda2, p,
+                              updatelambda2 = updatelambda, updatepsi = updatepsi,
+                              c1 = c1, c2 = c2,
+                              burnin1 = burnin1, burnin2 = burnin2, nsim = nsim,
+                              X = X,
+                              beta1=tmpbetadelta$beta1, 
+                              beta2=tmpbetadelta$beta2, 
+                              tau2beta1=tmptau2all$tau2beta1,
+                              tau2beta2=tmptau2all$tau2beta2) 
   
   #########################
   
-  betadelta0out <- matrix(NA, nrow = nsim, ncol = (1 + p + q))
-  tau2all0out <- matrix(NA, nrow = nsim, ncol = (1 + p + q))
-  sigma2out <- rep(NA, nsim)
-  lambda2out <- rep(NA, nsim)
-  psiout <- rep(NA, nsim)
-  
-  fit00out <- matrix(NA, nrow = nsim, ncol = n)
-  fit01out <- matrix(NA, nrow = nsim, ncol = n)
-  
-  #########################
-  
-  cnt = 1;
-  for (sim in 1:(nsim + burnin1)) {
-    V1 <- getV1(Y, V1, V2, psi, fit0, sigma2, burnin)
+  if (K > 0) {
+    initShift <- initializeGaussianPosterior(V = V1, lambda2 = lambda2, X = X, 
+                                             T = TT, U = U, W = W);
     
-    TT <- getT(V1, p)
+    psi <- exp(initShift$sigma2)
     
-    layer1NBNoShift <- getPosteriorLayer2NoShift(
-      V = V1, beta0 = tmpbetadelta$beta0, tau2beta0 = tmptau2all$tau2beta0, 
-      sigma2 = sigma2, lambda2 = lambda2, updatelambda2 = updatelambda, 
-      burnin = burnin2, nsim = 1,
-      X = X, T = TT, beta1 = tmpbetadelta$beta1, beta2 = tmpbetadelta$beta2, 
-      tau2beta1 = tmptau2all$tau2beta1, tau2beta2 = tmptau2all$tau2beta2
-    )
+    #EY <- exp(initShift$fit1)
+    #VarY <- (Y - EY) ^ 2
+    #psi <- mean(EY^2 / (VarY - EY))
     
-    tmpbetadelta <- readbetadelta(layer1NBNoShift$betadelta, q, p, 0, 0)
-    tmpbetadelta <- assignBetadelta(tmpbetadelta, q, p, 0, 0)
+    tmpbetadelta <- readbetadelta(initShift$betadelta, q, p, K, r)
+    tmpbetadelta <- assignBetadelta(tmpbetadelta, q, p, K, r)
     
-    tmptau2all <- readtau2all(layer1NBNoShift$tau2all, q, p, 0, 0)
-    tmptau2all <- assignTau2(tmptau2all, q, p, 0, 0)
+    tmptau2all <- readtau2all(initShift$tau2all, q, p, K, r)
+    tmptau2all <- assignTau2(tmptau2all, q, p, K, r)
     
-    sigma2 <- layer1NBNoShift$sigma2
-    psi <- getPsi(Y, V1, V2, psi, burnin, c1, c2)
-    lambda2 <- layer1NBNoShift$lambda2
+    layer1Shift <- getPosteriorLayer1NBShift(Y, V1, initShift$fit1, 
+                                             tmpbetadelta$beta0, tmptau2all$tau2beta0, 
+                                             initShift$sigma2, psi, lambda2, p,
+                                             updatelambda2 = updatelambda, updatepsi = updatepsi,
+                                             c1 = c1, c2 = c2,
+                                             burnin1 = burnin1, burnin2 = burnin2, nsim = nsim,
+                                             gamma=gamma,
+                                             X=X,
+                                             U=U,
+                                             W=W,
+                                             beta1=tmpbetadelta$beta1, 
+                                             beta2=tmpbetadelta$beta2, 
+                                             delta0=tmpbetadelta$delta0, 
+                                             delta1=tmpbetadelta$delta1,
+                                             tau2beta1=tmptau2all$tau2beta1,
+                                             tau2beta2=tmptau2all$tau2beta2,
+                                             tau2delta0=tmptau2all$tau2delta0,
+                                             tau2delta1=tmptau2all$tau2delta1)
     
-    fit0 <- layer1NBNoShift$fit0
+    ## rebuild the estimated time
     
-    if (sim > burnin1) {
-      betadelta0out[cnt, ] = layer1NBNoShift$betadelta;
-      tau2all0out[cnt, ] = layer1NBNoShift$tau2all;
-      sigma2out[cnt] <- sigma2
-      psiout[cnt] <- psi
-      lambda2out[cnt] <- lambda2
-      fit00out[cnt, ] <- layer1NBNoShift$fit0
-      fit01out[cnt, ] <- layer1NBNoShift$fit1
-      cnt = cnt + 1;
+    perc <- rep(0, K + K * r - 2)
+    
+    start <- (1 + q + p + 1)
+    delta <- layer1Shift$betadelta[, start:m]
+    
+    if (clustering == "kmeans") {
+      #tmpU <- getUMaxProb(layer2Shift$prob)
+      
+      kk <- 0
+      for (i in 2:(K + K * r - 1)) {
+        kk <- kk + 1
+        cluster <- kmeans(t(delta), centers = i)
+        perc[kk] <- cluster$betweenss / cluster$totss
+      }
+      
+      #cat(perc, '\n')
+      
+      target <- which(perc > spl)
+      
+      if (length(target) > 0) {
+        cluster <- kmeans(t(delta), centers = target[1] + 1)
+        maxgroup <- max(cluster$cluster)
+        tmpU <- matrix(0, nrow = n, ncol = K)
+        
+        #cat(maxgroup, '\n')
+        
+        for (i in 1:maxgroup) {
+          tmptarget <- which(cluster$cluster == i)
+          for (j in tmptarget) {
+            tmpU[which(U[, j] == 1), tmptarget[1]] <- 1
+          }
+        }
+        
+        tmpgamma <- colMeans(tmpU)
+        tmpgamma[which(tmpgamma == 0)] <- tol
+        tmpgamma <- tmpgamma / sum(tmpgamma)
+        
+        tmpbetadelta <- readbetadelta(layer1Shift$betadelta[nsim, ], q, p, K, r)
+        tmpbetadelta <- assignBetadelta(tmpbetadelta, q, p, K, r)
+        
+        tmptau2all <- readtau2all(layer1Shift$tau2all[nsim, ], q, p, K, r)
+        tmptau2all <- assignTau2(tmptau2all, q, p, K, r)
+        
+        
+        layer1Shift <- getPosteriorLayer1NBShift(Y, layer1Shift$V[nsim, ], layer1Shift$fit1[nsim, ], 
+                                  tmpbetadelta$beta0, tmptau2all$tau2beta0, 
+                                  layer1Shift$sigma2[nsim], layer1Shift$psi[nsim], layer1Shift$lambda2[nsim], p,
+                                  updatelambda2 = updatelambda, updatepsi = updatepsi,
+                                  c1 = c1, c2 = c2,
+                                  burnin1 = burnin1, burnin2 = burnin2, nsim = nsim,
+                                  gamma=tmpgamma,
+                                  X=X,
+                                  U=tmpU,
+                                  W=W,
+                                  beta1=tmpbetadelta$beta1, 
+                                  beta2=tmpbetadelta$beta2, 
+                                  delta0=tmpbetadelta$delta0, 
+                                  delta1=tmpbetadelta$delta1,
+                                  tau2beta1=tmptau2all$tau2beta1,
+                                  tau2beta2=tmptau2all$tau2beta2,
+                                  tau2delta0=tmptau2all$tau2delta0,
+                                  tau2delta1=tmptau2all$tau2delta1)
+        
+      } else {
+        break
+      }
+      
     }
+    
+    
   }
-
-  NoShift <- list(
-    "betadelta" = betadelta0out,
-    "tau2all" = tau2all0out,
-    "sigma2" = sigma2out,
-    "psi" = psiout,
-    "lambda2" = lambda2out,
-    "fit0" = fit00out,
-    "fit1" = fit01out,
-    "m" = m,
-    "q" = q,
-    "p" = p,
-    "K" = K,
-    "r" = r
-  )
   
   #########################
   
-   
+  out <- list(
+    "NoShift" = layer1NoShift,
+    "Shift" = layer1Shift
+  )
+  return(out) 
+  
+  
+}
+
+
+posteriorZinfNB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
+                        c1 = 1, c2 = 1,
+                        updatelambda = TRUE, 
+                        updatepsi = TRUE, 
+                        clustering = "kmeans", spl = 0.9, 
+                        changepoint = "idetect", 
+                        burnin1 = 50, burnin2 = 50, nsim = 1000, tol = 1e-6) {
+  
+  n <- length(Y)
+  
+  lambda2 = lambda ^ 2
+  
+  V1 <- log(Y + 0.5)
+  
+  if (p > 0) {
+    TT1 <- getT(V1, p)
+  } else {
+    TT1 <- NULL
+  }
+  
+  if (K > 0) {
+    if (changepoint == "idetect") {
+      U1vec <- idetect_rcpp(V1, K - 1)
+      U1 <- getU(U1vec, n, K)
+      gamma1 <- colMeans(U1)
+    }
+  } else {
+    U1 <- NULL
+    gamma1 <- NULL
+  }
+  
+  if (is.null(X)) {
+    q <- 0
+  } else {
+    q <- dim(X)[2]
+  }
+  
+  if (is.null(W)) {
+    r <- 0
+  } else {
+    r <- dim(W)[2]
+  }
+  
+  m <- 1 + q + p + K + K * r
+  
+  #########################
+  
+  initNoShift1 <- initializeGaussianPosterior(V = V1, lambda2 = lambda2, X = X, T = TT1);
+  
+  tmpbetadelta1 <- readbetadelta(initNoShift1$betadelta, q, p, 0, 0)
+  tmpbetadelta1 <- assignBetadelta(tmpbetadelta1, q, p, 0, 0)
+  
+  tmptau2all1 <- readtau2all(initNoShift1$tau2all, q, p, 0, 0)
+  tmptau2all1 <- assignTau2(tmptau2all1, q, p, 0, 0)
+  
+  #########################
+  
+  V2 <- as.numeric(Y == 0)
+
+  if (p > 0) {
+    TT2 <- getT(V2, p)
+  } else {
+    TT2 <- NULL
+  }
+  
+  if (K > 0) {
+    if (changepoint == "idetect") {
+      U2vec <- idetect_rcpp(V2, K - 1)
+      U2 <- getU(U2vec, n, K)
+      gamma1 <- colMeans(U2)
+    }
+  } else {
+    U2 <- NULL
+    gamma2 <- NULL
+  }
+  
+  U2vec <- idetect_rcpp(V2, K)
+  U2 <- getU(U2vec, n, K)
+  gamma2 <- colMeans(U2)
+  
+  dat <- as.data.frame(cbind(V2, TT2, U2))
+  names(dat)[1] <- 'VV'
+  
+  init2 <- glm(VV~., data = dat, family = binomial())
+  
+  betadelta2 <- init2$coefficients
+  betadelta2[is.na(betadelta2)] <- tol
+  sigma22 <- sd(init2$residuals)
+  tau2all2 <- getTau2(betadelta2, sigma22, lambda2)
+  
+  tmpbetadelta2 <- readbetadelta(betadelta2, q, p, 0, 0)
+  tmpbetadelta2 <- assignBetadelta(tmpbetadelta2, q, p, 0, 0)
+  
+  tmptau2all2 <- readtau2all(tau2all2, q, p, 0, 0)
+  tmptau2all2 <- assignTau2(tmptau2all2, q, p, 0, 0)
+  
+  V2 <- rnorm(n, init2$fitted.values, sqrt(sigma22))
+  
+  fit2 <- init2$fitted.values
+  
+  #########################
+  
+  #mu <- mean(exp(initNoShift1$fit1))
+  #pi <- mean(1 / (1 + exp(-fit2)))
+  
+  #EY <- (1 - pi) * mu
+  #VarY <- mean((Y - EY) ^ 2)
+  
+  #psi <- 1 / ((VarY / EY - 1) / mu - pi)
+  
+  psi <- (1 - 1 / (1 + exp(-sigma22))) * exp(initNoShift1$sigma2)
+  
+  #########################
+  
+  ## get the model for the no-shift situation
+  
+  layer1NoShift <- getPosteriorLayer1ZinfNBNoShift(Y = Y, 
+                                               V1 = V1, V1hat = initNoShift1$fit1, 
+                                               V2 = V2, V2hat = fit2, 
+                                               beta01 = tmpbetadelta1$beta0, tau2beta01 = tmptau2all1$tau2beta0,
+                                               beta02 = tmpbetadelta2$beta0, tau2beta02 = tmptau2all2$tau2beta0, 
+                                               sigma21 = initNoShift1$sigma2, sigma22 = sigma22,
+                                               psi = psi, lambda2 = lambda2, p = p, 
+                                               updatelambda2 = updatelambda, updatepsi = updatepsi,
+                                               c1 = c1, c2 = c2,
+                                               burnin1 = burnin1, burnin2 = burnin2, nsim = nsim, 
+                                               X = X, 
+                                               beta11 = tmpbetadelta1$beta1, 
+                                               beta21 = tmpbetadelta1$beta2, 
+                                               tau2beta11 = tmptau2all1$tau2beta1,
+                                               tau2beta21 = tmptau2all2$tau2beta2,
+                                               beta12 = tmpbetadelta2$beta1,
+                                               beta22 = tmpbetadelta2$beta2,
+                                               tau2beta12 = tmptau2all2$tau2beta1,
+                                               tau2beta22 = tmptau2all2$tau2beta2) 
+  
+  
+  #########################
+  
+  if (K > 0) {
+    
+    initShift1 <- initializeGaussianPosterior(V = V1, lambda2 = lambda2, X = X, 
+                                             T = TT1, U = U1, W = W);
+    
+    initShift2 <- initializeGaussianPosterior(V = V2, lambda2 = lambda2, X = X, 
+                                              T = TT2, U = U2, W = W);
+    
+    psi <- (1 - 1 / (1 + exp(-initShift2$sigma2))) * exp(initShift1$sigma2)
+    
+    tmpbetadelta1 <- readbetadelta(initShift1$betadelta, q, p, K, r)
+    tmpbetadelta1 <- assignBetadelta(tmpbetadelta1, q, p, K, r)
+    
+    tmptau2all1 <- readtau2all(initShift1$tau2all, q, p, K, r)
+    tmptau2all1 <- assignTau2(tmptau2all1, q, p, K, r)
+    
+    tmpbetadelta2 <- readbetadelta(initShift2$betadelta, q, p, K, r)
+    tmpbetadelta2 <- assignBetadelta(tmpbetadelta2, q, p, K, r)
+    
+    tmptau2all2 <- readtau2all(initShift2$tau2all, q, p, K, r)
+    tmptau2all2 <- assignTau2(tmptau2all2, q, p, K, r)
+    
+    layer1Shift <- getPosteriorLayer1ZinfNBShift(Y, 
+                                             V1, initShift1$fit1, 
+                                             V2, initShift2$fit1,
+                                             tmpbetadelta1$beta0, tmptau2all1$tau2beta0, 
+                                             tmpbetadelta2$beta0, tmptau2all2$tau2beta0, 
+                                             initShift1$sigma2, initShift2$sigma2, 
+                                             psi, lambda2, p, 
+                                             updatelambda, updatepsi, 
+                                             c1, c2, 
+                                             burnin1, burnin2, nsim, 
+                                             gamma1, gamma2, 
+                                             X, U1, U2, 
+                                             W, 
+                                             tmpbetadelta1$beta1, tmpbetadelta1$beta2, 
+                                             tmptau2all1$tau2beta1, tmptau2all1$tau2beta2, 
+                                             tmpbetadelta2$beta1, tmpbetadelta2$beta2, 
+                                             tmptau2all2$tau2beta1, tmptau2all2$tau2beta2, 
+                                             tmpbetadelta1$delta0, tmpbetadelta1$delta1, 
+                                             tmpbetadelta2$delta0, tmpbetadelta2$delta1, 
+                                             tmptau2all1$tau2delta0, tmptau2all1$tau2delta1, 
+                                             tmptau2all2$tau2delta0, tmptau2all2$tau2delta1)
+    
+  
+    
+    ## rebuild the estimated time
+    
+    perc1 <- rep(0, K + K * r - 2)
+    perc2 <- rep(0, K + K * r - 2)
+    
+    start <- (1 + q + p + 1)
+    delta1 <- layer1Shift$betadelta1[, start:m]
+    delta2 <- layer1Shift$betadelta2[, start:m]
+    
+    if (clustering == "kmeans") {
+      #tmpU <- getUMaxProb(layer2Shift$prob)
+      
+      kk <- 0
+      for (i in 2:(K + K * r - 1)) {
+        kk <- kk + 1
+        cluster1 <- kmeans(t(delta1), centers = i)
+        perc1[kk] <- cluster1$betweenss / cluster1$totss
+      }
+      
+      kk <- 0
+      for (i in 2:(K + K * r - 1)) {
+        kk <- kk + 1
+        cluster2 <- kmeans(t(delta2), centers = i)
+        perc2[kk] <- cluster2$betweenss / cluster2$totss
+      }
+      
+      #cat(perc, '\n')
+      
+      target1 <- which(perc1 > spl)
+      target2 <- which(perc2 > spl)
+      
+      if ((length(target1) > 0) | (length(target2) > 0)) {
+        
+        if (length(target1) > 0) {
+          cluster1 <- kmeans(t(delta1), centers = target1[1] + 1)
+          maxgroup1 <- max(cluster1$cluster)
+          tmpU1 <- matrix(0, nrow = n, ncol = K)
+          
+          #cat(maxgroup, '\n')
+          
+          for (i in 1:maxgroup1) {
+            tmptarget1 <- which(cluster1$cluster == i)
+            for (j in tmptarget1) {
+              tmpU1[which(U1[, j] == 1), tmptarget1[1]] <- 1
+            }
+          }
+          
+          tmpgamma1 <- colMeans(tmpU1)
+          tmpgamma1[which(tmpgamma1 == 0)] <- tol
+          tmpgamma1 <- tmpgamma1 / sum(tmpgamma1)
+          
+        } else {
+          tmpU1 <- U1;
+        }
+        
+        if (length(target2) > 0) {
+          cluster2 <- kmeans(t(delta2), centers = target2[1] + 1)
+          maxgroup2 <- max(cluster2$cluster)
+          tmpU2 <- matrix(0, nrow = n, ncol = K)
+          
+          #cat(maxgroup, '\n')
+          
+          for (i in 1:maxgroup2) {
+            tmptarget2 <- which(cluster2$cluster == i)
+            for (j in tmptarget2) {
+              tmpU2[which(U2[, j] == 1), tmptarget2[1]] <- 1
+            }
+          }
+          
+          tmpgamma2 <- colMeans(tmpU2)
+          tmpgamma2[which(tmpgamma2 == 0)] <- tol
+          tmpgamma2 <- tmpgamma2 / sum(tmpgamma2)
+          
+        } else {
+          tmpU2 <- U2;
+        }
+        
+        
+        
+        tmpbetadelta1 <- readbetadelta(layer1Shift$betadelta1[nsim, ], q, p, K, r)
+        tmpbetadelta1 <- assignBetadelta(tmpbetadelta1, q, p, K, r)
+        
+        tmptau2all1 <- readtau2all(layer1Shift$tau2all1[nsim, ], q, p, K, r)
+        tmptau2all1 <- assignTau2(tmptau2all1, q, p, K, r)
+        
+        tmpbetadelta2 <- readbetadelta(layer1Shift$betadelta2[nsim, ], q, p, K, r)
+        tmpbetadelta2 <- assignBetadelta(tmpbetadelta2, q, p, K, r)
+        
+        tmptau2all2 <- readtau2all(layer1Shift$tau2all2[nsim, ], q, p, K, r)
+        tmptau2all2 <- assignTau2(tmptau2all2, q, p, K, r)
+        
+        
+        layer1Shift <- getPosteriorLayer1ZinfNBShift(Y, 
+                                                     layer1Shift$V1[nsim, ], layer1Shift$fit11[nsim, ], 
+                                                     layer1Shift$V2[nsim, ], layer1Shift$fit12[nsim, ],
+                                                     tmpbetadelta1$beta0, tmptau2all1$tau2beta0, 
+                                                     tmpbetadelta2$beta0, tmptau2all2$tau2beta0, 
+                                                     layer1Shift$sigma21[nsim], layer1Shift$sigma22[nsim], 
+                                                     layer1Shift$psi[nsim], layer1Shift$lambda2[nsim], p, 
+                                                     updatelambda, updatepsi, 
+                                                     c1, c2, 
+                                                     burnin1, burnin2, nsim, 
+                                                     tmpgamma1, tmpgamma2, 
+                                                     X, tmpU1, tmpU2, 
+                                                     W, 
+                                                     tmpbetadelta1$beta1, tmpbetadelta1$beta2, 
+                                                     tmptau2all1$tau2beta1, tmptau2all1$tau2beta2, 
+                                                     tmpbetadelta2$beta1, tmpbetadelta2$beta2, 
+                                                     tmptau2all2$tau2beta1, tmptau2all2$tau2beta2, 
+                                                     tmpbetadelta1$delta0, tmpbetadelta1$delta1, 
+                                                     tmpbetadelta2$delta0, tmpbetadelta2$delta1, 
+                                                     tmptau2all1$tau2delta0, tmptau2all1$tau2delta1, 
+                                                     tmptau2all2$tau2delta0, tmptau2all2$tau2delta1)
+        
+      } else {
+        break
+      }
+      
+    }
+    
+    
+  }
+  
+  #########################
+  
+  out <- list(
+    "NoShift" = layer1NoShift,
+    "Shift" = layer1Shift
+  )
+  return(out) 
+  
+  
 }
 
 
@@ -376,7 +763,7 @@ p <- 10
 
 n <- 730
 
-spl <- 0.95
+spl <- 0.7
 
 Y <- arima.sim(list(ar = 0.5), n = n)
 Y[100:190] <- Y[100:190] + 3
@@ -393,6 +780,14 @@ aa <- posteriorLayer2(Y, X = NULL, W = NULL, p = p, K = K, lambda = 10,
                             changepoint = "idetect", 
                             burnin = burnin, nsim = nsim, tol = 1e-6)
 
+
+
+plot(Y)
+
+for (i in 1:nsim) {
+  points(aa$Shift$fit1[i, ], col = 'blue')
+  points(aa$NoShift$fit0[i, ], col = 'red')
+}
 
 TT <- getT(Y, p)
 
