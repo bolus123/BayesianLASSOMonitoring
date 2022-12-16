@@ -111,7 +111,7 @@ for (i in 1:(nsim + burnin)) {
   
   
   
-  tmpUList <- getUWithoutW(Y - post1$fit0, K, post1$delta0, sigma21, gamma)
+  tmpUList <- getUWithoutW(Y - post1$fit0, K, betadelta1[7:11], sigma21, gamma)
   U <- tmpUList$U
   
   
@@ -156,6 +156,14 @@ for (i in 1:(nsim + burnin)) {
 
 }
 
+
+
+plot(Y, type = 'l')
+
+for (i in 1:nsim) {
+  points(fit1out[i, ], col = 'red')
+  points(layer2$fit1[i, ], col = 'blue')
+}
 
 
 plot(Y, type = "l")
