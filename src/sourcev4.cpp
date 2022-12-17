@@ -2336,11 +2336,25 @@ Rcpp::List getPosteriorLayer1NBNoShift(arma::vec Y, arma::vec V, arma::vec Vhat,
   
   for (int sim1 = 0; sim1 < (burnin1 + nsim); sim1++) {
     
-    V1 = getV1(Y, V1, V2, iterpsi, fit1_, itersigma2, burnin1);
+    V1 = getV1(Y, V1, V2, iterpsi, fit1_, itersigma2, burnin2);
     T_ = getT(V1, p);
     
+    Rcpp::Rcout << "T_" << T_ << std::endl;
     
     for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
+      
+      Rcpp::Rcout << "beta0_" << beta0_ << std::endl;
+      Rcpp::Rcout << "tau2beta0_" << tau2beta0_ << std::endl;
+      Rcpp::Rcout << "itersigma2" << itersigma2 << std::endl;
+      Rcpp::Rcout << "iterlambda2" << iterlambda2 << std::endl;
+      Rcpp::Rcout << "beta1_" << beta1_ << std::endl;
+      Rcpp::Rcout << "beta2_" << beta2_ << std::endl;
+      Rcpp::Rcout << "delta0_" << delta0_ << std::endl;
+      Rcpp::Rcout << "delta1_" << delta1_ << std::endl;
+      Rcpp::Rcout << "tau2beta1_" << tau2beta1_ << std::endl;
+      Rcpp::Rcout << "tau2beta2_" << tau2beta2_ << std::endl;
+      Rcpp::Rcout << "tau2delta0_" << tau2delta0_ << std::endl;
+      Rcpp::Rcout << "tau2delta1_" << tau2delta1_ << std::endl;
       
       tmplist = getGaussianPosterior(V1, beta0_, tau2beta0_,
                                      itersigma2, iterlambda2, 
@@ -2349,8 +2363,13 @@ Rcpp::List getPosteriorLayer1NBNoShift(arma::vec Y, arma::vec V, arma::vec Vhat,
                                      tau2beta1_, tau2beta2_, 
                                      tau2delta0_, tau2delta1_, q, p, 0, 0);
       
+      
+      
       tmpbetadelta = Rcpp::as<arma::vec>(tmplist["betadelta"]);
       tmptau2all = Rcpp::as<arma::vec>(tmplist["tau2all"]);
+      
+      //Rcpp::Rcout << "tmpbetadelta" << tmplist << std::endl;
+      //Rcpp::Rcout << "tmptau2all" << tmplist << std::endl;
       
       tmpbetadeltalist = readbetadelta(tmpbetadelta, q, p, 0, 0);
       tmptau2alllist = readtau2all(tmptau2all, q, p, 0, 0);
@@ -2381,7 +2400,7 @@ Rcpp::List getPosteriorLayer1NBNoShift(arma::vec Y, arma::vec V, arma::vec Vhat,
     
     
     if (updatepsi == true) {
-      iterpsi = getPsi(Y, V1, V2, iterpsi, burnin1, c1, c2);
+      iterpsi = getPsi(Y, V1, V2, iterpsi, burnin2, c1, c2);
     }
     
     

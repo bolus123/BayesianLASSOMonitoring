@@ -66,6 +66,26 @@ Y <- dat[, 2]
 
 n <- length(Y)
 
+undebug(posteriorNB)
+bb <- posteriorNB(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
+                  c1 = 1, c2 = 1,
+                  updatelambda = TRUE, 
+                  updatepsi = TRUE, 
+                  clustering = "kmeans", spl = 0.9, 
+                  changepoint = "idetect", 
+                  burnin1 = 50, burnin2 = 50, nsim = 1000, tol = 1e-6)
+
+
+undebug(posteriorZinfNB)
+aa <- posteriorZinfNB(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
+                            c1 = 1, c2 = 1,
+                            updatelambda = TRUE, 
+                            updatepsi = TRUE, 
+                            clustering = "kmeans", spl = 0.9, 
+                            changepoint = "idetect", 
+                            burnin1 = 50, burnin2 = 50, nsim = 1000, tol = 1e-6) 
+
+
 ##########################
 
 V1 <- log(Y + 0.5)

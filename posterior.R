@@ -249,7 +249,7 @@ posteriorNB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
   
   if (K > 0) {
     if (changepoint == "idetect") {
-      Uvec <- idetect_rcpp(V, K - 1)
+      Uvec <- idetect_rcpp(V1, K - 1)
       U <- getU(Uvec, n, K)
       gamma <- colMeans(U)
     }
@@ -668,6 +668,7 @@ posteriorZinfNB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
           
         } else {
           tmpU1 <- U1;
+          tmpgamma1 <- gamma1;
         }
         
         if (length(target2) > 0) {
@@ -690,6 +691,7 @@ posteriorZinfNB <- function(Y, X = NULL, W = NULL, p = 5, K = 5, lambda = 10,
           
         } else {
           tmpU2 <- U2;
+          tmpgamm2 <- gamma2;
         }
         
         
