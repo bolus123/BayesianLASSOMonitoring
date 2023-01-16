@@ -87,8 +87,10 @@ for (i in 1:(nsim + burnin)) {
   #cat(i, "\n")
   
   post0 <- getGaussianPosterior(Y, betaldelta0[1], tau2all0[1],
-                                sigma20resi, lambda20, T = TT, beta2=betaldelta0[2:6],
-                                tau2beta2 = tau2all0[2:6])
+                                sigma20resi, lambda20, X = matrix(0, 1, 1), T = TT, U = matrix(0, 1, 1), W = matrix(0, 1, 1), 
+                                beta1 = 0, beta2=betaldelta0[2:6], delta0 = 0, delta1 = 0,
+                                tau2beta1 = 0, tau2beta2 = tau2all0[2:6], tau2delta0 = 0, tau2delta1 = 0, 
+                                q = 0, p = p, K = K, r = 0)
   betadelta0 <- post0$betadelta
   tau2all0 <- post0$tau2all
   sigma20 <- getSigma2(Y - post0$fit1, post0$betadelta, post0$tau2all, a1, a2)

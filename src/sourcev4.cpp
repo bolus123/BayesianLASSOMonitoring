@@ -480,10 +480,10 @@ double rgig_cpp(double chi, double psi, double lambda) {
   Rcpp::Function rgig = GIGrvg["rgig"];
   
   // Call the optim function from R in C++ 
-  Rcpp::List out = rgig(Rcpp::_["n"]    = 1,
-                                 Rcpp::_["lambda"]     = lambda,
-                                 Rcpp::_["chi"] = chi,
-                                 Rcpp::_["psi"] = psi);
+  Rcpp::List out = rgig(Rcpp::_["n"] = 1,
+                        Rcpp::_["lambda"]  = lambda,
+                        Rcpp::_["chi"] = chi,
+                        Rcpp::_["psi"] = psi);
   
   // Return estimated values
   return out(0);
@@ -2215,8 +2215,6 @@ Rcpp::List getPosteriorLayer1NBShift(arma::vec Y, arma::vec V, arma::vec Vhat,
     Rcpp::_["V"] = Vout,
     Rcpp::_["U"] = Uout,
     Rcpp::_["prob"] = probout,
-    Rcpp::_["fit0"] = arma::exp(fit0out),
-    Rcpp::_["fit1"] = arma::exp(fit1out),
     Rcpp::_["m"] = m,
     Rcpp::_["q"] = q,
     Rcpp::_["p"] = p,
@@ -2339,22 +2337,22 @@ Rcpp::List getPosteriorLayer1NBNoShift(arma::vec Y, arma::vec V, arma::vec Vhat,
     V1 = getV1(Y, V1, V2, iterpsi, fit1_, itersigma2, burnin2);
     T_ = getT(V1, p);
     
-    Rcpp::Rcout << "T_" << T_ << std::endl;
+    //Rcpp::Rcout << "T_" << T_ << std::endl;
     
     for (int sim2 = 0; sim2 < (burnin2 + 1); sim2++) {
       
-      Rcpp::Rcout << "beta0_" << beta0_ << std::endl;
-      Rcpp::Rcout << "tau2beta0_" << tau2beta0_ << std::endl;
-      Rcpp::Rcout << "itersigma2" << itersigma2 << std::endl;
-      Rcpp::Rcout << "iterlambda2" << iterlambda2 << std::endl;
-      Rcpp::Rcout << "beta1_" << beta1_ << std::endl;
-      Rcpp::Rcout << "beta2_" << beta2_ << std::endl;
-      Rcpp::Rcout << "delta0_" << delta0_ << std::endl;
-      Rcpp::Rcout << "delta1_" << delta1_ << std::endl;
-      Rcpp::Rcout << "tau2beta1_" << tau2beta1_ << std::endl;
-      Rcpp::Rcout << "tau2beta2_" << tau2beta2_ << std::endl;
-      Rcpp::Rcout << "tau2delta0_" << tau2delta0_ << std::endl;
-      Rcpp::Rcout << "tau2delta1_" << tau2delta1_ << std::endl;
+      //Rcpp::Rcout << "beta0_" << beta0_ << std::endl;
+      //Rcpp::Rcout << "tau2beta0_" << tau2beta0_ << std::endl;
+      //Rcpp::Rcout << "itersigma2" << itersigma2 << std::endl;
+      //Rcpp::Rcout << "iterlambda2" << iterlambda2 << std::endl;
+      //Rcpp::Rcout << "beta1_" << beta1_ << std::endl;
+      //Rcpp::Rcout << "beta2_" << beta2_ << std::endl;
+      //Rcpp::Rcout << "delta0_" << delta0_ << std::endl;
+      //Rcpp::Rcout << "delta1_" << delta1_ << std::endl;
+      //Rcpp::Rcout << "tau2beta1_" << tau2beta1_ << std::endl;
+      //Rcpp::Rcout << "tau2beta2_" << tau2beta2_ << std::endl;
+      //Rcpp::Rcout << "tau2delta0_" << tau2delta0_ << std::endl;
+      //Rcpp::Rcout << "tau2delta1_" << tau2delta1_ << std::endl;
       
       tmplist = getGaussianPosterior(V1, beta0_, tau2beta0_,
                                      itersigma2, iterlambda2, 
@@ -2453,8 +2451,6 @@ Rcpp::List getPosteriorLayer1NBNoShift(arma::vec Y, arma::vec V, arma::vec Vhat,
     Rcpp::_["fit0"] = fit0out,
     Rcpp::_["fit1"] = fit1out,
     Rcpp::_["V"] = Vout,
-    Rcpp::_["Yfit0"] = arma::exp(fit0out),
-    Rcpp::_["Yfit1"] = arma::exp(fit1out),
     Rcpp::_["m"] = m,
     Rcpp::_["q"] = q,
     Rcpp::_["p"] = p,
@@ -2797,8 +2793,6 @@ Rcpp::List getPosteriorLayer1ZinfNBNoShift(arma::vec Y,
     Rcpp::_["V2"] = V2out,
     Rcpp::_["psi"] = psiout,
     Rcpp::_["lambda2"] = lambda2out,
-    Rcpp::_["Yfit0"] = (1.0 - 1.0 / (1.0 + arma::exp(-fit02out))) % arma::exp(fit01out),
-    Rcpp::_["Yfit1"] = (1.0 - 1.0 / (1.0 + arma::exp(-fit12out))) % arma::exp(fit11out),
     Rcpp::_["q"] = q,
     Rcpp::_["p"] = p,
     Rcpp::_["K"] = 0,
@@ -3305,12 +3299,10 @@ Rcpp::List getPosteriorLayer1ZinfNBShift(arma::vec Y,
     
   }
   
-  arma::mat Yfit0 =  (1 - 1 / (1 + arma::exp(-fit02out))) % arma::exp(fit01out);
-  arma::mat Yfit1 =  (1 - 1 / (1 + arma::exp(-fit12out))) % arma::exp(fit11out);
   
   // output;
-  Rcpp::List out(25);
-  Rcpp::CharacterVector names(25);
+  Rcpp::List out(23);
+  Rcpp::CharacterVector names(23);
   SequentialInserter inserter(out, names);
   
   inserter["betadelta1"] = betadelta1out;
@@ -3331,8 +3323,6 @@ Rcpp::List getPosteriorLayer1ZinfNBShift(arma::vec Y,
   inserter["prob2"] = prob2out;
   inserter["psi"] = psiout;
   inserter["lambda2"] = lambda2out;
-  inserter["Yfit0"] = Yfit0;
-  inserter["Yfit1"] = Yfit1;
   inserter["m"] = m;
   inserter["q"] = q;
   inserter["p"] = p;
