@@ -1440,13 +1440,44 @@ double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, d
     a = proddiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
     //a = a + log(pow(tmppsi, d1 - 1) * exp(- tmppsi / d2)) - log(pow(newpsi, d1 - 1) * exp(- newpsi / d2));
     a = a * pow(tmppsi, c1 - 1) * exp(- tmppsi / c2) / pow(newpsi, c1 - 1) / exp(- newpsi / c2);
-    a = exp(a) * (R::dgamma(newpsi, tmpparsnew(0), tmpparsnew(1), false) / 
+    //a = exp(a) * (R::dgamma(newpsi, tmpparsnew(0), tmpparsnew(1), false) / 
+    //  R::dgamma(tmppsi, tmpparsold(0), tmpparsold(1), false));
+    a = a * (R::dgamma(newpsi, tmpparsnew(0), tmpparsnew(1), false) / 
       R::dgamma(tmppsi, tmpparsold(0), tmpparsold(1), false));
     if (tmppb < a) {
       newpsi = tmppsi;
     }
   }
   return(newpsi);
+}
+
+// [[Rcpp::export]]
+double getOmega(arma::vec Y, arma::vec V2, double psi, double omega, int burnin) {
+  
+  double a;
+  
+  double newomega = omega;
+  arma::vec tmpparsnew;
+  arma::vec tmpparsold;
+  double tmpomega;
+  double tmppb;
+  
+  int n = V2.n_elem;
+  arma::vec V1(n);
+  
+  V1.fill(omega);
+  
+  for (int i = 0; i < burnin; i++) {
+    tmpomega = R::runif(0.0, 1.0);
+    tmppb = R::runif(0.0, 1.0);
+    
+    a = proddiflogdzinbinom(Y, V1, V2, psi, psi);
+  
+    if (tmppb < a) {
+      newomega = tmpomega;
+    }
+  }
+  return(newomega);
 }
 
 // [[Rcpp::export]]
