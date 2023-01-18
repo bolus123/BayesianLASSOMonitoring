@@ -1,189 +1,1 @@
-library(GIGrvg)
-library(breakfast)
-library(pscl)
-
-nsim <- 100
-burnin <- 100
-
-lambda2 <- 10
-
-p <- 5
-K <- 5
-
-dat <- read.csv(file = '/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Daily opioid-overdose-related ER visits in Walker.csv')
-
-n <- dim(dat)[1]
-
-Y <- dat[, 2]
-
-###############################
-
-V1 <- exp(Y);
-T1 <- getT(V1, p)
-
-U1 <- idetect_rcpp(V1, K)
-U1 <- getU(U1, n, K)
-
-gamma1 <- colMeans(U1)
-
-X1 <- cbind(1, T1, U1)
-m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V1, X1)
-
-beta10 <- m1[1]
-beta12 <- m1[2:(p + 1)]
-delta10 <- m1[(p + 2):(1 + p + K)]
-
-fit1 <- X1 %*% m1
-
-sigma12 <- var(V1 - fit1)
-
-tau1 <- getTau2(m1, sigma12, lambda2)
-
-taubeta10 <- tau1[1]
-taubeta12 <- tau1[2:(p + 1)]
-taudelta10 <- tau1[(p + 2):(1 + p + K)]
-
-###############################
-
-V2 <- as.numeric(Y == 0)
-T2 <- getT(V2, p)
-
-U2 <- idetect_rcpp(V2, K)
-U2 <- getU(U2, n, K)
-
-gamma2 <- colMeans(U2)
-
-X2 <- cbind(1, T2, U2)
-m2 <- optim_rcpp(c(mean(V2), acf(V2, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V2, X2)
-
-beta20 <- m2[1]
-beta22 <- m2[2:(p + 1)]
-delta20 <- m2[(p + 2):(1 + p + K)]
-
-fit2 <- X2 %*% m2
-
-sigma22 <- var(V2 - fit2)
-
-tau2 <- getTau2(m2, sigma22, lambda2)
-
-taubeta20 <- tau2[1]
-taubeta22 <- tau2[2:(p + 1)]
-taudelta20 <- tau2[(p + 2):(1 + p + K)]
-
-psi <- getPsi(Y, V1, V2, 2, burnin, 1, 1)
-
-###############################
-
-betadeltamat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)
-taumat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)
-sigmamat1 <- matrix(NA, nrow = nsim, ncol = 1)
-psimat1 <- matrix(NA, nrow = nsim, ncol = 1)
-fit0mat1 <- matrix(NA, nrow = nsim, ncol = n)
-fit1mat1 <- matrix(NA, nrow = nsim, ncol = n)
-Vmat1 <- matrix(NA, nrow = nsim, ncol = n)
-Uarray1 <- array(NA, c(n, K, nsim))
-probarray1 <- array(NA, c(n, K, nsim))
-
-
-betadeltamat2 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)
-taumat2 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)
-sigmamat2 <- matrix(NA, nrow = nsim, ncol = 1)
-psimat2 <- matrix(NA, nrow = nsim, ncol = 1)
-fit0mat2 <- matrix(NA, nrow = nsim, ncol = n)
-fit1mat2 <- matrix(NA, nrow = nsim, ncol = n)
-Vmat2 <- matrix(NA, nrow = nsim, ncol = n)
-Uarray2 <- array(NA, c(n, K, nsim))
-probarray2 <- array(NA, c(n, K, nsim))
-
-psimat <- matrix(NA, nrow = nsim, ncol = 1)
-lambda2mat <- matrix(NA, nrow = nsim, ncol = 1)
-
-fit0mat <- matrix(NA, nrow = nsim, ncol = n)
-fit1mat <- matrix(NA, nrow = nsim, ncol = n)
-###############################
-kk <- 0
-for (i in 1:(nsim + burnin)) {
-  ###############################
-  V1 <- getV1(Y, V1, V2, psi, fit1, sigma12, burnin)
-  T1 <- getT(V1, p)
-  for (j in 1:(burnin + 1)) {
-    m1 <- getGaussianPosterior(
-      V1, beta10, taubeta10, sigma12, lambda2, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),
-      matrix(0, 1, 1), beta12, delta10, matrix(0, 1, 1), matrix(0, 1, 1), taubeta12, taudelta10,
-      matrix(0, 1, 1), 0, p, K, 0)
-    
-    beta10 <- m1$betadelta[1]
-    beta12 <- m1$betadelta[2:(p + 1)]
-    delta10 <- m1$betadelta[(p + 2):(1 + p + K)]
-    
-    sigma12 <- var(V1 - m1$fit1)
-    
-    taubeta10 <- m1$tau2all[1]
-    taubeta12 <- m1$tau2all[2:(p + 1)]
-    taudelta10 <- m1$tau2all[(p + 2):(1 + p + K)]
-    
-    fit1 <- m1$fit1
-  }
-  zetadelta1 <- V1 - m1$fit0
-  tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
-  U1 <- tmpU1$U
-  prob1 <- tmpU1$prob
-  ###############################
-  V2 <- getV2(Y, V1, V2, psi, fit2, sigma22, burnin)
-  T2 <- getT(V2, p)
-  for (j in 1:(burnin + 1)) {
-    m2 <- getGaussianPosterior(
-      V2, beta20, taubeta20, sigma22, lambda2, matrix(0, 1, 1), T2, U2, matrix(0, 1, 1),
-      matrix(0, 1, 1), beta22, delta20, matrix(0, 1, 1), matrix(0, 1, 1), taubeta22, taudelta20,
-      matrix(0, 1, 1), 0, p, K, 0)
-    
-    beta20 <- m2$betadelta[1]
-    beta22 <- m2$betadelta[2:(p + 1)]
-    delta20 <- m2$betadelta[(p + 2):(1 + p + K)]
-    
-    sigma22 <- var(V2 - m2$fit1)
-    
-    taubeta20 <- m2$tau2all[1]
-    taubeta22 <- m2$tau2all[2:(p + 1)]
-    taudelta20 <- m2$tau2all[(p + 2):(1 + p + K)]
-    
-    fit2 <- m2$fit1
-  }
-  zetadelta2 <- V2 - m2$fit0
-  tmpU2 <- getUWithoutW(zetadelta2, K, delta20, sigma22, gamma2)
-  U2 <- tmpU2$U
-  prob2 <- tmpU2$prob
-  ###############################
-  psi <- getPsi(Y, V1, V2, psi, burnin, 1, 1)
-  lambda2 <- getLambda2EM(c(m1$expectedtau2all, m2$expectedtau2all))
-  ###############################
-  if (i > burnin) {
-    kk <- kk + 1
-    
-    betadeltamat1[kk, ] <- m1$betadelta
-    taumat1[kk, ] <- m1$tau2all
-    sigmamat1[kk, ] <- sigma12
-    fit0mat1[kk, ] <- m1$fit0
-    fit1mat1[kk, ] <- m1$fit1
-    Vmat1[kk, ] <- V1
-    Uarray1[,,kk] <- U1
-    probarray1[,,kk] <- prob1
-    
-    
-    betadeltamat2[kk, ] <- m2$betadelta
-    taumat2[kk, ] <- m2$tau2all
-    sigmamat2[kk, ] <- sigma22
-    fit0mat2[kk, ] <- m2$fit0
-    fit1mat2[kk, ] <- m2$fit1
-    Vmat2[kk, ] <- V2
-    Uarray2[,,kk] <- U2
-    probarray2[,,kk] <- prob2
-    
-    psimat[kk, ] <- psi
-    lambda2mat[kk, ] <- lambda2
-    
-    fit0mat[kk, ] <- (1 - 1 / (1 + exp(-m2$fit0))) * exp(m1$fit0)
-    fit1mat[kk, ] <- (1 - 1 / (1 + exp(-m2$fit1))) * exp(m1$fit1)
-  }
-}
-
+library(GIGrvg)library(breakfast)library(pscl)###############################seed <- 12345nsim <- 1000burnin <- 80lambda2 <- 10p <- 3K <- 10dat <- read.csv(file = '/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Daily opioid-overdose-related ER visits in Walker.csv')dat <- dat[1:1461, ]n <- dim(dat)[1]Y <- dat[, 2]###############################betadeltamat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)taumat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)sigmamat1 <- matrix(NA, nrow = nsim, ncol = 1)psimat1 <- matrix(NA, nrow = nsim, ncol = 1)fit0mat1 <- matrix(NA, nrow = nsim, ncol = n)fit1mat1 <- matrix(NA, nrow = nsim, ncol = n)Vmat1 <- matrix(NA, nrow = nsim, ncol = n)Uarray1 <- array(NA, c(n, K, nsim))probarray1 <- array(NA, c(n, K, nsim))betadeltamat2 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)taumat2 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)sigmamat2 <- matrix(NA, nrow = nsim, ncol = 1)psimat2 <- matrix(NA, nrow = nsim, ncol = 1)fit0mat2 <- matrix(NA, nrow = nsim, ncol = n)fit1mat2 <- matrix(NA, nrow = nsim, ncol = n)Vmat2 <- matrix(NA, nrow = nsim, ncol = n)Uarray2 <- array(NA, c(n, K, nsim))probarray2 <- array(NA, c(n, K, nsim))psimat <- matrix(NA, nrow = nsim, ncol = 1)lambda2mat <- matrix(NA, nrow = nsim, ncol = 1)fit0mat <- matrix(NA, nrow = nsim, ncol = n)fit1mat <- matrix(NA, nrow = nsim, ncol = n)sigma2mat <- matrix(NA, nrow = nsim, ncol = 1)###############################set.seed(seed)###############################V1 <- exp(Y);T1 <- getT(V1, p)U1 <- idetect_rcpp(V1, K)U1 <- getU(U1, n, K)gamma1 <- colMeans(U1)X1 <- cbind(1, T1, U1)m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V1, X1)beta10 <- m1[1]beta12 <- m1[2:(p + 1)]delta10 <- m1[(p + 2):(1 + p + K)]fit1 <- X1 %*% m1sigma12 <- var(V1 - fit1)tau1 <- getTau2(m1, sigma12, lambda2)taubeta10 <- tau1[1]taubeta12 <- tau1[2:(p + 1)]taudelta10 <- tau1[(p + 2):(1 + p + K)]###############################V2 <- as.numeric(Y == 0)T2 <- getT(V2, p)U2 <- idetect_rcpp(V2, K)U2 <- getU(U2, n, K)gamma2 <- colMeans(U2)X2 <- cbind(1, T2, U2)m2 <- optim_rcpp(c(mean(V2), acf(V2, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V2, X2)beta20 <- m2[1]beta22 <- m2[2:(p + 1)]delta20 <- m2[(p + 2):(1 + p + K)]fit2 <- X2 %*% m2sigma22 <- var(V2 - fit2)tau2 <- getTau2(m2, sigma22, lambda2)taubeta20 <- tau2[1]taubeta22 <- tau2[2:(p + 1)]taudelta20 <- tau2[(p + 2):(1 + p + K)]psi <- getPsi(Y, V1, V2, 2, burnin, 1, 1)##############################################################kk <- 0for (i in 1:(nsim + burnin)) {  ###############################  V1 <- getV1(Y, V1, V2, psi, fit1, sigma12, burnin)  T1 <- getT(V1, p)  for (j in 1:(burnin + 1)) {    m1 <- getGaussianPosterior(      V1, beta10, taubeta10, sigma12, lambda2, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),      matrix(0, 1, 1), beta12, delta10, matrix(0, 1, 1), matrix(0, 1, 1), taubeta12, taudelta10,      matrix(0, 1, 1), 0, p, K, 0)        beta10 <- m1$betadelta[1]    beta12 <- m1$betadelta[2:(p + 1)]    delta10 <- m1$betadelta[(p + 2):(1 + p + K)]        sigma12 <- var(V1 - m1$fit1)        taubeta10 <- m1$tau2all[1]    taubeta12 <- m1$tau2all[2:(p + 1)]    taudelta10 <- m1$tau2all[(p + 2):(1 + p + K)]        fit1 <- m1$fit1  }  zetadelta1 <- V1 - m1$fit0  tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)  U1 <- tmpU1$U  prob1 <- tmpU1$prob  ###############################  V2 <- getV2(Y, V1, V2, psi, fit2, sigma22, burnin)  T2 <- getT(V2, p)  for (j in 1:(burnin + 1)) {    m2 <- getGaussianPosterior(      V2, beta20, taubeta20, sigma22, lambda2, matrix(0, 1, 1), T2, U2, matrix(0, 1, 1),      matrix(0, 1, 1), beta22, delta20, matrix(0, 1, 1), matrix(0, 1, 1), taubeta22, taudelta20,      matrix(0, 1, 1), 0, p, K, 0)        beta20 <- m2$betadelta[1]    beta22 <- m2$betadelta[2:(p + 1)]    delta20 <- m2$betadelta[(p + 2):(1 + p + K)]        sigma22 <- var(V2 - m2$fit1)        taubeta20 <- m2$tau2all[1]    taubeta22 <- m2$tau2all[2:(p + 1)]    taudelta20 <- m2$tau2all[(p + 2):(1 + p + K)]        fit2 <- m2$fit1  }  zetadelta2 <- V2 - m2$fit0  tmpU2 <- getUWithoutW(zetadelta2, K, delta20, sigma22, gamma2)  U2 <- tmpU2$U  prob2 <- tmpU2$prob  ###############################  psi <- getPsi(Y, V1, V2, psi, burnin, 1, 1)  lambda2 <- getLambda2EM(c(m1$expectedtau2all, m2$expectedtau2all))  ###############################  if (i > burnin) {    kk <- kk + 1        betadeltamat1[kk, ] <- m1$betadelta    taumat1[kk, ] <- m1$tau2all    sigmamat1[kk, ] <- sigma12    fit0mat1[kk, ] <- m1$fit0    fit1mat1[kk, ] <- m1$fit1    Vmat1[kk, ] <- V1    Uarray1[,,kk] <- U1    probarray1[,,kk] <- prob1            betadeltamat2[kk, ] <- m2$betadelta    taumat2[kk, ] <- m2$tau2all    sigmamat2[kk, ] <- sigma22    fit0mat2[kk, ] <- m2$fit0    fit1mat2[kk, ] <- m2$fit1    Vmat2[kk, ] <- V2    Uarray2[,,kk] <- U2    probarray2[,,kk] <- prob2        psimat[kk, ] <- psi    lambda2mat[kk, ] <- lambda2        fit0mat[kk, ] <- (1 - 1 / (1 + exp(-m2$fit0))) * exp(m1$fit0)    fit1mat[kk, ] <- (1 - 1 / (1 + exp(-m2$fit1))) * exp(m1$fit1)        sigma2mat[kk, ] <- var(Y - fit1mat[kk, ])  }}###############################TT <- matrix(NA, nrow = nsim, ncol = 1)for (i in 1:nsim) {  TT[i, ] <- (sum((Y - fit1mat[i, ]) ^ 2) - sum((Y - fit0mat[i, ]) ^ 2)) /     sqrt(sigma2mat[i, ])}###############################TT1 <- matrix(NA, nrow = nsim, ncol = 1)TT2 <- matrix(NA, nrow = nsim, ncol = 1)for (i in 1:nsim) {  TT1[i, ] <- (sum((V1[i, ] - fit1mat1[i, ]) ^ 2) - sum((V1[i, ] - fit0mat1[i, ]) ^ 2)) /     sqrt(sigmamat1[i, ])  TT2[i, ] <- (sum((V2[i, ] - fit1mat2[i, ]) ^ 2) - sum((V2[i, ] - fit0mat2[i, ]) ^ 2)) /     sqrt(sigmamat2[i, ])}#################################rss <- matrix(NA, nrow = nsim, ncol = n)##for (i in 1:nsim) {#  rss[i, ] <- (Y - fit1mat[i, ]) ^ 2 / sigmamat1[i, ]#}################################FAP <- 0.2findroot <- function(cc, FAP, ref, nsim, n) {    tmp <- matrix(NA, nrow = nsim, ncol = 1)  qs <- matrix(NA, nrow = 1, ncol = n)    for (j in 1:n) {    qs[, j] <- quantile(ref[, j], cc)  }    for (i in 1:nsim) {    tmp[i, ] <- sum(ref[i, ] <= qs) == n  }    FAPsim <- 1 - mean(tmp)  cat("FAPsim:", FAPsim, '\n')  FAP - FAPsim}cc <- uniroot(findroot, c(0.1, 1), FAP = FAP, ref = fit1mat, nsim = nsim, n = n)ll <- ###############################
