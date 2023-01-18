@@ -1415,8 +1415,8 @@ double proddiflogdzinbinom(arma::vec Y, arma::vec V1, arma::vec V2, double psi, 
   double tmp = 0.0;
   
   for (int i = 0; i < n; i++) {
-    //tmp = tmp + log(dzinfbinom(Y(i), V1(i), V2(i), psi)) - log(dzinfbinom(Y(i), V1(i), V2(i), oldpsi));
-    tmp = tmp * (dzinfbinom(Y(i), V1(i), V2(i), psi) / dzinfbinom(Y(i), V1(i), V2(i), oldpsi)) ;
+    tmp = tmp + log(dzinfbinom(Y(i), V1(i), V2(i), psi)) - log(dzinfbinom(Y(i), V1(i), V2(i), oldpsi));
+    //tmp = tmp * (dzinfbinom(Y(i), V1(i), V2(i), psi) / dzinfbinom(Y(i), V1(i), V2(i), oldpsi)) ;
   }
   return(tmp);
 }
@@ -1437,7 +1437,10 @@ double getPsi(arma::vec Y, arma::vec V1, arma::vec V2, double psi, int burnin, d
     tmppsi = R::rgamma(tmpparsold(0), tmpparsold(1));
     tmpparsnew = getGammaParm(tmppsi, tmppsi);
     tmppb = R::runif(0.0, 1.0);
-    a = proddiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
+    //a = proddiflogdzinbinom(Y, V1, V2, tmppsi, newpsi);
+    a = exp(proddiflogdzinbinom(Y, V1, V2, tmppsi, newpsi));
+    //Rcpp::Rcout << a << std::endl;
+    
     //a = a + log(pow(tmppsi, d1 - 1) * exp(- tmppsi / d2)) - log(pow(newpsi, d1 - 1) * exp(- newpsi / d2));
     a = a * pow(tmppsi, c1 - 1) * exp(- tmppsi / c2) / pow(newpsi, c1 - 1) / exp(- newpsi / c2);
     //a = exp(a) * (R::dgamma(newpsi, tmpparsnew(0), tmpparsnew(1), false) / 
