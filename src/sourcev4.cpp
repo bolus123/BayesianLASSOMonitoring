@@ -307,9 +307,76 @@ Rcpp::List getUWithW(arma::vec zetadelta, arma::mat W, int K,
 }
 
 // [[Rcpp::export]]
-Rcpp::List getUWithoutW(arma::vec zetadelta, int K, 
+Rcpp::List getUWithoutW_MC(arma::vec zetadelta, int K, 
                      arma::vec delta0, double sigma2, 
-                     arma::vec gamma) {
+                     arma::mat Gamma, arma::vec gamma) {
+  
+  //Rcpp::Rcout << "a" << std::endl;
+  
+  int n = zetadelta.n_elem;
+  arma::vec theta;
+  double zetaElem;
+  arma::vec eta;
+  arma::mat prob(n, K);
+  arma::mat out(n, K);
+  out.zeros();
+  
+  arma::vec tmpGamma; 
+  
+  arma::rowvec tmpProb;
+
+  arma::mat tmpcumsumProb;
+  
+  double randProb;
+  int cursor;
+  
+  arma::rowvec tmpout; 
+  
+  int i;
+  int j;
+  //Rcpp::Rcout << "b" << std::endl;
+  
+  for (i = 0; i < n; i++) {
+    
+    theta = delta0;
+    zetaElem = zetadelta(i);
+    
+    if (i == 0) {
+      tmpGamma = gamma;
+    } else {
+      tmpGamma = Gamma * arma::trans(out.row(i - 1));
+    }
+    
+    eta = getEta(zetaElem, theta, tmpGamma, sigma2);
+    tmpProb = arma::trans(eta / arma::accu(eta));
+    prob.row(i) = tmpProb;
+    tmpcumsumProb = arma::cumsum(prob.row(i));
+    
+    randProb = R::runif(0, 1);
+    cursor = 0;
+    for (int k = 0; k < K; k++) {
+      if (randProb > tmpcumsumProb(k)) {
+        cursor = cursor + 1;
+      }
+    }
+    out(i, cursor) = 1;
+  }
+  
+  //Rcpp::Rcout << "e" << std::endl;
+  
+  Rcpp::List outList;
+  outList = Rcpp::List::create(
+    Rcpp::_["prob"] = prob,
+    Rcpp::_["U"] = out
+  );
+  return(outList);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::List getUWithoutW(arma::vec zetadelta, int K, 
+                        arma::vec delta0, double sigma2, 
+                        arma::vec gamma) {
   
   //Rcpp::Rcout << "a" << std::endl;
   
@@ -322,7 +389,7 @@ Rcpp::List getUWithoutW(arma::vec zetadelta, int K,
   out.zeros();
   
   arma::rowvec tmpProb;
-
+  
   int i;
   
   //Rcpp::Rcout << "b" << std::endl;
@@ -1320,7 +1387,7 @@ double dzinfbinom(double Yi, double V1i, double V2i, double psi) {
     out = omega;
   }
   
-  out = out + (1 - omega) * (R::gammafn(Yi + psi) / R::gammafn(Yi + 1) / R::gammafn(psi)) * 
+  out = out + (1.0 - omega) * (R::gammafn(Yi + psi) / R::gammafn(Yi + 1.0) / R::gammafn(psi)) * 
     pow(mu / (mu + psi), Yi) * pow(psi/ (mu + psi), psi);
   
   return(out);
@@ -1468,13 +1535,13 @@ double getOmega(arma::vec Y, arma::vec V2, double psi, double omega, int burnin)
   int n = V2.n_elem;
   arma::vec V1(n);
   
-  V1.fill(omega);
+  V1.fill(log(omega / (1 - omega)));
   
   for (int i = 0; i < burnin; i++) {
     tmpomega = R::runif(0.0, 1.0);
     tmppb = R::runif(0.0, 1.0);
     
-    a = proddiflogdzinbinom(Y, V1, V2, psi, psi);
+    a = exp(proddiflogdzinbinom(Y, V1, V2, psi, psi));
   
     if (tmppb < a) {
       newomega = tmpomega;
@@ -3434,7 +3501,7 @@ Rcpp::List getPosteriorLayer1ZinfNBShift(arma::vec Y,
 //}
 
 // [[Rcpp::export]]
-double loglikelihoodLayer3(arma::vec V, arma::vec beta0, arma::vec tau2beta0,
+arma::vec loglikelihoodLayer3(arma::vec V, arma::vec beta0, arma::vec tau2beta0,
                            double sigma2, double lambda2, 
                            arma::vec gamma,
                            Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
@@ -3553,7 +3620,7 @@ double loglikelihoodLayer3(arma::vec V, arma::vec beta0, arma::vec tau2beta0,
   
   //
   
-  double tmp = 0.0;
+  arma::vec tmp(n);
   arma::rowvec Uvec;
   arma::vec llU(1);
   
@@ -3563,7 +3630,7 @@ double loglikelihoodLayer3(arma::vec V, arma::vec beta0, arma::vec tau2beta0,
       Uvec = U_.row(i);
       llU = Uvec * log(gamma);
     }
-    tmp = tmp + log(R::dnorm4(V(i), fit(i), sqrt(sigma2), false)) + 
+    tmp(i) = log(R::dnorm4(V(i), fit(i), sqrt(sigma2), false)) + 
       llU(0);
   }
   
@@ -3599,6 +3666,9 @@ double loglikelihoodLayer1(arma::vec Y, arma::vec V1, arma::vec V2, double psi) 
   
   return(tmp);
 }
+
+
+
 
 //
 //// [[Rcpp::export]]
