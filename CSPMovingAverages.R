@@ -5,27 +5,35 @@ library(pscl)
 
 ###############################
 
-seed <- 1234#
+tol <- 1e-6
+
+seed <- 12345#
 
 nsim <- 1000#
 burnin <- 200#
 
-lambda2 <- 10#
+lambda20 <- 10#
+lambda21 <- 10#
 
 p <- 10#
 K <- 10#
 
+W <- 14
+
 dat <- read.csv(file = '/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Daily opioid-overdose-related ER visits in Walker.csv')#
 
-dat <- dat[1:1461, ]#dat[which(dat[, 1] == "5/1/16"):which(dat[, 1] == "1/1/17"), ]
+#dat <- dat[367:1461, ]#dat[which(dat[, 1] == "5/1/16"):which(dat[, 1] == "1/1/17"), ]
+
+dat <- dat[(732 - W + 1):1461, ]
 
 n <- dim(dat)[1]
 
 #Y <- dat[, 2]
 
-W <- 14
+#W <- 14
 
-dat1 <- rep(NA, n - W - 1)
+
+dat1 <- rep(NA, n - W + 1)
 
 k <- 0
 for (i in W:n) {
@@ -80,8 +88,8 @@ T1 <- getT(V1, p)
 X1 <- cbind(1, T1)
 m0 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 )), V1, X1)
 
-beta00 <- m1[1]
-beta02 <- m1[2:(p + 1)]
+beta00 <- m0[1]
+beta02 <- m0[2:(p + 1)]
 
 fit1 <- X1 %*% m0
 
@@ -101,6 +109,26 @@ U1 <- idetect_rcpp(V1, K)
 U1 <- getU(U1, n, K)
 
 gamma1 <- colMeans(U1)
+
+Gamma1 <- matrix(0, K, K)
+for (i in 2:n) {
+  for (j in 1:K) {
+    if (U1[i - 1, j] == 1) {
+      K1 <- j
+      break
+    }
+  }
+  for (j in 1:K) {
+    if (U1[i, j] == 1) {
+      K2 <- j
+      break
+    }
+  }
+  Gamma1[K1, K2] <- Gamma1[K1, K2] + 1
+}
+
+Gamma1 <- Gamma1 / rowSums(Gamma1)
+
 
 X1 <- cbind(1, T1, U1)
 m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V1, X1)
@@ -181,7 +209,8 @@ for (i in 1:(nsim + burnin)) {
   fit1 <- m1$fit1
   #}
   zetadelta1 <- V1 - m1$fit0
-  tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
+  #tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
+  tmpU1 <- getUWithoutW_MC(zetadelta1, K, delta10, sigma12, Gamma1, gamma1)
   U1 <- tmpU1$U
   prob1 <- tmpU1$prob
   ###############################
@@ -246,6 +275,25 @@ gamma1 <- colMeans(U1)
 gamma1[which(gamma1 == 0)] <- 1e-6
 gamma1 <- gamma1 / (sum(gamma1))
 
+Gamma1 <- matrix(0, K, K)
+for (i in 2:n) {
+  for (j in 1:K) {
+    if (U1[i - 1, j] == 1) {
+      K1 <- j
+      break
+    }
+  }
+  for (j in 1:K) {
+    if (U1[i, j] == 1) {
+      K2 <- j
+      break
+    }
+  }
+  Gamma1[K1, K2] <- Gamma1[K1, K2] + 1
+}
+
+Gamma1 <- Gamma1 / rowSums(Gamma1)
+Gamma1[is.na(Gamma1)] <- 0
 ###############################
 
 kk <- 0
@@ -255,7 +303,7 @@ for (i in 1:(nsim + burnin)) {
   
   
   m1 <- getGaussianPosterior(
-    V1, beta10, taubeta10, sigma12, lambda2, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),
+    V1, beta10, taubeta10, sigma12, lambda21, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),
     matrix(0, 1, 1), beta12, delta10, matrix(0, 1, 1), matrix(0, 1, 1), taubeta12, taudelta10,
     matrix(0, 1, 1), 0, p, K, 0)
   
@@ -272,12 +320,13 @@ for (i in 1:(nsim + burnin)) {
   fit1 <- m1$fit1
   #}
   zetadelta1 <- V1 - m1$fit0
-  tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
+  #tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
+  tmpU1 <- getUWithoutW_MC(zetadelta1, K, delta10, sigma12, Gamma1, gamma1)
   U1 <- tmpU1$U
   prob1 <- tmpU1$prob
   ###############################
   ###############################
-  lambda2 <- getLambda2EM(c(m1$expectedtau2all))
+  lambda21 <- getLambda2EM(c(m1$expectedtau2all))
   ###############################
   if (i > burnin) {
     kk <- kk + 1
@@ -382,6 +431,17 @@ for (i in 1:nsim) {
 2 * min(mean(betadeltamat1[, 20] > 0), mean(betadeltamat1[, 20]  < 0))
 2 * min(mean(betadeltamat1[, 21] > 0), mean(betadeltamat1[, 21]  < 0))
 
+mean(betadeltamat1[, 12])
+mean(betadeltamat1[, 13])
+mean(betadeltamat1[, 14])
+mean(betadeltamat1[, 15])
+mean(betadeltamat1[, 16])
+mean(betadeltamat1[, 17])
+mean(betadeltamat1[, 18])
+mean(betadeltamat1[, 19])
+mean(betadeltamat1[, 20])
+mean(betadeltamat1[, 21])
+
 ###############################
 probll <- matrix(NA, nrow = n, ncol = K)
 U1vec <- rep(NA, n)
@@ -392,7 +452,7 @@ for (i in 1:n) {
   U1vec[i] <- which.max(probll[i, ])
 }
 
-U1vec[!(U1vec %in% c(1, 2, 3, 4, 5, 9))] <- 0
+U1vec[!(U1vec %in% c(1))] <- 0
 
 ###############################
 #plot(Y[500:1000], type = 'l')
@@ -424,57 +484,72 @@ U1vec[!(U1vec %in% c(1, 2, 3, 4, 5, 9))] <- 0
 #    points(YY, col = col1[500:1000], cex = 1.5)
 #    
 ###############################
-YY <- dat[732:1096, 2]
-UU <- c(rep(0, W - 1), U1vec)
-UU <- U1vec[732:1096]
+YY <- dat[14:743, 2]
+#UU <- c(rep(0, W - 1), U1vec)
+UU <- U1vec
 
-UU[UU == 1] <- 0
 
-plot(YY, type = 'l', main = "Walker County, AL 2018", 
+#UU[UU == 1] <- 0
+
+plot(YY, type = 'l', main = "Walker County, AL 2018 and 2019", 
      ylab = 'Opioid-overdose-related ER Visits', xaxt = "n", xlab = "")
 
 axis(1, at = c(
   1, 
-  32, 
-  60,
+  #32, 
+  #60,
   91,
-  121,
-  152,
+  #121,
+  #152,
   182,
-  213,
-  244,
+  #213,
+  #244,
   274,
-  305,
-  335
+  #305,
+  #335,
+  379, 
+  469,
+  560,
+  652
 ), labels = c(
-  "Jan 1",
-  "Feb 1",
-  "Mar 1",
-  "Apr 1",
-  "May 1",
-  "Jun 1",
-  "Jul 1",
-  "Aug 1",
-  "Sep 1",
-  "Oct 1",
-  "Nov 1",
-  "Dec 1"
+  "Jan 1, 18",
+  #"Feb 1",
+  #"Mar 1",
+  "Apr 1, 18",
+  #"May 1",
+  #"Jun 1",
+  "Jul 1, 18",
+  #"Aug 1",
+  #"Sep 1",
+  "Oct 1, 18",
+  #"Nov 1",
+  #"Dec 1"
+  "Jan 1, 19",
+  #"Feb 1",
+  #"Mar 1",
+  "Apr 1, 19",
+  #"May 1",
+  #"Jun 1",
+  "Jul 1, 19",
+  #"Aug 1",
+  #"Sep 1",
+  "Oct 1, 19"#,
+  #"Nov 1",
+  #"Dec 1"
 ))
 
 
 col2 <- rep('black', n)
-col2[which(UU == 2)] <- NA
-col2[which(UU == 3)] <- NA
-col2[which(UU == 5)] <- NA
-col2[which(UU == 9)] <- NA
-points(YY, col = col2, cex = 0.7, pch = 16)
+points(YY, col = col2, cex = 0.7, pch = 1)
 
 col1 <- rep(NA, n)
 #col1[which(UU == 1)] <- "green"
 
-col1[which(UU == 3)] <- "red"
-  col1[which(UU == 4)] <- "red"
-    col1[which(UU == 5)] <- "red"
+
+
+col1[which(UU == 1)] <- "red"
+#  col1[which(UU == 4)] <- "red"
+#    col1[which(UU == 5)] <- "red"
       
     #col1[which(UU == 2)] <- "green"
     #      col1[which(UU == 9)] <- "green"
@@ -482,8 +557,8 @@ col1[which(UU == 3)] <- "red"
     points(YY, col = col1, cex = 1.2, pch = 16)
     
     legend("topright", 
-           legend = c("High risk", "Mitigated or low risk"), 
-           col = c('red', "black"), pch = c(16, 16, 16))
+           legend = c("High", "Mitigated or Low"), 
+           col = c('red', "black"), pch = c(16, 1), title = 'Risk')
 ###############################
 YY <- c(rep(0, W - 1), dat1)
 YY <- YY[732:1096]

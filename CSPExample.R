@@ -17,7 +17,8 @@ K <- 3#
 
 dat <- read.csv(file = '/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Daily opioid-overdose-related ER visits in Walker.csv')#
 
-dat <- dat[367:1461, ]#dat[which(dat[, 1] == "5/1/16"):which(dat[, 1] == "1/1/17"), ]
+#dat <- dat[367:1461, ]#dat[which(dat[, 1] == "5/1/16"):which(dat[, 1] == "1/1/17"), ]
+dat <- dat[1:1461, ]
 
 n <- dim(dat)[1]
 
