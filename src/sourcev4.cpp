@@ -1100,6 +1100,281 @@ Rcpp::List getGaussianPosterior(arma::vec V, arma::vec beta0, arma::vec tau2beta
 }
 
 // [[Rcpp::export]]
+Rcpp::List getGaussianPosterior_Isolated_Sustained(
+  arma::vec V, 
+  arma::vec beta0, arma::vec tau2beta0,
+  double sigma2, double lambda2, 
+  arma::mat X,
+  arma::mat T,
+  arma::mat U1,
+  arma::mat U2,
+  arma::mat W,
+  arma::vec beta1, 
+  arma::vec beta2, 
+  arma::vec delta10, 
+  arma::vec delta11,
+  arma::vec delta20, 
+  arma::vec delta21,
+  arma::vec tau2beta1,
+  arma::vec tau2beta2,
+  arma::vec tau2delta10,
+  arma::vec tau2delta11,
+  arma::vec tau2delta20,
+  arma::vec tau2delta21,
+  int q, int p, int K1, int K2, int r) {
+  
+  // initialize all vectors;
+  
+  
+  
+  int n = V.n_elem;
+  int m = 1;
+  
+  //Rcpp::Rcout << 0.1 << std::endl;
+  
+  arma::mat X_ = X;
+  arma::mat T_ = T;
+  arma::mat U1_ = U1;
+  arma::mat U2_ = U2;
+  arma::mat W_ = W;
+  arma::vec beta0_ = beta0;
+  arma::vec beta1_ = beta1;
+  arma::vec beta2_ = beta2;
+  arma::vec delta10_ = delta10;
+  arma::vec delta11_ = delta11;
+  arma::vec delta20_ = delta20;
+  arma::vec delta21_ = delta21;
+  arma::vec tau2beta0_ = tau2beta0;
+  arma::vec tau2beta1_ = tau2beta1;
+  arma::vec tau2beta2_ = tau2beta2;
+  arma::vec tau2delta10_ = tau2delta10;
+  arma::vec tau2delta11_ = tau2delta11;
+  arma::vec tau2delta20_ = tau2delta20;
+  arma::vec tau2delta21_ = tau2delta21;
+  //Rcpp::Rcout << 0.14 << std::endl;
+  
+  arma::mat UW1_;
+  if (K1 > 0) {
+    if (r > 0) {
+      UW1_ = getUW(U1_, W_);
+    }
+  }
+  
+  arma::mat UW2_;
+  if (K2 > 0) {
+    if (r > 0) {
+      UW2_ = getUW(U2_, W_);
+    }
+  }
+  
+  //Rcpp::Rcout << 0.2 << std::endl;
+  
+  m = m + q + p + K1 + K1 * r+ K2 + K2 * r;
+  
+  // initialize all vectors;
+  
+  arma::vec zeta;
+  arma::vec Onebeta0;
+  Onebeta0.zeros(n);
+  arma::vec Xbeta1;
+  Xbeta1.zeros(n);
+  arma::vec Tbeta2;
+  Tbeta2.zeros(n);
+  arma::vec Udelta10;
+  Udelta10.zeros(n);
+  arma::vec UWdelta11;
+  UWdelta11.zeros(n);
+  arma::vec Udelta20;
+  Udelta20.zeros(n);
+  arma::vec UWdelta21;
+  UWdelta21.zeros(n);
+  arma::vec on = arma::ones(n);
+  
+  arma::vec betadelta;
+  arma::vec tau2all;
+  
+  
+  // update beta0;
+  
+  if (q > 0) {
+    Xbeta1 = X_ * beta1_;
+  }
+  
+  if (p > 0) {
+    Tbeta2 = T_ * beta2_;
+  }
+  
+  if (K1 > 0) {
+    Udelta10 = U1_ * delta10_;
+    if (r > 0) {
+      UWdelta11 = UW1_ * delta11_;
+    }
+  }
+  
+  if (K2 > 0) {
+    Udelta20 = U2_ * delta20_;
+    if (r > 0) {
+      UWdelta21 = UW2_ * delta21_;
+    }
+  }
+  
+  //Rcpp::Rcout << 0.3 << std::endl;
+  
+  //Rcpp::Rcout << "U_" << U_ << std::endl;
+  //Rcpp::Rcout << "delta0_" << delta0_ << std::endl;
+  
+  //cpp::Rcout << "Xbeta1" << Xbeta1 << std::endl;
+  //cpp::Rcout << "Tbeta2" << Tbeta2 << std::endl;
+  //cpp::Rcout << "Udelta0" << Udelta0 << std::endl;
+  //cpp::Rcout << "UWdelta1" << UWdelta1 << std::endl;
+  
+  
+  zeta = V - (Xbeta1 + Tbeta2 + Udelta10 + UWdelta11 + Udelta20 + UWdelta21);
+  beta0_ = getBetaNonMonotonicity(zeta, on, tau2beta0_, sigma2);
+  Onebeta0 = on * beta0_;
+  betadelta = beta0_;
+  
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  // update beta1;
+  
+  if (q > 0) {
+    zeta = V - (Onebeta0 + Tbeta2 + Udelta10 + UWdelta11 + Udelta20 + UWdelta21);
+    beta1_ = getBetaNonMonotonicity(zeta, X_, tau2beta1_, sigma2);
+    Xbeta1 = X_ * beta1_;
+    betadelta = arma::join_cols(betadelta, beta1_);
+  }
+  
+  //Rcpp::Rcout << 2 << std::endl;
+  
+  // update beta2;
+  
+  
+  
+  if (p > 0) {
+    zeta = V - (Onebeta0 + Xbeta1 + Udelta10 + UWdelta11 + Udelta20 + UWdelta21);
+    beta2_ = getBetaMonotonicity(zeta, T_, tau2beta2_, sigma2);
+    Tbeta2 = T_ * beta2_;
+    betadelta = arma::join_cols(betadelta, beta2_);
+  }
+  
+  //Rcpp::Rcout << 3 << std::endl;
+  
+  // update delta10;
+  
+  if (K1 > 0) {
+    zeta = V - (Onebeta0 + Xbeta1 + Tbeta2 + UWdelta11+ Udelta20 + UWdelta21);
+    delta10_ = getBetaNonMonotonicity(zeta, U1_, tau2delta10_, sigma2);
+    Udelta10 = U1_ * delta10_;
+    betadelta = arma::join_cols(betadelta, delta10_);
+    
+    // update delta11;
+    if (r > 0) {
+      zeta = V - (Onebeta0 + Xbeta1 + Tbeta2 + Udelta10+ Udelta20 + UWdelta21);
+      delta11_ = getBetaNonMonotonicity(zeta, UW1_, tau2delta11_, sigma2);
+      UWdelta11 = UW1_ * delta11_;
+      betadelta = arma::join_cols(betadelta, delta11_);
+    }
+  }
+  
+  // update delta0;
+  
+  if (K2 > 0) {
+    zeta = V - (Onebeta0 + Xbeta1 + Tbeta2 + Udelta10 + UWdelta11 + UWdelta21);
+    delta20_ = getBetaNonMonotonicity(zeta, U2_, tau2delta20_, sigma2);
+    Udelta20 = U2_ * delta20_;
+    betadelta = arma::join_cols(betadelta, delta20_);
+    
+    // update delta1;
+    if (r > 0) {
+      zeta = V - (Onebeta0 + Xbeta1 + Tbeta2 + Udelta10 + UWdelta11 + Udelta20);
+      delta21_ = getBetaNonMonotonicity(zeta, UW2_, tau2delta21_, sigma2);
+      UWdelta21 = UW2_ * delta21_;
+      betadelta = arma::join_cols(betadelta, delta21_);
+    }
+  }
+  
+  //Rcpp::Rcout << 4 << std::endl;
+  
+  // update tau2beta0;
+  
+  //Rcpp::Rcout << beta0_ << std::endl;
+  //Rcpp::Rcout << sigma2 << std::endl;
+  //Rcpp::Rcout << lambda2 << std::endl;
+  
+  tau2beta0_ = getTau2(beta0_, sigma2, lambda2);
+  tau2all = tau2beta0_;
+  
+  //Rcpp::Rcout << 5 << std::endl;
+  
+  // update tau2beta1;
+  
+  if (q > 0) {
+    tau2beta1_ = getTau2(beta1_, sigma2, lambda2);
+    tau2all = arma::join_cols(tau2all, tau2beta1_);
+  }
+  
+  //Rcpp::Rcout << 6 << std::endl;
+  
+  // update tau2beta2;
+  
+  if (p > 0) {
+    tau2beta2_ = getTau2(beta2_, sigma2, lambda2);
+    tau2all = arma::join_cols(tau2all, tau2beta2_);
+  }
+  
+  //Rcpp::Rcout << 7 << std::endl;
+  
+  // update tau2delta10;
+  
+  if (K1 > 0) {
+    tau2delta10_ = getTau2(delta10_, sigma2, lambda2);
+    tau2all = arma::join_cols(tau2all, tau2delta10_);
+    
+    // update tau2delta11;
+    if(r > 0) {
+      tau2delta11_ = getTau2(delta11_, sigma2, lambda2);
+      tau2all = arma::join_cols(tau2all, tau2delta11_);
+    }
+  }
+  
+  // update tau2delta20;
+  
+  if (K2 > 0) {
+    tau2delta20_ = getTau2(delta20_, sigma2, lambda2);
+    tau2all = arma::join_cols(tau2all, tau2delta20_);
+    
+    // update tau2delta21;
+    if(r > 0) {
+      tau2delta21_ = getTau2(delta21_, sigma2, lambda2);
+      tau2all = arma::join_cols(tau2all, tau2delta21_);
+    }
+  }
+  
+  //Rcpp::Rcout << 8 << std::endl;
+  
+  // output;
+  arma::vec fit0 = Onebeta0 + Xbeta1 + Tbeta2;
+  arma::vec fit1 = Onebeta0 + Xbeta1 + Tbeta2 + Udelta10 + UWdelta11 + Udelta20 + UWdelta21;
+  Rcpp::List out;
+  out = Rcpp::List::create(
+    Rcpp::_["betadelta"] = betadelta,
+    Rcpp::_["tau2all"] = tau2all,
+    Rcpp::_["expectedtau2all"] = getExpectedTau2(betadelta, sigma2, lambda2),
+    Rcpp::_["fit0"] = fit0,
+    Rcpp::_["fit1"] = fit1,
+    Rcpp::_["m"] = m,
+    Rcpp::_["q"] = q,
+    Rcpp::_["p"] = p,
+    Rcpp::_["K1"] = K1,
+    Rcpp::_["K2"] = K2,
+    Rcpp::_["r"] = r
+  );
+  return(out);
+}
+
+// [[Rcpp::export]]
 Rcpp::List readbetadelta(arma::vec betadelta, 
                    int q, int p, int K, int r) {
   
@@ -1183,6 +1458,8 @@ Rcpp::List readtau2all(arma::vec tau2all,
   );
   return(out); 
 }
+
+
 
 // [[Rcpp::export]]
 Rcpp::List initializeGaussianPosterior(

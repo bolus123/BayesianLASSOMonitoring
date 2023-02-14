@@ -16,7 +16,8 @@ lambda20 <- 10#
 lambda21 <- 10#
 
 p <- 10#
-K <- 10#
+K1 <- 10#
+K2 <- 10#
 
 W <- 14
 
@@ -62,9 +63,14 @@ taumat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)
 sigmamat1 <- matrix(NA, nrow = nsim, ncol = 1)
 fit0mat1 <- matrix(NA, nrow = nsim, ncol = n)
 fit1mat1 <- matrix(NA, nrow = nsim, ncol = n)
+
 Vmat1 <- matrix(NA, nrow = nsim, ncol = n)
 Uarray1 <- array(NA, c(n, K, nsim))
 probarray1 <- array(NA, c(n, K, nsim))
+
+Vmat2 <- matrix(NA, nrow = nsim, ncol = n)
+Uarray2 <- array(NA, c(n, K, nsim))
+probarray2 <- array(NA, c(n, K, nsim))
 
 omegamat <- matrix(NA, nrow = nsim, ncol = 1)
 
@@ -95,57 +101,12 @@ fit1 <- X1 %*% m0
 
 sigma02 <- var(V1 - fit1)
 
-tau0 <- getTau2(m0, sigma02, lambda2)
+tau0 <- getTau2(m0, sigma02, lambda20)
 
 taubeta00 <- tau0[1]
 taubeta02 <- tau0[2:(p + 1)]
 
-###############################
 
-V1 <- Y;
-T1 <- getT(V1, p)
-
-U1 <- idetect_rcpp(V1, K)
-U1 <- getU(U1, n, K)
-
-gamma1 <- colMeans(U1)
-
-Gamma1 <- matrix(0, K, K)
-for (i in 2:n) {
-  for (j in 1:K) {
-    if (U1[i - 1, j] == 1) {
-      K1 <- j
-      break
-    }
-  }
-  for (j in 1:K) {
-    if (U1[i, j] == 1) {
-      K2 <- j
-      break
-    }
-  }
-  Gamma1[K1, K2] <- Gamma1[K1, K2] + 1
-}
-
-Gamma1 <- Gamma1 / rowSums(Gamma1)
-
-
-X1 <- cbind(1, T1, U1)
-m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V1, X1)
-
-beta10 <- m1[1]
-beta12 <- m1[2:(p + 1)]
-delta10 <- m1[(p + 2):(1 + p + K)]
-
-fit1 <- X1 %*% m1
-
-sigma12 <- var(V1 - fit1)
-
-tau1 <- getTau2(m1, sigma12, lambda2)
-
-taubeta10 <- tau1[1]
-taubeta12 <- tau1[2:(p + 1)]
-taudelta10 <- tau1[(p + 2):(1 + p + K)]
 
 ###############################
 kk <- 0
@@ -172,7 +133,7 @@ for (i in 1:(nsim + burnin)) {
     
     betadeltamat0[kk, ] <- m0$betadelta
     taumat0[kk, ] <- m0$tau2all
-    sigmamat0[kk, ] <- sigma12
+    sigmamat0[kk, ] <- sigma02
     fit0mat0[kk, ] <- m0$fit0
     fit1mat0[kk, ] <- m0$fit1
     
@@ -185,32 +146,162 @@ for (i in 1:(nsim + burnin)) {
   }
 }
 
+
 ###############################
+
+V1 <- Y;
+T1 <- getT(V1, p)
+
+U1 <- idetect_rcpp(V1, K1)
+U1 <- getU(U1, n, K1)
+
+gamma1 <- colMeans(U1)
+
+Gamma1 <- matrix(0, K1, K1)
+for (i in 2:n) {
+  for (j in 1:K1) {
+    if (U1[i - 1, j] == 1) {
+      K1 <- j
+      break
+    }
+  }
+  for (j in 1:K) {
+    if (U1[i, j] == 1) {
+      K1 <- j
+      break
+    }
+  }
+  Gamma1[K1, K2] <- Gamma1[K1, K2] + 1
+}
+
+Gamma1 <- Gamma1 / rowSums(Gamma1)
+
+
+X1 <- cbind(1, T1, U1)
+m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V1, X1)
+
+
+
+beta10 <- m1[1]
+beta12 <- m1[2:(p + 1)]
+delta10 <- m1[(p + 2):(1 + p + K)]
+
+fit1 <- X1 %*% m1
+
+resi1 <- V1 - fit1
+
+sigma12 <- var(resi1)
+
+resi1 <- resi1 / as.numeric(sqrt(sigma12))
+
+U2pos <- resi1 > 3
+U2neg <- resi1 < -3
+
+U2 <- matrix(0, nrow = n, ncol = K2)
+
+for (i in 1:n) {
+  tmppos <- U2pos[i]
+  tmpneg <- U2neg[i]
+  if (tmppos == TRUE) {
+    U2[i, 2] <- 1
+  } else if (tmpneg == TRUE) {
+    U2[i, 3] <- 1
+  }
+}
+
+gamma2 <- colMeans(U2)
+
+Gamma2 <- matrix(0, K2, K2)
+for (i in 2:n) {
+  for (j in 1:K2) {
+    if (U2[i - 1, j] == 1) {
+      K2 <- j
+      break
+    }
+  }
+  for (j in 1:K2) {
+    if (U2[i, j] == 1) {
+      K2 <- j
+      break
+    }
+  }
+  Gamma1[K1, K2] <- Gamma1[K1, K2] + 1
+}
+
+Gamma1 <- Gamma1 / rowSums(Gamma1)
+
+X1 <- cbind(1, T1, U1, U2)
+m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K1 + K2)), V1, X1)
+
+beta10 <- m1[1]
+beta12 <- m1[2:(p + 1)]
+delta10 <- m1[(p + 2):(1 + p + K1)]
+delta20 <- m1[(2 + p + K1):(1 + p + K1 + K2)]
+
+fit1 <- X1 %*% m1
+
+resi1 <- V1 - fit1
+
+sigma12 <- var(resi1)
+
+resi1 <- resi1 / as.numeric(sqrt(sigma12))
+
+
+tau1 <- getTau2(m1, sigma12, lambda21)
+
+taubeta10 <- tau1[1]
+taubeta12 <- tau1[2:(p + 1)]
+taudelta10 <- tau1[(p + 2):(1 + p + K1)]
+taudelta20 <- tau1[(2 + p + K1):(1 + p + K1 + K2)]
+###############################
+
 kk <- 0
 for (i in 1:(nsim + burnin)) {
  
   ###############################
   #for (j in 1:(burnin + 1)) {
-  m1 <- getGaussianPosterior(
-    V1, beta10, taubeta10, sigma12, lambda21, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),
-    matrix(0, 1, 1), beta12, delta10, matrix(0, 1, 1), matrix(0, 1, 1), taubeta12, taudelta10,
-    matrix(0, 1, 1), 0, p, K, 0)
+  #m1 <- getGaussianPosterior(
+  #  V1, beta10, taubeta10, sigma12, lambda21, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),
+  #  matrix(0, 1, 1), beta12, delta10, matrix(0, 1, 1), matrix(0, 1, 1), taubeta12, taudelta10,
+  #  matrix(0, 1, 1), 0, p, K, 0)
+  
+  m1 <- getGaussianPosterior_Isolated_Sustained(
+    V1, beta10, taubeta10, sigma12, lambda21, matrix(0, 1, 1), T1,
+    U1,
+    U2,
+    matrix(0, 1, 1),
+    matrix(0, 1, 1), beta12, 
+    delta10, matrix(0, 1, 1),
+    delta20, matrix(0, 1, 1),
+    matrix(0, 1, 1),
+    taubeta12,
+    taudelta10,
+    matrix(0, 1, 1),
+    taudelta20,
+    matrix(0, 1, 1),
+    0, p, K1, K2, 0) 
   
   beta10 <- m1$betadelta[1]
   beta12 <- m1$betadelta[2:(p + 1)]
-  delta10 <- m1$betadelta[(p + 2):(1 + p + K)]
+  delta10 <- m1$betadelta[(p + 2):(1 + p + K1)]
+  delta20 <- m1$betadelta[(2 + p + K1):(1 + p + K1 + K2)]
   
   sigma12 <- var(V1 - m1$fit1)
   
   taubeta10 <- m1$tau2all[1]
   taubeta12 <- m1$tau2all[2:(p + 1)]
-  taudelta10 <- m1$tau2all[(p + 2):(1 + p + K)]
-  
+  taudelta10 <- m1$tau2all[(p + 2):(1 + p + K1)]
+  taudelta20 <- m1$tau2all[(2 + p + K1):(1 + p + K1 + K2)]
+    
   fit1 <- m1$fit1
   #}
-  zetadelta1 <- V1 - m1$fit0
+  zetadelta1 <- V1 - m1$fit0 - U2 %*% delta10
   #tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
   tmpU1 <- getUWithoutW_MC(zetadelta1, K, delta10, sigma12, Gamma1, gamma1)
+  U1 <- tmpU1$U
+  prob1 <- tmpU1$prob
+  
+  tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, Gamma1, gamma1)
   U1 <- tmpU1$U
   prob1 <- tmpU1$prob
   ###############################
