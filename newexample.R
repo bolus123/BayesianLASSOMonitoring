@@ -1,3 +1,8 @@
+library(GIGrvg)
+library(breakfast)
+library(pscl)
+
+
 dat <-read.csv(file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
 
 DateTime <- strptime(dat$Admit.Date.Time, format = "%m/%d/%Y %I:%M:%S %p", tz = "America/Chicago")
@@ -130,14 +135,14 @@ p <- 5
 lambda20 <- 5.0
 lambda21 <- 5.0
 
-burnin <- 100
-nsim <- 1000
+burnin <- 50
+nsim <- 100
 
 ##########################
 
 X1 <- IsolatedShift(length(tma))
 X2 <- SustainedShift(length(tma))
-X3 <- GradualShift(length(tma))
+#X3 <- GradualShift(length(tma))
 XShift <- cbind(X1, X2, X3)
 
 q <- dim(XShift)[2]
@@ -219,6 +224,36 @@ for (i in 1:(nsim + burnin)) {
 
 ##########################
 
+alpha <- 0.5
+CI <- matrix(NA, nrow = 1 + q + p, ncol = 3)
+
+for (i in 1:(1 + q + p)) {
+  
+  CI[i, 1:2] <- quantile(betamat1[, i], c(alpha / 2, 1 - alpha / 2)) 
+  CI[i, 3] <- 1 - (CI[i, 1] <= 0 & 0 <= CI[i, 2])
+  
+}
+
+which(CI[, 3] == 1)
+
+truebetamat1 <- colMeans(betamat1)
+truebetamat1[which(CI[, 3] == 0)] <- 0
+
+plot(tma)
+points(cbind(1, XShift) %*% colMeans(betamat1[, 1:1167]), type = 'l', col = 'red')
+
+plot(truebetamat1[2:(length(tma)+1)], col = 'red', type = 'l')
+plot(X2 %*% (truebetamat1[(length(tma) + 2):(2 * length(tma)-1)]), col = 'red', type = 'l')
+plot(X3 %*% truebetamat1[(2 * length(tma)):(3 * length(tma)-3)], col = 'red', type = 'l')
+plot(X2 %*% (truebetamat1[(length(tma) + 2):(2 * length(tma)-1)]) + X3 %*% truebetamat1[(2 * length(tma)):(3 * length(tma)-3)], 
+     col = 'red', type = 'l')
+
+
+plot(XShift[, 1:length(tma)] %*% colMeans(betamat1[, 1:length(tma)])
+
+
+##########################
+
 q <- 0
 
 Y <- tma;
@@ -270,6 +305,10 @@ for (i in 1:(nsim + burnin)) {
     
   }
 }
+
+#############
+
+
 
 #############
 
