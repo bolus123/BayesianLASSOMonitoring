@@ -143,8 +143,9 @@ nsim <- 100
 X1 <- IsolatedShift(length(tma))
 X2 <- SustainedShift(length(tma))
 #X3 <- GradualShift(length(tma))
-XShift <- cbind(X1, X2, X3)
-
+#XShift <- cbind(X1, X2, X3)
+XShift <- cbind(X1, X2)
+                
 q <- dim(XShift)[2]
 
 betamat1 <- matrix(NA, nrow = nsim, ncol = 1 + q + p)
@@ -244,7 +245,7 @@ points(cbind(1, XShift) %*% colMeans(betamat1[, 1:1167]), type = 'l', col = 'red
 
 plot(truebetamat1[2:(length(tma)+1)], col = 'red', type = 'l')
 plot(X2 %*% (truebetamat1[(length(tma) + 2):(2 * length(tma)-1)]), col = 'red', type = 'l')
-plot(X3 %*% truebetamat1[(2 * length(tma)):(3 * length(tma)-3)], col = 'red', type = 'l')
+#plot(X3 %*% truebetamat1[(2 * length(tma)):(3 * length(tma)-3)], col = 'red', type = 'l')
 plot(X2 %*% (truebetamat1[(length(tma) + 2):(2 * length(tma)-1)]) + X3 %*% truebetamat1[(2 * length(tma)):(3 * length(tma)-3)], 
      col = 'red', type = 'l')
 
