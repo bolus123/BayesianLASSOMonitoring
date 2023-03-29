@@ -882,6 +882,192 @@ arma::vec checkDim(Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
   
 }
 
+// [[Rcpp::export]]
+arma::mat IsolatedShift(int T) {
+  arma::mat out(T, T);
+  out.eye();
+  return(out);
+} 
+
+// [[Rcpp::export]]
+arma::mat SustainedShift(int T) {
+  
+  arma::mat out(T, T - 2);
+  out.zeros();
+  
+  int i = 0;
+  int j = 0;
+  for (j = 0; j < (T - 2); j++) {
+    for (i = 0; i < T; i++) {
+      if (i > j) {
+        out(i, j) = 1.0;
+      }
+    }
+  }
+  
+  return(out);
+} 
+
+// [[Rcpp::export]]
+arma::mat GradualShift(int T) {
+  
+  arma::mat out(T, T - 2);
+  out.zeros();
+  
+  int i = 0;
+  int j = 0;
+  for (j = 0; j < (T - 2); j++) {
+    for (i = 0; i < T; i++) {
+      if (i > j) {
+        out(i, j) = (i - j) * 1.0;
+      }
+    }
+  }
+  
+  return(out);
+} 
+
+// [[Rcpp::export]]
+Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::vec beta0, arma::vec tau2beta0,
+                                double sigma2, double lambda2, 
+                                arma::mat X,
+                                arma::mat V,
+                                arma::vec beta1, 
+                                arma::vec beta2, 
+                                arma::vec tau2beta1,
+                                arma::vec tau2beta2,
+                                int q, int p) {
+  
+  // initialize all vectors;
+  
+  
+  
+  int n = Y.n_elem;
+  int m = 1;
+  
+  //Rcpp::Rcout << 0.1 << std::endl;
+  
+  arma::vec Y_ = Y; 
+  arma::mat X_ = X;
+  arma::mat V_ = V;
+  
+  arma::vec beta0_ = beta0;
+  arma::vec beta1_ = beta1;
+  arma::vec beta2_ = beta2;
+
+  arma::vec tau2beta0_ = tau2beta0;
+  arma::vec tau2beta1_ = tau2beta1;
+  arma::vec tau2beta2_ = tau2beta2;
+
+  //Rcpp::Rcout << 0.2 << std::endl;
+  
+  m = m + q + p;
+  
+  // initialize all vectors;
+  
+  arma::vec zeta;
+  arma::vec Onebeta0;
+  Onebeta0.zeros(n);
+  arma::vec Xbeta1;
+  Xbeta1.zeros(n);
+  arma::vec Vbeta2;
+  Vbeta2.zeros(n);
+
+  arma::vec on = arma::ones(n);
+  
+  arma::vec betadelta;
+  arma::vec tau2all;
+  
+  // update beta0;
+  
+  if (q > 0) {
+    Xbeta1 = X_ * beta1_;
+  }
+  
+  
+  if (p > 0) {
+    Vbeta2 = V_ * beta2_;
+  }
+  
+  
+  //Rcpp::Rcout << "U_" << U_ << std::endl;
+  //Rcpp::Rcout << "delta0_" << delta0_ << std::endl;
+  
+  //cpp::Rcout << "Xbeta1" << Xbeta1 << std::endl;
+  //cpp::Rcout << "Tbeta2" << Tbeta2 << std::endl;
+  //cpp::Rcout << "Udelta0" << Udelta0 << std::endl;
+  //cpp::Rcout << "UWdelta1" << UWdelta1 << std::endl;
+  
+  
+  zeta = Y_ - (Xbeta1 + Vbeta2);
+  beta0_ = getBetaNonMonotonicity(zeta, on, tau2beta0_, sigma2);
+  Onebeta0 = on * beta0_;
+  betadelta = beta0_;
+  
+  
+  // update beta1;
+  
+  if (q > 0) {
+    zeta = Y_ - (Onebeta0 + Vbeta2);
+    beta1_ = getBetaNonMonotonicity(zeta, X_, tau2beta1_, sigma2);
+    Xbeta1 = X_ * beta1_;
+    betadelta = arma::join_cols(betadelta, beta1_);
+  }
+  
+  
+  // update beta2;
+  
+  if (p > 0) {
+    zeta = Y_ - (Onebeta0 + Xbeta1);
+    beta2_ = getBetaMonotonicity(zeta, V_, tau2beta2_, sigma2);
+    Vbeta2 = V_ * beta2_;
+    betadelta = arma::join_cols(betadelta, beta2_);
+  }
+  
+  
+  // update tau2beta0;
+  
+  //Rcpp::Rcout << beta0_ << std::endl;
+  //Rcpp::Rcout << sigma2 << std::endl;
+  //Rcpp::Rcout << lambda2 << std::endl;
+  
+  tau2beta0_ = getTau2(beta0_, sigma2, lambda2);
+  tau2all = tau2beta0_;
+  
+  
+  // update tau2beta1;
+  
+  if (q > 0) {
+    tau2beta1_ = getTau2(beta1_, sigma2, lambda2);
+    tau2all = arma::join_cols(tau2all, tau2beta1_);
+  }
+  
+  
+  // update tau2beta2;
+  
+  if (p > 0) {
+    tau2beta2_ = getTau2(beta2_, sigma2, lambda2);
+    tau2all = arma::join_cols(tau2all, tau2beta2_);
+  }
+  
+  
+  // output;
+  arma::vec fit0 = Onebeta0 + Vbeta2;
+  arma::vec fit1 = Onebeta0 + Xbeta1 + Vbeta2;
+  Rcpp::List out;
+  out = Rcpp::List::create(
+    Rcpp::_["betadelta"] = betadelta,
+    Rcpp::_["tau2all"] = tau2all,
+    Rcpp::_["expectedtau2all"] = getExpectedTau2(betadelta, sigma2, lambda2),
+    Rcpp::_["fit0"] = fit0,
+    Rcpp::_["fit1"] = fit1,
+    Rcpp::_["m"] = m,
+    Rcpp::_["q"] = q,
+    Rcpp::_["p"] = p
+  );
+  return(out);
+}
+
 
 // [[Rcpp::export]]
 Rcpp::List getGaussianPosterior(arma::vec V, arma::vec beta0, arma::vec tau2beta0,

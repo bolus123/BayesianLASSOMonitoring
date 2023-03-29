@@ -16,8 +16,7 @@ lambda20 <- 10#
 lambda21 <- 10#
 
 p <- 10#
-K1 <- 10#
-K2 <- 2#
+K <- 10#
 
 W <- 14
 
@@ -25,9 +24,7 @@ dat <- read.csv(file = '/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/
 
 #dat <- dat[367:1461, ]#dat[which(dat[, 1] == "5/1/16"):which(dat[, 1] == "1/1/17"), ]
 
-#dat <- dat[(732 - W + 1):1461, ]
-#dat <- dat[(732 - W + 1):1096, ]
-dat <- dat[(367 - W + 1):1461, ]
+dat <- dat[(732 - W + 1):1461, ]
 
 n <- dim(dat)[1]
 
@@ -59,22 +56,15 @@ sigmamat0 <- matrix(NA, nrow = nsim, ncol = 1)
 fit0mat0 <- matrix(NA, nrow = nsim, ncol = n)
 fit1mat0 <- matrix(NA, nrow = nsim, ncol = n)
 
-#betadeltamat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K1)
-#taumat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K1)
 
-betadeltamat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K1 + K2)
-taumat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K1 + K2)
+betadeltamat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)
+taumat1 <- matrix(NA, nrow = nsim, ncol = 1 + p + K)
 sigmamat1 <- matrix(NA, nrow = nsim, ncol = 1)
 fit0mat1 <- matrix(NA, nrow = nsim, ncol = n)
 fit1mat1 <- matrix(NA, nrow = nsim, ncol = n)
-
 Vmat1 <- matrix(NA, nrow = nsim, ncol = n)
-Uarray1 <- array(NA, c(n, K1, nsim))
-probarray1 <- array(NA, c(n, K1, nsim))
-
-Vmat2 <- matrix(NA, nrow = nsim, ncol = n)
-Uarray2 <- array(NA, c(n, K2, nsim))
-probarray2 <- array(NA, c(n, K2, nsim))
+Uarray1 <- array(NA, c(n, K, nsim))
+probarray1 <- array(NA, c(n, K, nsim))
 
 omegamat <- matrix(NA, nrow = nsim, ncol = 1)
 
@@ -110,7 +100,52 @@ tau0 <- getTau2(m0, sigma02, lambda20)
 taubeta00 <- tau0[1]
 taubeta02 <- tau0[2:(p + 1)]
 
+###############################
 
+V1 <- Y;
+T1 <- getT(V1, p)
+
+U1 <- idetect_rcpp(V1, K)
+U1 <- getU(U1, n, K)
+
+gamma1 <- colMeans(U1)
+
+Gamma1 <- matrix(0, K, K)
+for (i in 2:n) {
+  for (j in 1:K) {
+    if (U1[i - 1, j] == 1) {
+      K1 <- j
+      break
+    }
+  }
+  for (j in 1:K) {
+    if (U1[i, j] == 1) {
+      K2 <- j
+      break
+    }
+  }
+  Gamma1[K1, K2] <- Gamma1[K1, K2] + 1
+}
+
+Gamma1 <- Gamma1 / rowSums(Gamma1)
+
+
+X1 <- cbind(1, T1, U1)
+m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K)), V1, X1)
+
+beta10 <- m1[1]
+beta12 <- m1[2:(p + 1)]
+delta10 <- m1[(p + 2):(1 + p + K)]
+
+fit1 <- X1 %*% m1
+
+sigma12 <- var(V1 - fit1)
+
+tau1 <- getTau2(m1, sigma12, lambda21)
+
+taubeta10 <- tau1[1]
+taubeta12 <- tau1[2:(p + 1)]
+taudelta10 <- tau1[(p + 2):(1 + p + K)]
 
 ###############################
 kk <- 0
@@ -137,7 +172,7 @@ for (i in 1:(nsim + burnin)) {
     
     betadeltamat0[kk, ] <- m0$betadelta
     taumat0[kk, ] <- m0$tau2all
-    sigmamat0[kk, ] <- sigma02
+    sigmamat0[kk, ] <- sigma12
     fit0mat0[kk, ] <- m0$fit0
     fit1mat0[kk, ] <- m0$fit1
     
@@ -150,155 +185,34 @@ for (i in 1:(nsim + burnin)) {
   }
 }
 
-
 ###############################
-
-V1 <- Y;
-T1 <- getT(V1, p)
-
-U1 <- idetect_rcpp(V1, K1)
-U1 <- getU(U1, n, K1)
-
-gamma1 <- colMeans(U1)
-
-Gamma1 <- matrix(0, K1, K1)
-for (i in 2:n) {
-  for (j in 1:K1) {
-    if (U1[i - 1, j] == 1) {
-      kk1 <- j
-      break
-    }
-  }
-  for (j in 1:K1) {
-    if (U1[i, j] == 1) {
-      kk2 <- j
-      break
-    }
-  }
-  Gamma1[kk1, kk2] <- Gamma1[kk1, kk2] + 1
-}
-
-Gamma1 <- Gamma1 / rowSums(Gamma1)
-
-
-X1 <- cbind(1, T1, U1)
-m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K1)), V1, X1)
-
-
-
-beta10 <- m1[1]
-beta12 <- m1[2:(p + 1)]
-delta10 <- m1[(p + 2):(1 + p + K1)]
-
-fit1 <- X1 %*% m1
-
-resi1 <- V1 - fit1
-
-sigma12 <- var(resi1)
-
-resi1 <- resi1 / as.numeric(sqrt(sigma12))
-
-U2pos <- resi1 > 3.8
-U2neg <- resi1 < -3.8
-
-U2 <- matrix(0, nrow = n, ncol = K2)
-
-for (i in 1:n) {
-  tmppos <- U2pos[i]
-  tmpneg <- U2neg[i]
-  if (tmppos == TRUE) {
-    U2[i, 1] <- 1
-  } else if (tmpneg == TRUE) {
-    U2[i, 2] <- 1
-  } #else {
-    #U2[i, 1] <- 1
-  #}
-}
-
-gamma2 <- colMeans(U2)
-
-
-X1 <- cbind(1, T1, U1, U2)
-m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K1 + K2)), V1, X1)
-#X1 <- cbind(1, T1, U1)
-#m1 <- optim_rcpp(c(mean(V1), acf(V1, plot = FALSE)$acf[2], rep(0, p - 1 + K1)), V1, X1)
-
-beta10 <- m1[1]
-beta12 <- m1[2:(p + 1)]
-delta10 <- m1[(p + 2):(1 + p + K1)]
-delta20 <- m1[(2 + p + K1):(1 + p + K1 + K2)]
-
-fit1 <- X1 %*% m1
-
-resi1 <- V1 - fit1
-
-sigma12 <- var(resi1)
-
-resi1 <- resi1 / as.numeric(sqrt(sigma12))
-
-
-tau1 <- getTau2(m1, sigma12, lambda21)
-
-taubeta10 <- tau1[1]
-taubeta12 <- tau1[2:(p + 1)]
-taudelta10 <- tau1[(p + 2):(1 + p + K1)]
-taudelta20 <- tau1[(2 + p + K1):(1 + p + K1 + K2)]
-###############################
-
 kk <- 0
 for (i in 1:(nsim + burnin)) {
- 
+  
   ###############################
   #for (j in 1:(burnin + 1)) {
-  #m1 <- getGaussianPosterior(
-  #  V1, beta10, taubeta10, sigma12, lambda21, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),
-  #  matrix(0, 1, 1), beta12, delta10, matrix(0, 1, 1), matrix(0, 1, 1), taubeta12, taudelta10,
-  #  matrix(0, 1, 1), 0, p, K1, 0)
-  
-  m1 <- getGaussianPosterior_Isolated_Sustained(
-    V1, beta10, taubeta10, sigma12, lambda21, matrix(0, 1, 1), T1,
-    U1,
-    U2,
-    matrix(0, 1, 1),
-    matrix(0, 1, 1), beta12, 
-    delta10, matrix(0, 1, 1),
-    delta20, matrix(0, 1, 1),
-    matrix(0, 1, 1),
-    taubeta12,
-    taudelta10,
-    matrix(0, 1, 1),
-    taudelta20,
-    matrix(0, 1, 1),
-    0, p, K1, K2, 0) 
+  m1 <- getGaussianPosterior(
+    V1, beta10, taubeta10, sigma12, lambda21, matrix(0, 1, 1), T1, U1, matrix(0, 1, 1),
+    matrix(0, 1, 1), beta12, delta10, matrix(0, 1, 1), matrix(0, 1, 1), taubeta12, taudelta10,
+    matrix(0, 1, 1), 0, p, K, 0)
   
   beta10 <- m1$betadelta[1]
   beta12 <- m1$betadelta[2:(p + 1)]
-  delta10 <- m1$betadelta[(p + 2):(1 + p + K1)]
-  #delta20 <- m1$betadelta[(2 + p + K1):(1 + p + K1 + K2)]
+  delta10 <- m1$betadelta[(p + 2):(1 + p + K)]
   
   sigma12 <- var(V1 - m1$fit1)
   
   taubeta10 <- m1$tau2all[1]
   taubeta12 <- m1$tau2all[2:(p + 1)]
-  taudelta10 <- m1$tau2all[(p + 2):(1 + p + K1)]
-  #taudelta20 <- m1$tau2all[(2 + p + K1):(1 + p + K1 + K2)]
-    
+  taudelta10 <- m1$tau2all[(p + 2):(1 + p + K)]
+  
   fit1 <- m1$fit1
   #}
-  zetadelta1 <- V1 - m1$fit0 - U2 %*% delta20
+  zetadelta1 <- V1 - m1$fit0
   #tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
-  tmpU1 <- getUWithoutW_MC(zetadelta1, K1, delta10, sigma12, Gamma1, gamma1)
+  tmpU1 <- getUWithoutW_MC(zetadelta1, K, delta10, sigma12, Gamma1, gamma1)
   U1 <- tmpU1$U
   prob1 <- tmpU1$prob
-  
-  #########
-  
-  zetadelta2 <- V1 - m1$fit0 - U1 %*% delta10
-  #tmpU1 <- getUWithoutW(zetadelta1, K, delta10, sigma12, gamma1)
-  tmpU2 <- getUWithoutW(zetadelta2, K2, delta20, sigma12, gamma2)
-  U2 <- tmpU2$U
-  prob2 <- tmpU2$prob
-  
   ###############################
   ###############################
   lambda21 <- getLambda2EM(c(m1$expectedtau2all))
@@ -315,9 +229,6 @@ for (i in 1:(nsim + burnin)) {
     Uarray1[,,kk] <- U1
     probarray1[,,kk] <- prob1
     
-    Uarray2[,,kk] <- U2
-    probarray2[,,kk] <- prob2
-    
     lambda2mat1[kk, ] <- lambda21
     
     #fit0mat[kk, ] <- (1 - omega) * exp(m1$fit0)
@@ -329,23 +240,6 @@ for (i in 1:(nsim + burnin)) {
 
 ###############################
 
-plot(c(1, dim(fit0mat0)[2]), 
-     c(min(fit0mat0, fit1mat1), max(fit0mat0, fit1mat1)),
-     type = 'n')
-
-for (i in 1:nsim) {
-  
-  points(1:dim(fit0mat0)[2], fit1mat1[i, ], col = 'red')
-  
-}
-
-for (i in 1:nsim) {
-  
-  points(1:dim(fit0mat0)[2], fit0mat0[i, ])
-  
-}
-
-###############################
 tol <- 1e-6
 perc <- 0.8
 
@@ -445,7 +339,7 @@ for (i in 1:(nsim + burnin)) {
     Uarray1[,,kk] <- U1
     probarray1[,,kk] <- prob1
     
-    lambda2mat1[kk, ] <- lambda2
+    lambda2mat1[kk, ] <- lambda21
     
     #fit0mat[kk, ] <- (1 - omega) * exp(m1$fit0)
     #fit1mat[kk, ] <- (1 - omega) * exp(m1$fit1)
@@ -516,7 +410,7 @@ TT <- matrix(NA, nrow = nsim, ncol = 1)
 for (i in 1:nsim) {
   TT[i, ] <- sum((Y - fit0mat0[i, ]) ^ 2 / sigmamat0[i, ]) - 
     sum((Y - fit1mat1[i, ]) ^ 2 / sigmamat1[i, ])
-    
+  
 }
 
 (mean(TT > 0))
@@ -537,10 +431,6 @@ for (i in 1:nsim) {
 2 * min(mean(betadeltamat1[, 20] > 0), mean(betadeltamat1[, 20]  < 0))
 2 * min(mean(betadeltamat1[, 21] > 0), mean(betadeltamat1[, 21]  < 0))
 
-2 * min(mean(betadeltamat1[, 22] > 0), mean(betadeltamat1[, 22]  < 0))
-2 * min(mean(betadeltamat1[, 23] > 0), mean(betadeltamat1[, 23]  < 0))
-#2 * min(mean(betadeltamat1[, 24] > 0), mean(betadeltamat1[, 24]  < 0))
-
 mean(betadeltamat1[, 12])
 mean(betadeltamat1[, 13])
 mean(betadeltamat1[, 14])
@@ -553,16 +443,16 @@ mean(betadeltamat1[, 20])
 mean(betadeltamat1[, 21])
 
 ###############################
-probll <- matrix(NA, nrow = n, ncol = K1)
+probll <- matrix(NA, nrow = n, ncol = K)
 U1vec <- rep(NA, n)
 for (i in 1:n) {
-  for (j in 1:K1) {
+  for (j in 1:K) {
     probll[i, j] <- median(probarray1[i, j, ], na.rm = T) 
   }
   U1vec[i] <- which.max(probll[i, ])
 }
 
-U1vec[!(U1vec %in% c(1, 2, 4, 5, 6))] <- 0
+U1vec[!(U1vec %in% c(1))] <- 0
 
 ###############################
 #plot(Y[500:1000], type = 'l')
@@ -600,6 +490,7 @@ UU <- U1vec
 
 
 #UU[UU == 1] <- 0
+
 
 plot(YY, type = 'l', main = "Walker County, AL 2018 and 2019", 
      ylab = 'Opioid-overdose-related ER Visits', xaxt = "n", xlab = "")
@@ -655,21 +546,85 @@ points(YY, col = col2, cex = 0.7, pch = 1)
 col1 <- rep(NA, n)
 #col1[which(UU == 1)] <- "green"
 
+abline(v = max(which(UU == 1)) + 0.5, col = 'red', lty = 2)
+
+#col1[max(which(UU == 1))] <- "red"
+  #  col1[which(UU == 4)] <- "red"
+#    col1[which(UU == 5)] <- "red"
+
+#col1[which(UU == 2)] <- "green"
+#      col1[which(UU == 9)] <- "green"
+
+#points(YY, col = col1, cex = 1.2, pch = 16)
+
+legend("topright", 
+       legend = c("Higher Risk", "Lower or Mitigated Risk"), title = 'Before or After Red Dashed Line')
+###############################
+plot(cumsum(YY), type = 'l', main = "Walker County, AL 2018 and 2019", 
+     ylab = 'Cumulative Opioid-overdose-related ER Visits', xaxt = "n", xlab = "")
+
+axis(1, at = c(
+  1, 
+  #32, 
+  #60,
+  91,
+  #121,
+  #152,
+  182,
+  #213,
+  #244,
+  274,
+  #305,
+  #335,
+  379, 
+  469,
+  560,
+  652
+), labels = c(
+  "Jan 1, 18",
+  #"Feb 1",
+  #"Mar 1",
+  "Apr 1, 18",
+  #"May 1",
+  #"Jun 1",
+  "Jul 1, 18",
+  #"Aug 1",
+  #"Sep 1",
+  "Oct 1, 18",
+  #"Nov 1",
+  #"Dec 1"
+  "Jan 1, 19",
+  #"Feb 1",
+  #"Mar 1",
+  "Apr 1, 19",
+  #"May 1",
+  #"Jun 1",
+  "Jul 1, 19",
+  #"Aug 1",
+  #"Sep 1",
+  "Oct 1, 19"#,
+  #"Nov 1",
+  #"Dec 1"
+))
 
 
-col1[which(UU == 1)] <- "red"
+abline(v = max(which(UU == 1)) + 0.5, col = 'red', lty = 2)
+
+#col1[max(which(UU == 1))] <- "red"
 #  col1[which(UU == 4)] <- "red"
 #    col1[which(UU == 5)] <- "red"
-      
-    #col1[which(UU == 2)] <- "green"
-    #      col1[which(UU == 9)] <- "green"
-    
-    points(YY, col = col1, cex = 1.2, pch = 16)
-    
-    legend("topright", 
-           legend = c("High", "Mitigated or Low"), 
-           col = c('red', "black"), pch = c(16, 1), title = 'Risk')
+
+#col1[which(UU == 2)] <- "green"
+#      col1[which(UU == 9)] <- "green"
+
+#points(YY, col = col1, cex = 1.2, pch = 16)
+
+legend("bottomright", 
+       legend = c("Higher Risk", "Lower or Mitigated Risk"), title = 'Before or After Red Dashed Line')
+
+
 ###############################
+
 YY <- c(rep(0, W - 1), dat1)
 YY <- YY[732:1096]
 UU <- c(rep(0, W - 1), U1vec)
@@ -718,15 +673,15 @@ col1 <- rep(NA, n)
 
 col1[which(UU == 3)] <- "red"
   col1[which(UU == 4)] <- "red"
-  col1[which(UU == 5)] <- "red"
+    col1[which(UU == 5)] <- "red"
+      
+    #col1[which(UU == 2)] <- "green"
+    #      col1[which(UU == 9)] <- "green"
     
-#col1[which(UU == 2)] <- "green"
-#      col1[which(UU == 9)] <- "green"
-        
-      points(YY, col = col1, cex = 1.2, pch = 16)
+    points(YY, col = col1, cex = 1.2, pch = 16)
     
     legend("topright", 
            legend = c("High risk", "Mitigated or low risk"), 
            col = c('red', "black"), pch = c(16, 16, 16))
     
-###############################
+    ###############################
