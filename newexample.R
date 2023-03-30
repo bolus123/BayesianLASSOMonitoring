@@ -327,6 +327,6 @@ for (i in 1:nsim1) {
   fit21 <- fit1mat2[target2, ]
   sigma22 <- sigmamat2[target2]
   
-  statmat[i, 1] <- (sum((Y - fit21)^2) / sigma22) - (sum((Y - fit11)^2) / sigma21)
+  statmat[i, 1] <- ((sum((Y - fit21)^2)) - (sum((Y - fit11)^2) )/ sigma21)
   
 }

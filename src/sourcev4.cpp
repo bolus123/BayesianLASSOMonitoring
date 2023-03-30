@@ -1068,6 +1068,12 @@ Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::vec beta0, arma::vec tau2be
   return(out);
 }
 
+// [[Rcpp::export]]
+double HarmonicMean(arma::vec Y, arma::vec beta)  {
+  
+} 
+
+
 
 // [[Rcpp::export]]
 Rcpp::List getGaussianPosterior(arma::vec V, arma::vec beta0, arma::vec tau2beta0,
