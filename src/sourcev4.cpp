@@ -1069,10 +1069,18 @@ Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::vec beta0, arma::vec tau2be
 }
 
 // [[Rcpp::export]]
-double HarmonicMean(arma::vec Y, arma::vec beta)  {
-  
+double marginallik(arma::vec Y, arma::mat X, arma::vec beta, double sigma2)  {
+  int T = Y.n_elem;
+  Rcpp::NumericVector eps = Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(Y - X * beta));
+  int i = 0;
+  Rcpp::NumericVector marginalLik(T);
+  double tmp = 1.0;
+  for (i = 0; i < T; i++) {
+    marginalLik(i) = R::dnorm4(eps(i), 0.0, sqrt(sigma2), false);
+    tmp = tmp * marginalLik(i);
+  }
+  return(tmp);
 } 
-
 
 
 // [[Rcpp::export]]
