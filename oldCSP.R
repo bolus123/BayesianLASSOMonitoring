@@ -26,6 +26,12 @@ dat <- read.csv(file = '/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/
 
 dat <- dat[(732 - W + 1):1461, ]
 
+### 2021-05-19
+### 2021-03-11
+### 2021-05-11
+
+dat$Freq <- dat$Freq[which(dat$Day == "5/19/21")] - 1
+
 n <- dim(dat)[1]
 
 #Y <- dat[, 2]
