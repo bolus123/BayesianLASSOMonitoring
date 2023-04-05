@@ -140,11 +140,11 @@ nsim <- 100
 
 ##########################
 
-X1 <- IsolatedShift(length(tma))
-X2 <- SustainedShift(length(tma))
-#X3 <- GradualShift(length(tma))
-#XShift <- cbind(X1, X2, X3)
-XShift <- cbind(X1, X2)
+X1 <- IsolatedShift(length(tlog))
+X2 <- SustainedShift(length(tlog))
+X3 <- GradualShift(length(tlog))
+XShift <- cbind(X1, X2, X3)
+#XShift <- cbind(X1, X2)
                 
 q <- dim(XShift)[2]
 
@@ -166,8 +166,8 @@ lambda2mat2 <- matrix(NA, nrow = nsim, ncol = 1)
 
 ##########################
 
-Y <- tma;
-V <- getT(tma, p)
+Y <- tlog;
+V <- getT(tlog, p)
 
 X <- cbind(V, XShift)
 
@@ -240,13 +240,13 @@ which(CI[, 3] == 1)
 truebetamat1 <- colMeans(betamat1)
 truebetamat1[which(CI[, 3] == 0)] <- 0
 
-plot(tma)
+plot(tlog)
+#points(cbind(1, XShift) %*% colMeans(betamat1[, 1:779]), type = 'l', col = 'red')
 points(cbind(1, XShift) %*% colMeans(betamat1[, 1:1167]), type = 'l', col = 'red')
-
-plot(truebetamat1[2:(length(tma)+1)], col = 'red', type = 'l')
-plot(X2 %*% (truebetamat1[(length(tma) + 2):(2 * length(tma)-1)]), col = 'red', type = 'l')
+plot(truebetamat1[2:(length(tlog)+1)], col = 'red', type = 'l')
+plot(X2 %*% (truebetamat1[(length(tlog) + 2):(2 * length(tlog)-1)]), col = 'red', type = 'l')
 #plot(X3 %*% truebetamat1[(2 * length(tma)):(3 * length(tma)-3)], col = 'red', type = 'l')
-plot(X2 %*% (truebetamat1[(length(tma) + 2):(2 * length(tma)-1)]) + X3 %*% truebetamat1[(2 * length(tma)):(3 * length(tma)-3)], 
+plot(X2 %*% (truebetamat1[(length(tlog) + 2):(2 * length(tlog)-1)]) + X3 %*% truebetamat1[(2 * length(tlog)):(3 * length(tlog)-3)], 
      col = 'red', type = 'l')
 
 
