@@ -152,7 +152,7 @@ dat1 <- bb
 
 #############
 
-w <- 14
+w <- 28
 
 cntma <- rep(NA, dim(dat1)[1])
 
@@ -167,16 +167,18 @@ for (i in 1:dim(dat1)[1]) {
 }
 
 #############
+p <- 5
+V <- getT(cntma, p)
 
 check <- which(as.Date("2017-01-01") <= as.Date(dat1[, 1]) & as.Date(dat1[, 1]) <= as.Date("2020-12-31"))
 
 cntma <- cntma[check]
-
+V <- V[check, ]
 #############
 
 T <- length(cntma)
 
-p <- 5
+
 
 lambda20 <- 5.0
 lambda21 <- 5.0
@@ -188,8 +190,8 @@ nsim <- 100
 X1 <- IsolatedShift(length(cntma))
 X2 <- SustainedShift(length(cntma))
 X3 <- GradualShift(length(cntma))
-XShift <- cbind(X1, X2, X3)
-#XShift <- cbind(X1, X2)
+#XShift <- cbind(X1, X2, X3)
+XShift <- cbind(X1, X2)
                 
 q <- dim(XShift)[2]
 
@@ -212,7 +214,7 @@ lambda2mat2 <- matrix(NA, nrow = nsim, ncol = 1)
 ########################
 
 Y <- cntma;
-V <- getT(cntma, p)
+
 
 X <- cbind(V, XShift)
 
@@ -274,7 +276,7 @@ for (i in 1:(nsim + burnin)) {
 
 ##########################
 
-alpha <- 0.5
+alpha <- 0.05
 CI <- matrix(NA, nrow = 1 + q + p, ncol = 3)
 
 for (i in 1:(1 + q + p)) {
@@ -290,8 +292,46 @@ truebetamat1 <- colMeans(betamat1)
 truebetamat1[which(CI[, 3] == 0)] <- 0
 
 plot(cntma)
-points(cbind(1, XShift) %*% colMeans(betamat1[, 1:2921]), type = 'l', col = 'red')
+points(cbind(1, V) %*% colMeans(betamat1[, c(1, (dim(betamat1)[2] - p + 1):dim(betamat1)[2])]), type = 'l', col = 'blue')
+points(cbind(1, XShift, V) %*% colMeans(betamat1), type = 'l', col = 'red')
 plot(truebetamat1[2:(length(cntma)+1)], col = 'red', type = 'l')
 plot(X2 %*% (truebetamat1[(length(cntma) + 2):(2 * length(cntma)-1)]), col = 'red', type = 'l')
-plot(X2 %*% (truebetamat1[(length(cntma) + 2):(2 * length(cntma)-1)]) + X3 %*% truebetamat1[(2 * length(cntma)):(3 * length(cntma)-3)], 
-     col = 'red', type = 'l')
+#plot(X2 %*% (truebetamat1[(length(cntma) + 2):(2 * length(cntma)-1)]) + X3 %*% truebetamat1[(2 * length(cntma)):(3 * length(cntma)-3)], 
+#     col = 'red', type = 'l')
+
+##########################
+
+r <- matrix(NA, nrow = nsim, ncol = length(cntma))
+
+for (i in 1:nsim) {
+  
+  r[i, ] <- (Y - fit0mat1[i, ]) ^ 2 / var(Y - fit0mat1[i, ])
+
+}
+
+##########################
+
+d <- rep(NA, nsim)
+D <- rep(NA, nsim)
+
+for (i in 1:nsim) {
+  
+  d[i] <- sum((((Y - fit0mat1[i, ]) ^ 2 / var(Y - fit0mat1[i, ]) - (Y - fit1mat1[i, ])) ^ 2 / sigmamat1[i]))
+  Yrep <- rnorm(length(cntma), fit1mat1[i, ], sqrt(sigmamat1[i]))
+  D[i] <- sum((((Yrep - fit0mat1[i, ]) ^ 2 / var(Y - fit0mat1[i, ]) - (Yrep - fit1mat1[i, ])) ^ 2/ sigmamat1[i]) )
+  
+}
+
+
+
+##########################
+
+ee1 <- colMeans(betamat1)
+ee2 <- betamat1
+
+pp <- dim(betamat1)[2]
+
+for (i in 1:pp) {
+  ee2[, i] <- (ee2[, i] - ee1[i]) / sqrt(var(betamat1[, i]))
+  ee1[i] <- ee1[i] / sqrt(var(betamat1[, i]))
+}
