@@ -3,9 +3,9 @@ library(breakfast)
 library(pscl)
 
 
-#dat <-read.csv(file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
+dat <-read.csv(file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
 
-dat <- read.csv(file = "C:/Users/Yuhui/Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
+#dat <- read.csv(file = "C:/Users/Yuhui/Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
 
 DateTime <- strptime(dat$Admit.Date.Time, format = "%m/%d/%Y %I:%M:%S %p", tz = "America/Chicago")
 
@@ -277,6 +277,8 @@ for (i in 1:(nsim + burnin)) {
   }
 }
 
+#save(betamat1, file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/betamat.csv")
+
 ##########################
 
 alpha <- 0.05
@@ -347,6 +349,8 @@ plot(X2 %*% (truebetamat1[(length(cntma) + 2):(2 * length(cntma)-1)]), col = 're
 #     col = 'red', type = 'l')
 
 ##########################
+
+
 
 logpdf <- function(Y, fit) {
   sigma2 <- var(Y - fit)
@@ -650,7 +654,145 @@ getKLResiCSPPPAlt <- function(Y, fit0, fit1, nsim, breaks = 10) {
 }
 
 
+
+getResiCS <- function(Y, V, beta01, nsim) {
+  
+  nn <- length(Y)
+  
+  X <- cbind(1, V)
+  sigma02 <- var(Y - X %*% beta0)
+  
+  resi0Mat <- matrix(NA, nrow = nsim, ncol = nn)
+  resi0repMat <- matrix(NA, nrow = nsim, ncol = nn)
+  for (i in 1:nsim) {
+    resi0 <- Y - fit0[i, ]
+    resi0Mat[i, ] <- resi0
+  }
+  
+  mean0vec <- colMeans(resi0Mat)
+  sigma02vec <- rep(NA, nn)
+  
+  Yrep <- rep(NA, nn)
+  
+  for (i in 1:nn) {
+    sigma02vec[i] <- var(resi0Mat[, i] - mean0vec[i])
+  }
+  
+  for (i in 1:nsim) {
+    Yrep <- rnorm(nn, fit0[i, ], sqrt(sigma02vec))
+    resi0rep <- Yrep - fit0[i, ]
+    resi0repMat[i, ] <- resi0rep
+  }
+  
+
+  mean0repvec <- colMeans(resi0repMat)
+  
+  out <- rep(NA, ncol = nn)
+  
+  out <- nsim * (mean0vec - mean0repvec) ^ 2 / (sigma02vec)
+  #out <- log(out)
+  out
+}
+
+findrootResiCSPPP <- function(FAP0, Y, fit0, nsim, nnsim, interval = c(0, 5), tol = 1e-4) {
+  
+  rootfinding <- function(cc, FAP0, ref, T) {
+    check <- ref <= cc
+    NSE <- rowSums(check) == T
+    ProbNSE <- mean(NSE)
+    diff <- (1 - FAP0) - ProbNSE
+    cat("cc:", cc, "and diff:", diff, '\n')
+    return(diff)
+  }
+  
+  ref <- matrix(NA, nrow = nnsim, ncol = length(Y))
+  
+  for (i in 1:nnsim) {
+    ref[i, ] <- getResiCS(Y, fit0, nsim) 
+  }
+  
+  T <- length(Y)
+  
+  #ref <- log(ref)
+  #debug(rootfinding)
+  uniroot(rootfinding, interval = interval, FAP0 = FAP0, 
+          ref = ref, tol = tol, T = T)$root
+  
+}
+
+
+getResiCSAlt <- function(Y, fit0, fit1, nsim) {
+  nn <- length(Y)
+  
+  resi0Mat <- matrix(NA, nrow = nsim, ncol = nn)
+  resi1Mat <- matrix(NA, nrow = nsim, ncol = nn)
+  for (i in 1:nsim) {
+    resi0 <- Y - fit0[i, ]
+    resi0Mat[i, ] <- resi0
+  }
+  
+  mean0vec <- colMeans(resi0Mat)
+  sigma02vec <- rep(NA, nn)
+  
+  Yrep <- rep(NA, nn)
+  
+  for (i in 1:nn) {
+    sigma02vec[i] <- var(resi0Mat[, i] - mean0vec[i])
+  }
+  
+  for (i in 1:nsim) {
+    resi1Mat[i, ] <- rnorm(nn, mean0vec, sqrt(sigma02vec))
+  }
+  
+  
+  mean1vec <- colMeans(resi1Mat)
+  
+  out <- rep(NA, ncol = nn)
+  
+  out <- nsim * (mean0vec - mean1vec) ^ 2 / (sigma02vec)
+  #out <- log(out)
+  out
+}
+
+
+SimLinear <- function(Y, beta0, beta1, initial = rep(0, length(beta1))) {
+  n <- length(Y)
+  Yrep <- rep(NA, n)
+  Yrep <- c(initial, Yrep)
+  sigma2 <- var(Y - beta0)
+  q <- length(beta1)
+  for (i in (q + 1):(n + q)) {
+    Yrep[i] <- beta0 + Yrep[(i - q):(i - 1)] %*% beta1 + rnorm(1, 0, sqrt(sigma2))
+  }
+  Yrep[-c(1:q)]
+}
+
+
+beta0 <- betamat1[1, 1]
+beta1 <- betamat1[1, (dim(betamat1)[2] - p + 1):dim(betamat1)[2]]
+
+#debug(SimLinear)
+SimLinear(Y, beta0, beta1, initial = V[1, ])
+
 fit0 <- t(cbind(1, V) %*% t(betamat1[, c(1, (dim(betamat1)[2] - p + 1):dim(betamat1)[2])]))
+fit1 <- t(cbind(1, XShift, V) %*% t(betamat1))
+
+#debug(getResiCS)
+qq <- getResiCS(Y, fit0, nsim)
+
+#debug(findrootResiCSPPP)
+ee1 <- findrootResiCSPPP(0.2, Y, fit0, nsim, nnsim = 1000, interval = c(1e-4, 20), tol = 1e-4)
+
+ee2 <- findrootResiCSPPP(0.5, Y, fit0, nsim, nnsim = 1000, interval = c(1e-4, 1000), tol = 1e-4)
+  
+dd <- getResiCSAlt(Y, fit0, fit1, nsim)
+
+
+
+
+
+
+
 
 qq <- getKSlogpdfCSPPP(Y, fit0, nsim)
 qq <- getKSResiCSPPP(Y, fit0, nsim)
@@ -658,7 +800,7 @@ qq <- getKSResiCSPPP(Y, fit0, nsim)
 qq <- getKLResiCSPPP(Y, fit0, nsim)
 
 
-fit1 <- t(cbind(1, XShift, V) %*% t(betamat1))
+
 
 pp <- getKSResiCSPPPAlt(Y, fit0, fit1, nsim) 
 
