@@ -174,6 +174,9 @@ check <- which(as.Date("2017-01-01") <= as.Date(dat1[, 1]) & as.Date(dat1[, 1]) 
 
 cntma <- cntma[check]
 V <- V[check, ]
+
+ddate <- dat1[check, 1]
+
 #############
 
 T <- length(cntma)
@@ -294,12 +297,390 @@ truebetamat1[which(CI[, 3] == 0)] <- 0
 plot(cntma)
 points(cbind(1, V) %*% colMeans(betamat1[, c(1, (dim(betamat1)[2] - p + 1):dim(betamat1)[2])]), type = 'l', col = 'blue')
 points(cbind(1, XShift, V) %*% colMeans(betamat1), type = 'l', col = 'red')
+
+
+
+check1 <- which(as.Date("2017-01-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2017-03-31"))
+check2 <- which(as.Date("2017-04-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2017-06-30"))
+check3 <- which(as.Date("2017-07-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2017-09-30"))
+check4 <- which(as.Date("2017-10-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2017-12-31"))
+
+
+check5 <- which(as.Date("2018-01-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2018-03-31"))
+check6 <- which(as.Date("2018-04-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                 as.Date("2018-06-30"))
+check7 <- which(as.Date("2018-07-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2018-09-30"))
+check8 <- which(as.Date("2018-10-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2018-12-31"))
+
+
+
+check9 <- which(as.Date("2019-01-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2019-03-31"))
+check10 <- which(as.Date("2019-04-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2019-06-30"))
+check11 <- which(as.Date("2019-07-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2019-09-30"))
+check12 <- which(as.Date("2019-10-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2019-12-31"))
+
+
+check13 <- which(as.Date("2020-01-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                  as.Date("2020-03-31"))
+check14 <- which(as.Date("2020-04-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                   as.Date("2020-06-30"))
+check15 <- which(as.Date("2020-07-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                   as.Date("2020-09-30"))
+check16 <- which(as.Date("2020-10-01") <= as.Date(ddate) & as.Date(ddate) <= 
+                   as.Date("2020-12-31"))
+
+
 plot(truebetamat1[2:(length(cntma)+1)], col = 'red', type = 'l')
 plot(X2 %*% (truebetamat1[(length(cntma) + 2):(2 * length(cntma)-1)]), col = 'red', type = 'l')
 #plot(X2 %*% (truebetamat1[(length(cntma) + 2):(2 * length(cntma)-1)]) + X3 %*% truebetamat1[(2 * length(cntma)):(3 * length(cntma)-3)], 
 #     col = 'red', type = 'l')
 
 ##########################
+
+logpdf <- function(Y, fit) {
+  sigma2 <- var(Y - fit)
+  log(dnorm(Y, fit, sqrt(sigma2)))
+}
+
+
+getKS <- function(Y, fit0, fit1, nsim, nnsim) {
+  nn <- length(Y)
+  resi0 <- Y - fit0
+  resi1 <- Y - fit1
+  out <- matrix(NA, nrow = nnsim, ncol = nn)
+  for (j in 1:nnsim) {
+    for (i in 1:nn) {
+      #cat("j:", j, "i:", i, '\n');
+      tmpx <- sample(resi0[, i], nsim, replace = TRUE)
+      tmpy <- sample(resi1[, i], nsim, replace = TRUE)
+      out[j, i] <- ks.test(tmpx, tmpy)$statistic
+    }
+  }
+  out
+}
+
+getKSlogpdf <- function(Y, fit0, fit1, nsim, nnsim) {
+  nn <- length(Y)
+  
+  logpdf0 <- matrix(NA, nrow = nsim, ncol = nn)
+  logpdf1 <- logpdf0
+  
+  for (i in 1:nsim) {
+    logpdf0[i, ] <- logpdf(Y, fit0[i, ])
+    logpdf1[i, ] <- logpdf(Y, fit1[i, ])
+  }
+  
+  out <- matrix(NA, nrow = nnsim, ncol = nn)
+  for (j in 1:nnsim) {
+    for (i in 1:nn) {
+      #cat("j:", j, "i:", i, '\n');
+      tmpx <- sample(logpdf0[, i], nsim, replace = TRUE)
+      tmpy <- sample(logpdf1[, i], nsim, replace = TRUE)
+      out[j, i] <- ks.test(tmpx, tmpy)$statistic
+    }
+  }
+  out
+}
+
+
+findroot <- function(FAP0, Y, fit0, nsim, nnsim, interval = c(0, 5), tol = 1e-4) {
+  
+  rootfinding <- function(cc, FAP0, ref) {
+    check <- ref <= cc
+    ProbNSE <- mean(rowMeans(check))
+    diff <- 1 - FAP0 - ProbNSE
+    cat("cc:", cc, "and diff:", diff, '\n')
+    return(diff)
+  }
+  
+  ref <- getKS(Y, fit0, fit0, nsim, nnsim)
+  
+  uniroot(rootfinding, interval = interval, FAP0 = FAP0, 
+          ref = ref, tol = tol)$root
+  
+}
+
+findrootlogpdf <- function(FAP0, Y, fit0, nsim, nnsim, interval = c(0, 5), tol = 1e-4) {
+  
+  rootfinding <- function(cc, FAP0, ref) {
+    check <- ref <= cc
+    ProbNSE <- mean(rowMeans(check))
+    diff <- 1 - FAP0 - ProbNSE
+    cat("cc:", cc, "and diff:", diff, '\n')
+    return(diff)
+  }
+  
+  ref <- getKSlogpdf(Y, fit0, fit0, nsim, nnsim)
+  
+  uniroot(rootfinding, interval = interval, FAP0 = FAP0, 
+          ref = ref, tol = tol)$root
+  
+}
+
+
+getKSCS <- function(Y, fit0, fit1, nsim) {
+  nn <- length(Y)
+  resi0 <- Y - fit0
+  resi1 <- Y - fit1
+  out <- rep(NA, ncol = nn)
+    for (i in 1:nn) {
+      #cat("j:", j, "i:", i, '\n');
+      tmpx <- resi0[, i]
+      tmpy <- resi1[, i]
+      out[i] <- ks.test(tmpx, tmpy)$statistic
+    }
+  out
+}
+
+
+getKSlogpdfCS <- function(Y, fit0, fit1, nsim) {
+  nn <- length(Y)
+  
+  logpdf0 <- matrix(NA, nrow = nsim, ncol = nn)
+  logpdf1 <- logpdf0
+  
+  for (i in 1:nsim) {
+    logpdf0[i, ] <- logpdf(Y, fit0[i, ])
+    logpdf1[i, ] <- logpdf(Y, fit1[i, ])
+  }
+  
+  out <- rep(NA, ncol = nn)
+    for (i in 1:nn) {
+      #cat("j:", j, "i:", i, '\n');
+      tmpx <- logpdf0[, i]
+      tmpy <- logpdf1[, i]
+      out[i] <- ks.test(tmpx, tmpy)$statistic
+    }
+  out
+}
+
+
+getKSlogpdfCSPPP <- function(Y, fit0, nsim) {
+  nn <- length(Y)
+  
+  logpdf0rep <- matrix(NA, nrow = nsim, ncol = nn)
+  logpdf0 <- logpdf0rep
+  
+  for (i in 1:nsim) {
+    Sigma2 <- var(Y - fit0[i, ])
+    Yrep <- rnorm(nn, fit0[i, ], sqrt(Sigma2))
+    logpdf0rep[i, ] <- logpdf(Yrep, fit0[i, ])
+    logpdf0[i, ] <- logpdf(Y, fit0[i, ])
+  }
+  
+  out <- rep(NA, ncol = nn)
+  for (i in 1:nn) {
+    #cat("j:", j, "i:", i, '\n');
+    tmpx <- logpdf0rep[, i]
+    tmpy <- logpdf0[, i]
+    out[i] <- ks.test(tmpx, tmpy)$statistic
+  }
+  out
+}
+
+
+getKSResiCSPPP <- function(Y, fit0, nsim) {
+  nn <- length(Y)
+  
+  resi0rep <- matrix(NA, nrow = nsim, ncol = nn)
+  resi0 <- resi0rep
+  
+  for (i in 1:nsim) {
+    Sigma2 <- var(Y - fit0[i, ])
+    Yrep <- rnorm(nn, fit0[i, ], sqrt(Sigma2))
+    resi0rep[i, ] <- Yrep - fit0[i, ]
+    resi0[i, ] <- Y - fit0[i, ]
+  }
+  
+  out <- rep(NA, ncol = nn)
+  for (i in 1:nn) {
+    #cat("j:", j, "i:", i, '\n');
+    tmpx <- resi0rep[, i]
+    tmpy <- resi0[, i]
+    out[i] <- ks.test(tmpx, tmpy)$statistic
+  }
+  out
+}
+
+
+findrootKSResiCSPPP <- function(FAP0, Y, fit0, nsim, nnsim, interval = c(0, 1), tol = 1e-4) {
+  
+  rootfinding <- function(cc, FAP0, ref) {
+    check <- ref <= cc
+    ProbNSE <- mean(rowMeans(check))
+    diff <- 1 - FAP0 - ProbNSE
+    cat("cc:", cc, "and diff:", diff, '\n')
+    return(diff)
+  }
+  
+  ref <- matrix(NA, nrow = nnsim, ncol = length(Y))
+  
+  for (i in 1:nnsim) {
+    ref[i, ] <- getKSResiCSPPP(Y, fit0, nsim) 
+  }
+  
+  uniroot(rootfinding, interval = interval, FAP0 = FAP0, 
+          ref = ref, tol = tol)$root
+  
+}
+
+
+getKSResiCSPPPAlt <- function(Y, fit0, fit1, nsim) {
+  nn <- length(Y)
+  
+  resi0 <- matrix(NA, nrow = nsim, ncol = nn)
+  resi1 <- resi0
+  
+  for (i in 1:nsim) {
+    resi0[i, ] <- Y - fit0[i, ]
+    resi1[i, ] <- Y - fit1[i, ]
+  }
+  
+  out <- rep(NA, ncol = nn)
+  for (i in 1:nn) {
+    #cat("j:", j, "i:", i, '\n');
+    tmpx <- resi0[, i]
+    tmpy <- resi1[, i]
+    out[i] <- ks.test(tmpx, tmpy)$statistic
+  }
+  out
+}
+
+
+getBinProb <- function(p, q, breaks = 10) {
+  
+  start <- min(p, q)
+  end <- max(p, q)
+  step <- (end - start) / breaks
+  intervals <- rep(NA, breaks + 1)
+  out <- matrix(NA, nrow = 2, ncol = breaks)
+  for (i in 1:(breaks + 1)) {
+    intervals[i] <- start + (i - 1) * (step)
+    if (1 < i & i < (breaks + 1)) {
+      out[1, i - 1] <- sum(intervals[i - 1] <= p & p < intervals[i])
+      out[2, i - 1] <- sum(intervals[i - 1] <= q & q < intervals[i])
+    } else if (i == breaks + 1) {
+      out[1, i - 1] <- sum(intervals[i - 1] <= p & p <= intervals[i])
+      out[2, i - 1] <- sum(intervals[i - 1] <= q & q <= intervals[i])
+    }
+  }
+  out[1, ] <- out[1, ] / sum(out[1, ])
+  out[2, ] <- out[2, ] / sum(out[2, ])
+  out
+}
+
+
+
+getKLResiCSPPP <- function(Y, fit0, nsim, breaks = 10) {
+  nn <- length(Y)
+  
+  resi0rep <- matrix(NA, nrow = nsim, ncol = nn)
+  resi0 <- resi0rep
+  
+  for (i in 1:nsim) {
+    Sigma2 <- var(Y - fit0[i, ])
+    Yrep <- rnorm(nn, fit0[i, ], sqrt(Sigma2))
+    resi0rep[i, ] <- Yrep - fit0[i, ]
+    resi0[i, ] <- Y - fit0[i, ]
+  }
+  
+  out <- rep(NA, ncol = nn)
+  for (i in 1:nn) {
+    #cat("j:", j, "i:", i, '\n');
+    tmpx <- resi0rep[, i]
+    tmpy <- resi0[, i]
+    tmp <- getBinProb(tmpy, tmpx, breaks = breaks)
+    out[i] <- KL(tmp, unit = "log")
+  }
+  out
+}
+
+findrootKLResiCSPPP <- function(FAP0, Y, fit0, nsim, nnsim, breaks = 20, interval = c(0, 5), tol = 1e-4) {
+  
+  rootfinding <- function(cc, FAP0, ref) {
+    check <- ref <= cc
+    ProbNSE <- mean(rowMeans(check))
+    diff <- 1 - FAP0 - ProbNSE
+    cat("cc:", cc, "and diff:", diff, '\n')
+    return(diff)
+  }
+  
+  ref <- matrix(NA, nrow = nnsim, ncol = length(Y))
+  
+  for (i in 1:nnsim) {
+    ref[i, ] <- getKLResiCSPPP(Y, fit0, nsim, breaks) 
+  }
+  
+  uniroot(rootfinding, interval = interval, FAP0 = FAP0, 
+          ref = ref, tol = tol)$root
+  
+}
+
+getKLResiCSPPPAlt <- function(Y, fit0, fit1, nsim, breaks = 10) {
+  nn <- length(Y)
+  
+  resi0 <- matrix(NA, nrow = nsim, ncol = nn)
+  resi1 <- resi0
+  
+  for (i in 1:nsim) {
+    resi0[i, ] <- Y - fit0[i, ]
+    resi1[i, ] <- Y - fit1[i, ]
+  }
+  
+  out <- rep(NA, ncol = nn)
+  for (i in 1:nn) {
+    #cat("j:", j, "i:", i, '\n');
+    tmpx <- resi0[, i]
+    tmpy <- resi1[, i]
+    tmp <- getBinProb(tmpy, tmpx, breaks = breaks)
+    out[i] <- KL(tmp, unit = "log")
+  }
+  out
+}
+
+
+fit0 <- t(cbind(1, V) %*% t(betamat1[, c(1, (dim(betamat1)[2] - p + 1):dim(betamat1)[2])]))
+
+qq <- getKSlogpdfCSPPP(Y, fit0, nsim)
+qq <- getKSResiCSPPP(Y, fit0, nsim)
+
+qq <- getKLResiCSPPP(Y, fit0, nsim)
+
+
+fit1 <- t(cbind(1, XShift, V) %*% t(betamat1))
+
+pp <- getKSResiCSPPPAlt(Y, fit0, fit1, nsim) 
+
+ee <- findrootKLResiCSPPP(0.05, Y, fit0, nsim, nnsim = 100)
+
+nnsim <- 100
+
+cc <- findroot(0.2, Y, fit0, nsim, nnsim, interval = c(0, 5), tol = 1e-4)
+ 
+test <- getKSCS(Y, fit0, fit1, nsim)
+
+
+cc <- findrootlogpdf(0.1, Y, fit0, nsim, nnsim)
+
+test <- getKSlogpdfCS(Y, fit0, fit1, nsim)
+
+nnsim <- 10000
+
+FAP <- 0.1
+
+findroot(0.1, Y, fit0, nsim)
+
 
 r <- matrix(NA, nrow = nsim, ncol = length(cntma))
 
