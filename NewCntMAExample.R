@@ -278,7 +278,7 @@ for (i in 1:(nsim + burnin)) {
 }
 
 #save(betamat1, file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/betamat.csv")
-
+load(file = "C:/Users/Yuhui/Box/Yuhui R21/betamat.csv")
 ##########################
 
 alpha <- 0.05
@@ -768,8 +768,118 @@ SimLinear <- function(Y, beta0, beta1, initial = rep(0, length(beta1))) {
 }
 
 
-beta0 <- betamat1[1, 1]
-beta1 <- betamat1[1, (dim(betamat1)[2] - p + 1):dim(betamat1)[2]]
+
+getResiCSLinear <- function(Y, V, beta0, beta1, nsim, initial = rep(0, length(beta1))) {
+  
+  nn <- length(Y)
+  
+  resi0Mat <- matrix(NA, nrow = nsim, ncol = nn)
+  resi0repMat <- matrix(NA, nrow = nsim, ncol = nn)
+  
+  p <- dim(beta1)[2]
+  
+  out <- matrix(NA, nrow = nsim, ncol = nn)
+  
+  for (i in 1:nsim) {
+    resi0Mat[i, ] <- Y - beta0[i] - V %*% beta1[i, ]
+    sigma2 <- var(resi0Mat[i, ])
+    Yrep <- SimLinear(Y, beta0[i], beta1[i, ], initial = initial)
+    Vrep <- getT(c(initial, Yrep), p)[-c(1:p), ]
+    resi0repMat[i, ] <- Yrep - beta0[i] - Vrep %*% beta1[i, ]
+    out[i, ] <- (resi0repMat[i, ] - resi0Mat[i, ]) / sqrt(2 * sigma2)
+  }
+  
+  #mu0 <- colMeans(resi0Mat)
+  #mu0rep <- colMeans(resi0repMat)
+  #sigma02vec <- rep(NA, nn)
+  #
+  #for (i in 1:nn) {
+  #  sigma02vec[i] <- var(resi0Mat[, i])
+  #}
+  #
+  #out <- (mu0 - mu0rep)^2 / sigma02vec
+  #log(out)
+  colMeans(out)
+}
+
+findrootResiCSPPPLinear <- function(FAP0, Y, V, beta0, beta1, 
+                                    nsim, nnsim, initial = rep(0, dim(beta1)[2]), 
+                                    interval = c(0.5, 1), tol = 1e-4) {
+  
+  rootfinding <- function(cc, FAP0, ref, T) {
+    
+    #sigma2vec <- rep(NA, T)
+    #uqvec <- rep(NA, T)
+    #nsim <- dim(ref)[1]
+    check <- matrix(NA, nrow = nsim, ncol = T)
+    
+    #for (i in 1:T) {
+    #  sigma2vec[i] <- var(ref[, i])
+    #}
+    
+    for (i in 1:nsim) {
+      check[i, ] <- -cc <= ref[i, ] & ref[i, ] <= cc
+    }
+    
+    NSE <- rowSums(check) == T
+    ProbNSE <- mean(NSE)
+    diff <- (1 - FAP0) - ProbNSE
+    cat("cc:", cc, "and diff:", diff, '\n')
+    return(diff)
+  }
+  
+  ref <- matrix(NA, nrow = nnsim, ncol = length(Y))
+  
+  for (i in 1:nnsim) {
+    ref[i, ] <- getResiCSLinear(Y, V, beta0, beta1, 
+                                nsim, initial = initial)
+  }
+  
+  T <- length(Y)
+  
+  #ref <- log(ref)
+  #debug(rootfinding)
+  uniroot(rootfinding, interval = interval, FAP0 = FAP0, 
+          ref = ref, tol = tol, T = T)$root
+  
+}
+
+getResiCSLinearAlt <- function(Y, V, X, beta0, beta1, beta2, nsim, initial = rep(0, length(beta1))) {
+  
+  nn <- length(Y)
+  
+  resi0Mat <- matrix(NA, nrow = nsim, ncol = nn)
+  resi1Mat <- matrix(NA, nrow = nsim, ncol = nn)
+  
+  out <- matrix(NA, nrow = nsim, ncol = nn)
+  
+  p <- dim(beta1)[2]
+  
+  for (i in 1:nsim) {
+    resi0Mat[i, ] <- Y - beta0[i] - V %*% beta1[i, ]
+    sigma2 <- var(resi0Mat[i, ])
+    resi1Mat[i, ] <- Y - beta0[i] - V %*% beta1[i, ] - X %*% beta2[i, ]
+    out[i, ] <- (resi1Mat[i, ] - resi0Mat[i, ]) / sqrt(2 * sigma2)
+  }
+  
+  colMeans(out)
+}
+
+
+
+#debug(getResiCSLinear)
+ee <- getResiCSLinear(Y, V, beta0, beta1, nsim, initial = V[1, ])
+
+#debug(findrootResiCSPPPLinear)
+aa <- findrootResiCSPPPLinear(0.2, Y, V, beta0, beta1, 
+                   nsim, nnsim = 100, initial = V[1, ], 
+                   interval = c(0.1, 5), tol = 1e-4)
+
+bb <- getResiCSLinearAlt(Y, V, XShift, beta0, beta1, beta2, nsim, initial = V[1, ])
+
+beta0 <- betamat1[, 1]
+beta1 <- betamat1[, (dim(betamat1)[2] - p + 1):dim(betamat1)[2]]
+beta2 <- betamat1[, (2):(dim(betamat1)[2] - p)]
 
 #debug(SimLinear)
 SimLinear(Y, beta0, beta1, initial = V[1, ])
