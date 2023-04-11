@@ -152,7 +152,7 @@ dat1 <- bb
 
 #############
 
-w <- 28
+w <- 30
 
 cntma <- rep(NA, dim(dat1)[1])
 
@@ -170,7 +170,8 @@ for (i in 1:dim(dat1)[1]) {
 p <- 5
 V <- getT(cntma, p)
 
-check <- which(as.Date("2017-01-01") <= as.Date(dat1[, 1]) & as.Date(dat1[, 1]) <= as.Date("2020-12-31"))
+check <- which(as.Date("2018-01-01") <= as.Date(dat1[, 1]) & 
+                 as.Date(dat1[, 1]) <= as.Date("2018-12-31"))
 
 cntma <- cntma[check]
 V <- V[check, ]
@@ -279,6 +280,7 @@ for (i in 1:(nsim + burnin)) {
 
 #save(betamat1, file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/betamat.csv")
 load(file = "C:/Users/Yuhui/Box/Yuhui R21/betamat.csv")
+load(file = '/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/betamat.csv')
 ##########################
 
 alpha <- 0.05
@@ -585,18 +587,35 @@ getBinProb <- function(p, q, breaks = 10) {
 }
 
 
+SimLinear <- function(Y, beta0, beta1, initial = rep(0, length(beta1))) {
+  n <- length(Y)
+  Yrep <- rep(NA, n)
+  Yrep <- c(initial, Yrep)
+  sigma2 <- var(Y - beta0)
+  q <- length(beta1)
+  for (i in (q + 1):(n + q)) {
+    Yrep[i] <- beta0 + Yrep[(i - q):(i - 1)] %*% beta1 + rnorm(1, 0, sqrt(sigma2))
+  }
+  Yrep[-c(1:q)]
+}
 
-getKLResiCSPPP <- function(Y, fit0, nsim, breaks = 10) {
+
+getKLResiCSPPP <- function(Y, V, beta0, beta1, nsim, breaks = 10) {
   nn <- length(Y)
   
   resi0rep <- matrix(NA, nrow = nsim, ncol = nn)
   resi0 <- resi0rep
   
+  p <- dim(beta1)[2]
+  #V <- getT(c(initial, Y), p)[-c(1:p), ]
+    
+  initial <- V[1, ]
+  
   for (i in 1:nsim) {
-    Sigma2 <- var(Y - fit0[i, ])
-    Yrep <- rnorm(nn, fit0[i, ], sqrt(Sigma2))
-    resi0rep[i, ] <- Yrep - fit0[i, ]
-    resi0[i, ] <- Y - fit0[i, ]
+    Yrep <- SimLinear(Y, beta0[i], beta1[i, ], initial) 
+    Vrep <- getT(c(initial, Yrep), p)[-c(1:p), ]
+    resi0rep[i, ] <- Yrep -  beta0[i] - Vrep %*% beta1[i, ]
+    resi0[i, ] <- Y -  beta0[i] - V %*% beta1[i, ]
   }
   
   out <- rep(NA, ncol = nn)
@@ -605,16 +624,18 @@ getKLResiCSPPP <- function(Y, fit0, nsim, breaks = 10) {
     tmpx <- resi0rep[, i]
     tmpy <- resi0[, i]
     tmp <- getBinProb(tmpy, tmpx, breaks = breaks)
-    out[i] <- KL(tmp, unit = "log")
+    out[i] <- philentropy::KL(tmp, unit = "log")
   }
   out
 }
 
-findrootKLResiCSPPP <- function(FAP0, Y, fit0, nsim, nnsim, breaks = 20, interval = c(0, 5), tol = 1e-4) {
+findrootKLResiCSPPP <- function(FAP0, Y, V, beta0, beta1, 
+                                nsim, nnsim, breaks = 10, 
+                                interval = c(0, 5), tol = 1e-4) {
   
-  rootfinding <- function(cc, FAP0, ref) {
+  rootfinding <- function(cc, FAP0, ref, n) {
     check <- ref <= cc
-    ProbNSE <- mean(rowMeans(check))
+    ProbNSE <- mean(rowSums(check) == n)
     diff <- 1 - FAP0 - ProbNSE
     cat("cc:", cc, "and diff:", diff, '\n')
     return(diff)
@@ -623,37 +644,69 @@ findrootKLResiCSPPP <- function(FAP0, Y, fit0, nsim, nnsim, breaks = 20, interva
   ref <- matrix(NA, nrow = nnsim, ncol = length(Y))
   
   for (i in 1:nnsim) {
-    ref[i, ] <- getKLResiCSPPP(Y, fit0, nsim, breaks) 
+    ref[i, ] <- getKLResiCSPPP(Y, V, beta0, beta1, nsim, breaks = breaks)
   }
   
+  n <- length(Y)
+  
+  #debug(rootfinding)
   uniroot(rootfinding, interval = interval, FAP0 = FAP0, 
-          ref = ref, tol = tol)$root
+          ref = ref, n = n, tol = tol)$root
   
 }
 
-getKLResiCSPPPAlt <- function(Y, fit0, fit1, nsim, breaks = 10) {
+getKLResiCSPPPAlt <- function(Y, V, X, beta0, beta1, beta2, nsim, breaks = 10) {
   nn <- length(Y)
   
   resi0 <- matrix(NA, nrow = nsim, ncol = nn)
   resi1 <- resi0
   
   for (i in 1:nsim) {
-    resi0[i, ] <- Y - fit0[i, ]
-    resi1[i, ] <- Y - fit1[i, ]
+    resi1[i, ] <- Y -  beta0[i] - V %*% beta1[i, ] - X %*% beta2[i, ]
+    resi0[i, ] <- Y -  beta0[i] - V %*% beta1[i, ]
   }
   
   out <- rep(NA, ncol = nn)
   for (i in 1:nn) {
     #cat("j:", j, "i:", i, '\n');
-    tmpx <- resi0[, i]
-    tmpy <- resi1[, i]
+    tmpx <- resi1[, i]
+    tmpy <- resi0[, i]
     tmp <- getBinProb(tmpy, tmpx, breaks = breaks)
-    out[i] <- KL(tmp, unit = "log")
+    out[i] <- philentropy::KL(tmp, unit = "log")
   }
   out
 }
 
+########################
 
+beta0 <- betamat1[, 1]
+beta1 <- betamat1[, (dim(betamat1)[2] - p + 1):dim(betamat1)[2]]
+beta2 <- betamat1[, (2):(dim(betamat1)[2] - p)]
+
+
+fit0 <- t(cbind(1, V) %*% t(betamat1[, c(1, (dim(betamat1)[2] - p + 1):dim(betamat1)[2])]))
+fit1 <- t(cbind(1, XShift, V) %*% t(betamat1))
+
+
+#undebug(findrootKLResiCSPPP)
+#debug(getKLResiCSPPP)
+set.seed(12345)
+bb1 <- findrootKLResiCSPPP(0.1, Y, V, beta0, beta1, 
+                          nsim, nnsim, breaks = 20, interval = c(0, 20)) 
+
+set.seed(12345)
+bb2 <- findrootKLResiCSPPP(0.2, Y, V, beta0, beta1, 
+                          nsim, nnsim, breaks = 20, interval = c(0, 20)) 
+
+set.seed(12345)
+bb3 <- findrootKLResiCSPPP(0.3, Y, V, beta0, beta1, 
+                          nsim, nnsim, breaks = 20, interval = c(0, 20)) 
+cc <- getKLResiCSPPPAlt(Y, V, XShift, beta0, beta1, beta2, nsim, breaks = 20)
+
+
+
+
+########################
 
 getResiCS <- function(Y, V, beta01, nsim) {
   
@@ -693,6 +746,16 @@ getResiCS <- function(Y, V, beta01, nsim) {
   #out <- log(out)
   out
 }
+
+
+
+
+
+
+
+
+
+
 
 findrootResiCSPPP <- function(FAP0, Y, fit0, nsim, nnsim, interval = c(0, 5), tol = 1e-4) {
   
@@ -755,17 +818,7 @@ getResiCSAlt <- function(Y, fit0, fit1, nsim) {
 }
 
 
-SimLinear <- function(Y, beta0, beta1, initial = rep(0, length(beta1))) {
-  n <- length(Y)
-  Yrep <- rep(NA, n)
-  Yrep <- c(initial, Yrep)
-  sigma2 <- var(Y - beta0)
-  q <- length(beta1)
-  for (i in (q + 1):(n + q)) {
-    Yrep[i] <- beta0 + Yrep[(i - q):(i - 1)] %*% beta1 + rnorm(1, 0, sqrt(sigma2))
-  }
-  Yrep[-c(1:q)]
-}
+
 
 
 
@@ -786,7 +839,7 @@ getResiCSLinear <- function(Y, V, beta0, beta1, nsim, initial = rep(0, length(be
     Yrep <- SimLinear(Y, beta0[i], beta1[i, ], initial = initial)
     Vrep <- getT(c(initial, Yrep), p)[-c(1:p), ]
     resi0repMat[i, ] <- Yrep - beta0[i] - Vrep %*% beta1[i, ]
-    out[i, ] <- (resi0repMat[i, ] - resi0Mat[i, ]) / sqrt(2 * sigma2)
+    out[i, ] <- (resi0Mat[i, ] - resi0repMat[i, ]) ^ 2  / sigma2
   }
   
   #mu0 <- colMeans(resi0Mat)
@@ -817,10 +870,10 @@ findrootResiCSPPPLinear <- function(FAP0, Y, V, beta0, beta1,
     #  sigma2vec[i] <- var(ref[, i])
     #}
     
-    for (i in 1:nsim) {
-      check[i, ] <- -cc <= ref[i, ] & ref[i, ] <= cc
-    }
-    
+    #for (i in 1:nsim) {
+    #  check[i, ] <- ref[i, ] & ref[i, ] <= cc
+    #}
+    check <- ref <= cc
     NSE <- rowSums(check) == T
     ProbNSE <- mean(NSE)
     diff <- (1 - FAP0) - ProbNSE
@@ -859,7 +912,7 @@ getResiCSLinearAlt <- function(Y, V, X, beta0, beta1, beta2, nsim, initial = rep
     resi0Mat[i, ] <- Y - beta0[i] - V %*% beta1[i, ]
     sigma2 <- var(resi0Mat[i, ])
     resi1Mat[i, ] <- Y - beta0[i] - V %*% beta1[i, ] - X %*% beta2[i, ]
-    out[i, ] <- (resi1Mat[i, ] - resi0Mat[i, ]) / sqrt(2 * sigma2)
+    out[i, ] <- (resi0Mat[i, ] - resi1Mat[i, ]) ^ 2 / sigma2
   }
   
   colMeans(out)
@@ -873,13 +926,165 @@ ee <- getResiCSLinear(Y, V, beta0, beta1, nsim, initial = V[1, ])
 #debug(findrootResiCSPPPLinear)
 aa <- findrootResiCSPPPLinear(0.2, Y, V, beta0, beta1, 
                    nsim, nnsim = 100, initial = V[1, ], 
-                   interval = c(0.1, 5), tol = 1e-4)
+                   interval = c(0.1, 20), tol = 1e-4)
 
 bb <- getResiCSLinearAlt(Y, V, XShift, beta0, beta1, beta2, nsim, initial = V[1, ])
 
-beta0 <- betamat1[, 1]
-beta1 <- betamat1[, (dim(betamat1)[2] - p + 1):dim(betamat1)[2]]
-beta2 <- betamat1[, (2):(dim(betamat1)[2] - p)]
+
+plot(c(1, 365), c(min(bb), max(bb)), 
+     ylab = 'Divergence', 
+     xlab = "", type = 'n', main = "Walker County, 2018",  xaxt = "n")
+points(bb, type = 'o')
+
+axis(side = 1, at = atvec, labels = FALSE)
+axis(side = 1, at = atv, tick = FALSE,
+     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                "Sep", "Oct", "Nov", "Dec"))
+
+
+abline(h = aa)
+legend("topright", legend = "FAP0 = 0.2", lty = 1, title = 'Control Limit')
+#######################
+
+num <- which(bb > aa)
+
+beta21 <- matrix(0, nrow = dim(beta2)[1], ncol = dim(beta2)[2])
+beta21[, num] <- beta2[, num]
+beta21[, 365 + num - 1] <- beta2[, 365 + num - 1]
+
+
+
+fit0 <- beta0 + V %*% t(beta1)
+fit0 <- t(fit0)
+fit1 <- beta0 + V %*% t(beta1) + XShift %*% t(beta21)
+fit1 <- t(fit1)
+
+plot(cntma, type = 'o', main = "Walker County, 2018", 
+     ylab = 'Moving-average Count with 30 Days of Sliding Windows', 
+     xlab = "", xaxt = "n")
+
+atvec <- rep(NA, 13)
+atvec[1] <- 1
+atvec[2] <- atvec[1] + 31
+atvec[3] <- atvec[2] + 28
+atvec[4] <- atvec[3] + 31
+atvec[5] <- atvec[4] + 30
+atvec[6] <- atvec[5] + 31
+atvec[7] <- atvec[6] + 30
+atvec[8] <- atvec[7] + 31
+atvec[9] <- atvec[8] + 31
+atvec[10] <- atvec[9] + 30
+atvec[11] <- atvec[10] + 31
+atvec[12] <- atvec[11] + 30
+atvec[13] <- atvec[12] + 31
+
+atv <- rep(NA, 12)
+
+for (i in 2:13) {
+  atv[i - 1] <- (atvec[i] + atvec[i - 1]) / 2
+}
+
+axis(side = 1, at = atvec, labels = FALSE)
+axis(side = 1, at = atv, tick = FALSE,
+     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                "Sep", "Oct", "Nov", "Dec"))
+
+for (i in 1:nsim) {
+  points(fit1[i, ], type = 'l', col = 'pink')
+  points(fit0[i, ], type = 'l', col = 'skyblue')
+}
+
+
+points(colMeans(fit1), type = 'l', col = 'red')
+points(colMeans(fit0), type = 'l', col = 'blue')
+
+legend("topright", legend = c("IC", "OOC"), lty = c(1, 1), col = c("blue", "red"), 
+       title = "Fitted Curve")
+
+#######################
+
+eee <- beta0 + t(XShift %*% t(beta21))
+
+
+plot(c(1, 365), c(min(eee), max(eee)), type = 'n', main = "Walker County, 2018", 
+     ylab = 'Trend in the Mean', 
+     xlab = "", xaxt = "n")
+
+for (i in 1:nsim) {
+  points(as.vector(eee[i, ]), col = 'gray', type = "l")
+}
+
+
+points(colMeans(eee), col = 'black', type = "l")
+
+
+axis(side = 1, at = atvec, labels = FALSE)
+axis(side = 1, at = atv, tick = FALSE,
+     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                "Sep", "Oct", "Nov", "Dec"))
+
+
+#######################
+
+fff <-t(XShift[, 1:365] %*% t(beta21)[1:365, ])
+
+
+plot(c(1, 365), c(min(fff), max(fff)), type = 'n', main = "Walker County, 2018", 
+     ylab = 'Isolated Shift in the Mean', 
+     xlab = "", xaxt = "n")
+
+for (i in 1:nsim) {
+  points(as.vector(fff[i, ]), col = 'gray', type = "l")
+}
+
+
+points(colMeans(fff), col = 'black', type = "l")
+
+
+axis(side = 1, at = atvec, labels = FALSE)
+axis(side = 1, at = atv, tick = FALSE,
+     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                "Sep", "Oct", "Nov", "Dec"))
+
+#######################
+
+fff <-t(XShift[, 366:728] %*% t(beta21)[366:728, ])
+
+
+plot(c(1, 365), c(min(fff), max(fff)), type = 'n', main = "Walker County, 2018", 
+     ylab = 'Sustained Shift in the Mean', 
+     xlab = "", xaxt = "n")
+
+for (i in 1:nsim) {
+  points(as.vector(fff[i, ]), col = 'gray', type = "l")
+}
+
+
+points(colMeans(fff), col = 'black', type = "l")
+
+
+axis(side = 1, at = atvec, labels = FALSE)
+axis(side = 1, at = atv, tick = FALSE,
+     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                "Sep", "Oct", "Nov", "Dec"))
+
+#######################
+
+
+
+plot(c(min(beta21[, 366:365]), max(beta21[, 1:365])), type = 'n', main = "Walker County, 2018", 
+     ylab = 'Trend in the Mean', 
+     xlab = "", xaxt = "n")
+
+for (i in 1:nsim) {
+  points(beta21[i, 1:365], type = 'l', col = 'skyblue')
+}
+
+
+points(colMeans(beta21[, 1:365]), type = 'l', col = 'blue')
+
+#######################
+
 
 #debug(SimLinear)
 SimLinear(Y, beta0, beta1, initial = V[1, ])
