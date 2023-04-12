@@ -928,19 +928,13 @@ arma::mat GradualShift(int T) {
 } 
 
 // [[Rcpp::export]]
-Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::vec beta0, arma::vec tau2beta0,
+Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::mat V, arma::mat X,
+                                  arma::vec beta0, arma::vec beta1, arma::vec beta2, 
+                                  arma::vec tau20, arma::vec tau21, arma::vec tau22,
                                   double sigma2, double lambda2, 
-                                  arma::mat X,
-                                  arma::mat V,
-                                  arma::vec beta1, 
-                                  arma::vec beta2, 
-                                  arma::vec tau2beta1,
-                                  arma::vec tau2beta2,
                                   int q, int p) {
   
   // initialize all vectors;
-  
-  
   
   int n = Y.n_elem;
   int m = 1;
