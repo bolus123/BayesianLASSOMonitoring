@@ -1,7 +1,7 @@
 library(GIGrvg)
 library(breakfast)
 library(pscl)
-
+library(glmnet)
 
 dat <-read.csv(file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
 
@@ -221,6 +221,8 @@ Y <- cntma;
 
 
 X <- cbind(V, XShift)
+
+m0 <- glmnet_cpp(X, Y, 5)
 
 m0 <- glmnet::glmnet(X, Y, lambda = lambda20, intercept = TRUE)
 
