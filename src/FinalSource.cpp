@@ -1131,13 +1131,14 @@ Rcpp::List getPosterior(arma::vec Y, arma::mat V, arma::mat X, double lambda2,
 
 }
 
-Rcpp::NumericMatrix rootfinding(double cc, double FAP0, 
-                   Rcpp::NumericMatrix ref, Rcpp::String side) {
+// [[Rcpp::export]]
+double rootfinding(double cc, double FAP0, 
+                   arma::mat ref, Rcpp::String side) {
   
-  int nsim = ref.rows();
-  int T = ref.cols();
+  int nsim = ref.n_rows;
+  int T = ref.n_cols;
   
-  Rcpp::NumericMatrix check(nsim, T);
+  arma::mat check(nsim, T);
   
   int i;
   int j;
@@ -1155,7 +1156,7 @@ Rcpp::NumericMatrix rootfinding(double cc, double FAP0,
   } else if (side == "two-sided") {
     for (i = 0; i < nsim; i++) {
       for (j = 0; j < T; j++) {
-        if (-cc <= ref(i, j) & ref(i, j) <= cc) {
+        if ((-cc <= ref(i, j)) && (ref(i, j) <= cc)) {
           check(i, j) = 1.0;
         } else {
           check(i, j) = 0.0;
@@ -1163,22 +1164,157 @@ Rcpp::NumericMatrix rootfinding(double cc, double FAP0,
       }
     }
   }
-  return(check);
+  
+  double tmpsum = 0;
+  arma::vec tmp(nsim);
+  
+  for (i = 0; i < nsim; i++) {
+    tmpsum = arma::accu(check.row(i));
+    //std::cout << "tmpsum:" << tmpsum << std::endl;
+    if (tmpsum == T) {
+      tmp(i) = 1.0;
+    } else {
+      tmp(i) = 0.0;
+    }
+  }
+  
+  tmpsum = arma::accu(tmp) / nsim;
+  //std::cout << "tmpsum:" << tmpsum << std::endl;
+  double out = (1.0 - FAP0) - tmpsum;
+  return(out);
+  
 }
 
 
 // [[Rcpp::export]]
-double uniroot_cpp(double chi, double psi, double lambda) {
-  // Extract R's optim function
-  Rcpp::Environment stats("package:uniroot"); 
-  Rcpp::Function uniroot = stats["uniroot"];
+double bisection(double FAP0, arma::mat ref, Rcpp::String side, 
+                 double lower, double upper, double eps) {
+  double cc;
+  double fc;
+  //int i = 0;
+  while ((upper - lower) >= eps) {
+    //i++;
+    //std::cout << i << std::endl;
+    cc = (lower + upper) / 2.0;
+    fc = rootfinding(cc, FAP0, ref, side);
+    //std::cout << "cc:" << cc << "fc:" << fc << std::endl;
+    if (fc == 0.0) {
+      return cc;
+    } else if (fc * rootfinding(lower, FAP0, ref, side) < 0.0) {
+      upper = cc;
+    } else {
+      lower = cc;
+    }
+  }
+  return (lower + upper) / 2.0;
+}
+
+// [[Rcpp::export]]
+Rcpp::List simYrepLinear(double beta0, arma::vec beta1, double sigma2,
+                        int T, arma::vec init)  {
+
+  int q = beta1.n_elem;
   
-  // Call the optim function from R in C++ 
-  Rcpp::List out = uniroot(Rcpp::_["n"] = 1,
-                        Rcpp::_["lambda"]  = lambda,
-                        Rcpp::_["chi"] = chi,
-                        Rcpp::_["psi"] = psi);
+  arma::vec tmpYrep(T + q);
+  tmpYrep.zeros();
+  tmpYrep.subvec(0, q - 1) = init;
   
-  // Return estimated values
-  return out(0);
+  //std::cout << 0 << std::endl;
+  
+  arma::vec Vrep(q); 
+  arma::vec tmp; 
+  
+  //std::cout << 1 << std::endl;
+  
+  arma::vec fit0rep(T); 
+  
+  int i = 0;
+  for (i = q; i < (T + q); i++) {
+    Vrep = arma::reverse(tmpYrep.subvec(i - q, i - 1));
+    //std::cout << Vrep << std::endl;
+    tmp = arma::trans(Vrep) * beta1;
+    fit0rep(i - q) = beta0 + tmp(0);
+    tmpYrep(i) = fit0rep(i - q) + arma::randn() * sqrt(sigma2);
+    //std::cout << 2 << std::endl;
+  }
+  
+  Rcpp::List out; 
+  out = Rcpp::List::create(
+    Rcpp::_["Yrep"] = tmpYrep.subvec(q, (q + T - 1)), 
+    Rcpp::_["fit0rep"] = fit0rep);
+  
+  return(out);
+} 
+
+// [[Rcpp::export]]
+arma::vec DivergenceResidual(
+    arma::vec Y, arma::mat V, 
+    double beta0, arma::vec beta1, 
+    arma::vec init)  {
+  
+    int T = Y.n_elem;
+    arma::vec resi = Y - arma::ones(T) * beta0 - V * beta1;
+    double sigma2 = arma::var(resi);
+
+    Rcpp::List tmpRep = simYrepLinear(beta0, beta1, sigma2,
+                                   T,  init);
+    
+    arma::vec Yrep = Rcpp::as<arma::vec>(Rcpp::wrap(tmpRep["Yrep"])); 
+    arma::vec fit0rep = Rcpp::as<arma::vec>(Rcpp::wrap(tmpRep["fit0rep"]));
+    
+    arma::vec out = (arma::pow(resi, 2) - arma::pow(Yrep - fit0rep, 2)) / 
+      sigma2; 
+    
+    return(out);
+    
+}
+
+// [[Rcpp::export]]
+arma::mat getRefDivergence(arma::vec Y, arma::mat V, 
+                           arma::vec beta0, arma::mat beta1, 
+                           arma::vec init, Rcpp::String divergenceType) {
+  int T = Y.n_elem;
+  int nsim = beta0.n_elem;
+  arma::mat out(nsim, T); 
+  double tmpbeta0;
+  arma::vec tmpbeta1; 
+  
+  //std::cout << 1 << std::endl;
+  
+  if (divergenceType == "Residual") {
+    for (int i = 0; i < nsim; i++) {
+      tmpbeta0 = beta0(i);
+      tmpbeta1 = arma::trans(beta1.row(i));
+      out.row(i) = arma::trans(
+        DivergenceResidual(Y, V, tmpbeta0, tmpbeta1, init));
+    }
+  }
+
+  return(out);
+  
+}
+
+// [[Rcpp::export]]
+arma::mat getDivergenceCS(arma::vec Y, arma::mat V, arma::mat X, 
+                           arma::vec beta0, arma::mat beta1, arma::mat beta2
+                           arma::vec init, Rcpp::String divergenceType) {
+  int T = Y.n_elem;
+  int nsim = beta0.n_elem;
+  arma::mat out(nsim, T); 
+  double tmpbeta0;
+  arma::vec tmpbeta1; 
+  
+  //std::cout << 1 << std::endl;
+  
+  if (divergenceType == "Residual") {
+    for (int i = 0; i < nsim; i++) {
+      tmpbeta0 = beta0(i);
+      tmpbeta1 = arma::trans(beta1.row(i));
+      out.row(i) = arma::trans(
+        DivergenceResidual(Y, V, tmpbeta0, tmpbeta1, init));
+    }
+  }
+  
+  return(out);
+  
 }

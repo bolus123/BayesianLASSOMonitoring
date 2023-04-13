@@ -223,9 +223,6 @@ Y <- cntma;
 
 X <- cbind(V, XShift)
 
-m0 <- glmnet_cpp(X, Y, 5)
-
-aaa(m0)
 
 m0 <- glmnet::glmnet(X, Y, lambda = lambda20, intercept = TRUE)
 
@@ -234,9 +231,22 @@ beta <- as.vector(m0$beta)
 beta1 <- beta[1:q]
 beta2 <- beta[(q + 1):(q + p)]
 
+sta <- Sys.time()
+
 ee <- getPosterior(Y, V, XShift, lambda20, 
              beta0, beta1, beta2, 
-             burnin = 50, nsim = 100) 
+             burnin = 50, nsim = 1000) 
+
+
+end <- Sys.time()
+
+ref <- getRefDivergence(Y, V, ee$beta[, 1], 
+                        ee$beta[, 2:6], V[1, ], "Residual")
+
+cc <- bisection(0.1, ref, "one-sided", 
+          0, 10, 1e-6)
+
+
 
 fit0 <- cbind(1, V) %*% colMeans(ee$beta[, 1:(q + 1)])
 fit1 <- cbind(1, V, XShift) %*% colMeans(ee$beta)
