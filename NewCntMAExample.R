@@ -167,8 +167,8 @@ for (i in 1:dim(dat1)[1]) {
 }
 
 #############
-p <- 5
-V <- getT(cntma, p)
+q <- 5
+V <- getT(cntma, q)
 
 check <- which(as.Date("2018-01-01") <= as.Date(dat1[, 1]) & 
                  as.Date(dat1[, 1]) <= as.Date("2018-12-31"))
@@ -197,7 +197,7 @@ X3 <- GradualShift(length(cntma))
 #XShift <- cbind(X1, X2, X3)
 XShift <- cbind(X1, X2)
                 
-q <- dim(XShift)[2]
+p <- dim(XShift)[2]
 
 betamat1 <- matrix(NA, nrow = nsim, ncol = 1 + q + p)
 taumat1 <- matrix(NA, nrow = nsim, ncol = 1 + q + p)
@@ -217,14 +217,33 @@ lambda2mat2 <- matrix(NA, nrow = nsim, ncol = 1)
 
 ########################
 
-Y <- cntma;
+########################
 
+Y <- cntma;
 
 X <- cbind(V, XShift)
 
 m0 <- glmnet_cpp(X, Y, 5)
 
+aaa(m0)
+
 m0 <- glmnet::glmnet(X, Y, lambda = lambda20, intercept = TRUE)
+
+beta0 <- m0$a0
+beta <- as.vector(m0$beta)
+beta1 <- beta[1:q]
+beta2 <- beta[(q + 1):(q + p)]
+
+ee <- getPosterior(Y, V, XShift, lambda20, 
+             beta0, beta1, beta2, 
+             burnin = 50, nsim = 100) 
+
+fit0 <- cbind(1, V) %*% colMeans(ee$beta[, 1:(q + 1)])
+fit1 <- cbind(1, V, XShift) %*% colMeans(ee$beta)
+
+plot(Y)
+points(fit0, type = 'l', col = 'blue')
+points(fit1, type = 'l', col = 'red')
 
 beta00 <- unlist(as.numeric(m0$a0[1]))
 beta02 <- unlist(m0$beta[1:(p)])

@@ -1,6 +1,7 @@
-#include <RcppArmadillo.h>   
 // [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
 using namespace Rcpp;
+
 
 // [[Rcpp::export]]
 arma::mat getInvTau2(arma::vec Tau2) {
@@ -930,7 +931,7 @@ arma::mat GradualShift(int T) {
 // [[Rcpp::export]]
 Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::mat V, arma::mat X,
                                   arma::vec beta0, arma::vec beta1, arma::vec beta2, 
-                                  arma::vec tau20, arma::vec tau21, arma::vec tau22,
+                                  arma::vec tau02, arma::vec tau12, arma::vec tau22,
                                   double sigma2, double lambda2, 
                                   int q, int p) {
   
@@ -942,16 +943,16 @@ Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::mat V, arma::mat X,
   //Rcpp::Rcout << 0.1 << std::endl;
   
   arma::vec Y_ = Y; 
-  arma::mat X_ = X;
   arma::mat V_ = V;
+  arma::mat X_ = X;
   
   arma::vec beta0_ = beta0;
   arma::vec beta1_ = beta1;
   arma::vec beta2_ = beta2;
   
-  arma::vec tau2beta0_ = tau2beta0;
-  arma::vec tau2beta1_ = tau2beta1;
-  arma::vec tau2beta2_ = tau2beta2;
+  arma::vec tau02_ = tau02;
+  arma::vec tau12_ = tau12;
+  arma::vec tau22_ = tau22;
   
   //Rcpp::Rcout << 0.2 << std::endl;
   
@@ -962,97 +963,76 @@ Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::mat V, arma::mat X,
   arma::vec zeta;
   arma::vec Onebeta0;
   Onebeta0.zeros(n);
-  arma::vec Xbeta1;
-  Xbeta1.zeros(n);
-  arma::vec Vbeta2;
-  Vbeta2.zeros(n);
+  
+  arma::vec Vbeta1;
+  Vbeta1.zeros(n);
+  
+  arma::vec Xbeta2;
+  Xbeta2.zeros(n);
   
   arma::vec on = arma::ones(n);
   
-  arma::vec betadelta;
-  arma::vec tau2all;
+  arma::vec beta;
+  arma::vec tau2;
   
   // update beta0;
   
-  if (q > 0) {
-    Xbeta1 = X_ * beta1_;
-  }
-  
-  
   if (p > 0) {
-    Vbeta2 = V_ * beta2_;
+    Vbeta1 = V_ * beta1_;
   }
   
+  if (q > 0) {
+    Xbeta2 = X_ * beta2_;
+  }
   
-  //Rcpp::Rcout << "U_" << U_ << std::endl;
-  //Rcpp::Rcout << "delta0_" << delta0_ << std::endl;
-  
-  //cpp::Rcout << "Xbeta1" << Xbeta1 << std::endl;
-  //cpp::Rcout << "Tbeta2" << Tbeta2 << std::endl;
-  //cpp::Rcout << "Udelta0" << Udelta0 << std::endl;
-  //cpp::Rcout << "UWdelta1" << UWdelta1 << std::endl;
-  
-  
-  zeta = Y_ - (Xbeta1 + Vbeta2);
-  beta0_ = getBetaNonMonotonicity(zeta, on, tau2beta0_, sigma2);
+  zeta = Y_ - (Xbeta2 + Vbeta1);
+  beta0_ = getBetaNonMonotonicity(zeta, on, tau02_, sigma2);
   Onebeta0 = on * beta0_;
-  betadelta = beta0_;
-  
+  beta = beta0_;
   
   // update beta1;
   
   if (q > 0) {
-    zeta = Y_ - (Onebeta0 + Vbeta2);
-    beta1_ = getBetaNonMonotonicity(zeta, X_, tau2beta1_, sigma2);
-    Xbeta1 = X_ * beta1_;
-    betadelta = arma::join_cols(betadelta, beta1_);
+    zeta = Y_ - (Onebeta0 + Xbeta2);
+    beta1_ = getBetaMonotonicity(zeta, V_, tau12_, sigma2);
+    Vbeta1 = V_ * beta1_;
+    beta = arma::join_cols(beta, beta1_);
   }
-  
   
   // update beta2;
   
   if (p > 0) {
-    zeta = Y_ - (Onebeta0 + Xbeta1);
-    beta2_ = getBetaMonotonicity(zeta, V_, tau2beta2_, sigma2);
-    Vbeta2 = V_ * beta2_;
-    betadelta = arma::join_cols(betadelta, beta2_);
+    zeta = Y_ - (Onebeta0 + Vbeta1);
+    beta2_ = getBetaNonMonotonicity(zeta, X_, tau22_, sigma2);
+    Xbeta2 = X_ * beta2_;
+    beta = arma::join_cols(beta, beta2_);
   }
   
+  tau02_ = getTau2(beta0_, sigma2, lambda2);
+  tau2 = tau02_;
   
-  // update tau2beta0;
-  
-  //Rcpp::Rcout << beta0_ << std::endl;
-  //Rcpp::Rcout << sigma2 << std::endl;
-  //Rcpp::Rcout << lambda2 << std::endl;
-  
-  tau2beta0_ = getTau2(beta0_, sigma2, lambda2);
-  tau2all = tau2beta0_;
-  
-  
-  // update tau2beta1;
+  // update tau12;
   
   if (q > 0) {
-    tau2beta1_ = getTau2(beta1_, sigma2, lambda2);
-    tau2all = arma::join_cols(tau2all, tau2beta1_);
+    tau12_ = getTau2(beta1_, sigma2, lambda2);
+    tau2 = arma::join_cols(tau2, tau12_);
   }
   
-  
-  // update tau2beta2;
+  // update tau22;
   
   if (p > 0) {
-    tau2beta2_ = getTau2(beta2_, sigma2, lambda2);
-    tau2all = arma::join_cols(tau2all, tau2beta2_);
+    tau22_ = getTau2(beta2_, sigma2, lambda2);
+    tau2 = arma::join_cols(tau2, tau22_);
   }
   
-  
   // output;
-  arma::vec fit0 = Onebeta0 + Vbeta2;
-  arma::vec fit1 = Onebeta0 + Xbeta1 + Vbeta2;
+  arma::vec fit0 = Onebeta0 + Vbeta1;
+  arma::vec fit1 = Onebeta0 + Xbeta2 + Vbeta1;
   Rcpp::List out;
   out = Rcpp::List::create(
-    Rcpp::_["betadelta"] = betadelta,
-    Rcpp::_["tau2all"] = tau2all,
-    Rcpp::_["expectedtau2all"] = getExpectedTau2(betadelta, sigma2, lambda2),
+    Rcpp::_["beta"] = beta,
+    Rcpp::_["tau2"] = tau2,
+    Rcpp::_["expectedTau2"] = getExpectedTau2(beta, sigma2, lambda2),
     Rcpp::_["fit0"] = fit0,
     Rcpp::_["fit1"] = fit1,
     Rcpp::_["m"] = m,
@@ -1062,48 +1042,143 @@ Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::mat V, arma::mat X,
   return(out);
 }
 
+
 // [[Rcpp::export]]
-Rcpp::List glmnet_cpp(arma::mat X, arma::vec Y, double lambda) {
-  // Extract R's optim function
-  Rcpp::Environment glmnet("package:glmnet"); 
-  Rcpp::Function glmnet_func = glmnet["glmnet"];
+Rcpp::List getPosterior(arma::vec Y, arma::mat V, arma::mat X, double lambda2, 
+                        arma::vec beta0, arma::vec beta1, arma::vec beta2, 
+                        int burnin, int nsim) {
   
-  Rcpp::NumericMatrix X_ = Rcpp::as<Rcpp::NumericMatrix>(Rcpp::wrap(X));
-  Rcpp::NumericVector Y_ = Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(Y));
+  int T = Y.n_elem;
   
-  // Call the optim function from R in C++ 
-  Rcpp::List out = glmnet_func(
-                        Rcpp::_["x"] = X_,
-                        Rcpp::_["y"]  = Y_,
-                        Rcpp::_["lambda"] = lambda);
+  int q = V.n_cols;
+  int p = X.n_cols;
   
-  // Return estimated values
-  return out;
+  double lambda2_ = lambda2;
+  
+  //initialize output
+  Rcpp::List out;
+  
+  arma::mat betaout(nsim, 1 + p + q);
+  arma::vec sigma2out(nsim); 
+  arma::vec lambda2out(nsim);
+  
+  //initialize subjects
+  Rcpp::List m1;
+  arma::vec fit1;
+  
+  arma::vec beta(1 + p + q);
+  beta(0) = beta0(0);
+  beta.subvec(1, q) = beta1;
+  beta.subvec((q + 1), (q + p)) = beta2;
+  
+  arma::vec tau2(1 + p + q); 
+  arma::vec tau02(1); 
+  arma::vec tau12(q);
+  arma::vec tau22(p);
+  
+  arma::vec expectedTau2(1 + p + q); 
+  
+  double sigma2 = arma::var(Y - arma::ones(T) * beta0 - V * beta1 - X * beta2);
+  
+  //
+  
+  
+  int i = 0;
+  int k = 0;
+  
+  for (i = 0; i < (nsim + burnin); i++) {
+    tau2 = getTau2(beta, sigma2, lambda2_);
+    
+    tau02 = tau2(0);
+    tau12 = tau2.subvec(1, q);
+    tau22 = tau2.subvec(q + 1, q + p);
+    
+    beta0 = beta(0);
+    beta1 = beta.subvec(1, q);
+    beta2 = beta.subvec(q + 1, q + p);
+    
+    m1 = getGaussianPosteriorCM(Y, V, X,
+                                beta0, beta1, beta2, 
+                                tau02, tau12, tau22,
+                                sigma2, lambda2_, 
+                                q, p);
+    
+    beta = Rcpp::as<arma::vec>(Rcpp::wrap(m1["beta"]));
+    tau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["tau2"]));
+    
+    expectedTau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["expectedTau2"]));
+    
+    fit1 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["fit1"]));
+    
+    sigma2 = arma::var(Y - fit1);
+    lambda2_ = getLambda2EM(expectedTau2);
+    
+    if (i >= burnin) {
+      betaout.row(i - burnin) = arma::trans(beta);
+      sigma2out(i - burnin) = sigma2;
+      lambda2out(i - burnin) = lambda2_;
+    }
+    
+  }
+  
+  out = Rcpp::List::create(
+    Rcpp::_["beta"] = betaout,
+    Rcpp::_["sigma2"] = sigma2out,
+    Rcpp::_["lambda2"] = lambda2out
+  );
+  
+  return(out);
+
+}
+
+Rcpp::NumericMatrix rootfinding(double cc, double FAP0, 
+                   Rcpp::NumericMatrix ref, Rcpp::String side) {
+  
+  int nsim = ref.rows();
+  int T = ref.cols();
+  
+  Rcpp::NumericMatrix check(nsim, T);
+  
+  int i;
+  int j;
+  
+  if (side == "one-sided") {
+    for (i = 0; i < nsim; i++) {
+      for (j = 0; j < T; j++) {
+        if (ref(i, j) <= cc) {
+          check(i, j) = 1.0;
+        } else {
+          check(i, j) = 0.0;
+        }
+      }
+    }
+  } else if (side == "two-sided") {
+    for (i = 0; i < nsim; i++) {
+      for (j = 0; j < T; j++) {
+        if (-cc <= ref(i, j) & ref(i, j) <= cc) {
+          check(i, j) = 1.0;
+        } else {
+          check(i, j) = 0.0;
+        }
+      }
+    }
+  }
+  return(check);
 }
 
 
 // [[Rcpp::export]]
-Rcpp::List getPosterior(arma::vec Y, arma::mat V, arma::mat X, double lambda2, 
-                        int burnin, int nsim) {
+double uniroot_cpp(double chi, double psi, double lambda) {
+  // Extract R's optim function
+  Rcpp::Environment stats("package:uniroot"); 
+  Rcpp::Function uniroot = stats["uniroot"];
   
-  //initialize subjects
-  tau0
-  taubeta1
-  taubeta2
+  // Call the optim function from R in C++ 
+  Rcpp::List out = uniroot(Rcpp::_["n"] = 1,
+                        Rcpp::_["lambda"]  = lambda,
+                        Rcpp::_["chi"] = chi,
+                        Rcpp::_["psi"] = psi);
   
-  //initialize Gibbs sampler
-  int q = V.n_cols;
-  int p = X.n_cols;
-  arma::mat X0 = arma::join_cols(V, X);
-  
-  Rcpp::List m0 = glmnet_cpp(X, Y, sqrt(lambda2));
-  
-  double beta0 = m0["a0"];
-  Rcpp::NumericVector tmpbeta = m0["beta"]; 
-  arma::vec beta = Rcpp::as<arma::vec>(Rcpp::wrap(tmpbeta));
-  arma::vec beta1 = beta.subvec(0, q - 1);
-  arma::vec beta2 = beta.subvec(q, q + p - 1);
-  
-  //
-
+  // Return estimated values
+  return out(0);
 }
