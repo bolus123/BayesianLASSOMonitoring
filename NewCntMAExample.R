@@ -240,12 +240,21 @@ ee <- getPosterior(Y, V, XShift, lambda20,
 
 end <- Sys.time()
 
+
+#save(ee, file = "C:/Users/Yuhui/Box/Yuhui R21/ee.Rdat")
+#load(file = "C:/Users/Yuhui/Box/Yuhui R21/ee.Rdat")
+
 ref <- getRefDivergence(Y, V, ee$beta[, 1], 
-                        ee$beta[, 2:6], V[1, ], "Residual")
+                        ee$beta[, 2:6], V[1, ], "Residual", 1000)
 
 cc <- bisection(0.1, ref, "one-sided", 
           0, 10, 1e-6)
 
+aa <- getDivergenceCS(Y, V, XShift, 
+                ee$beta[, 1], 
+                ee$beta[, 2:6], 
+                ee$beta[, 7:734],
+                V[1, ], "Residual")
 
 
 fit0 <- cbind(1, V) %*% colMeans(ee$beta[, 1:(q + 1)])

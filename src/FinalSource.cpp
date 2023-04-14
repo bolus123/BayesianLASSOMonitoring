@@ -1272,22 +1272,30 @@ arma::vec DivergenceResidual(
 // [[Rcpp::export]]
 arma::mat getRefDivergence(arma::vec Y, arma::mat V, 
                            arma::vec beta0, arma::mat beta1, 
-                           arma::vec init, Rcpp::String divergenceType) {
+                           arma::vec init, Rcpp::String divergenceType,
+                           int nsim) {
   int T = Y.n_elem;
-  int nsim = beta0.n_elem;
+  int n = beta0.n_elem;
   arma::mat out(nsim, T); 
   double tmpbeta0;
   arma::vec tmpbeta1; 
-  
+  arma::mat tmp(n, T);
   //std::cout << 1 << std::endl;
   
+  int i;
+  int j;
+  
   if (divergenceType == "Residual") {
-    for (int i = 0; i < nsim; i++) {
-      tmpbeta0 = beta0(i);
-      tmpbeta1 = arma::trans(beta1.row(i));
-      out.row(i) = arma::trans(
-        DivergenceResidual(Y, V, tmpbeta0, tmpbeta1, init));
+    for (j = 0; j < nsim; j++) {
+      for (i = 0; i < n; i++) {
+        tmpbeta0 = beta0(i);
+        tmpbeta1 = arma::trans(beta1.row(i));
+        tmp.row(i) = arma::trans(
+          DivergenceResidual(Y, V, tmpbeta0, tmpbeta1, init));
+      }
+      out.row(j) = arma::mean(tmp, 0); 
     }
+    
   }
 
   return(out);
@@ -1295,26 +1303,62 @@ arma::mat getRefDivergence(arma::vec Y, arma::mat V,
 }
 
 // [[Rcpp::export]]
-arma::mat getDivergenceCS(arma::vec Y, arma::mat V, arma::mat X, 
-                           arma::vec beta0, arma::mat beta1, arma::mat beta2
+arma::vec getDivergenceCS(arma::vec Y, arma::mat V, arma::mat X, 
+                           arma::vec beta0, arma::mat beta1, arma::mat beta2,
                            arma::vec init, Rcpp::String divergenceType) {
   int T = Y.n_elem;
-  int nsim = beta0.n_elem;
-  arma::mat out(nsim, T); 
-  double tmpbeta0;
+  int n = beta0.n_elem;
+  arma::mat out(n, T); 
+  arma::vec tmpbeta0(1);
   arma::vec tmpbeta1; 
-  
+  arma::vec tmpbeta2;
   //std::cout << 1 << std::endl;
   
+  arma::vec tmpfit0;
+  arma::vec tmpfit1;
+  double sigma2;
+  arma::vec resi0;
+  arma::vec resi1;
+  
+  arma::vec tmp0;
+  arma::vec tmp1;
+  arma::vec tmp2;
+  
+  int i;
+  
   if (divergenceType == "Residual") {
-    for (int i = 0; i < nsim; i++) {
-      tmpbeta0 = beta0(i);
+    for (i = 0; i < n; i++) {
+      tmpbeta0(0) = beta0(i);
       tmpbeta1 = arma::trans(beta1.row(i));
-      out.row(i) = arma::trans(
-        DivergenceResidual(Y, V, tmpbeta0, tmpbeta1, init));
+      tmpbeta2 = arma::trans(beta2.row(i));
+      //Rcpp::Rcout << tmpbeta2 << std::endl;
+      
+      tmpfit0 = arma::ones(T) * tmpbeta0 + V * tmpbeta1;
+      //Rcpp::Rcout << tmpfit0 << std::endl;
+      
+      resi0 = Y - tmpfit0;
+      sigma2 = arma::var(resi0);
+      //Rcpp::Rcout << tmpfit0 << std::endl;
+      
+      tmpfit1 = tmpfit0 + X * tmpbeta2;
+      resi1 = Y - tmpfit1;
+      //Rcpp::Rcout << resi1 << std::endl;
+      //
+      tmp0 = arma::pow(resi0, 2);
+      //Rcpp::Rcout << tmp0 << std::endl;
+      tmp1 = arma::pow(resi1, 2);
+      //Rcpp::Rcout << tmp1 << std::endl;
+      
+      tmp2 = tmp0 - tmp1;
+      //Rcpp::Rcout << tmp2 << std::endl;
+      
+      out.row(i) = arma::trans(tmp2 / sigma2);
+      //Rcpp::Rcout << out.row(i) << std::endl;
     }
   }
   
-  return(out);
+  
+  
+  return(arma::trans(arma::mean(out, 0)));
   
 }
