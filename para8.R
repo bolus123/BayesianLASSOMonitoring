@@ -2,7 +2,8 @@ library(GIGrvg)
 library(breakfast)
 library(pscl)
 library(glmnet)
-
+library(parallel)
+Rcpp::sourceCpp(file = "C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/src/FinalSource.cpp")
 #################################################
 
 simAR1 <- function(T, q, psi, sigma2, delta, tau) {
@@ -109,6 +110,105 @@ getChart <- function(FAP0, Y, V, m1,
 
 #################################################
 
+wrap <- function(X, pars, tau, 
+                 shift = c("Isolated", "Sustained"), 
+                 lambda2 = 5, burnin = 50, nbeta = 1000, ntry = 10, 
+                 side = "one-sided",
+                 DivType = "Residual", 
+                 nref = 1000,
+                 interval = c(0, 10), tol = 1e-6, seed = 12345) {
+  
+  #Rcpp::sourceCpp(file = "C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/src/FinalSource.cpp")
+  
+  set.seed(seed + X)
+  
+  s <- dim(pars)[1]
+  
+  out <- rep(NA, s)
+  
+  for (i in 1:s) {
+    FAP0 <- pars[i, 1]
+    T <- pars[i, 2]
+    q <- pars[i, 3]
+    psi <- pars[i, 4]
+    sigma2 <- pars[i, 5]
+    delta <- pars[i, 6]
+    
+    realization <- simAR1(T, q, psi, sigma2, delta, tau)
+    m1 <- getModel(realization$Y, realization$V, shift = shift, 
+                   lambda2 = lambda2, burnin = burnin, nsim = nbeta, ntry = ntry)
+    chart <- getChart(FAP0, realization$Y, realization$V, m1, 
+                      shift = shift, side = side,
+                      DivType = DivType, 
+                      nsim = nref,
+                      interval = interval, tol = tol)
+    out[i] <- sum(chart$sig) > 0
+  }
+  out
+  
+}
+
+
+
+parFAP <- function(cl, pars, tau, 
+                   shift = c("Isolated", "Sustained"), 
+                   lambda2 = 5, burnin = 50, nbeta = 1000, ntry = 10, 
+                   side = "one-sided",
+                   DivType = "Residual", 
+                   nref = 1000,
+                   interval = c(0, 10), tol = 1e-6,
+                   nsim = 1000, seed = 12345) {
+  
+  
+  outMat <- vector()
+  
+  
+  for (i in 1:nsim) {
+    out <- parLapplyLB(cl = cl, 1:nsim, fun = wrap, 
+                       pars = pars, tau = tau, 
+                       shift = shift, 
+                       lambda2 = lambda2, burnin = burnin, 
+                       nbeta = nbeta, ntry = ntry, 
+                       side = side,
+                       DivType = DivType, 
+                       nref = nref,
+                       interval = interval, tol = tol, seed = seed)
+    outMat <- cbind(outMat, unlist(out))
+  }
+  
+  
+  outMat
+  
+}
+
 
 
 #################################################
+
+FAP0vec <- c(0.1)
+Tvec <- c(365)
+qvec <- c(5)
+psivec <- c(0, 0.5)
+sigma2vec <- c(1)
+deltavec <- c(0, 1, 2, 3)
+pars <- expand.grid(FAP0vec, Tvec, qvec, psivec, sigma2vec, deltavec)
+
+
+no <- 8
+addr <- paste("C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/out", no, '.Rdat', sep = "")
+
+
+out <- vector()
+
+for (i in 1:100) {
+  tmp <- wrap(i, pars, 183, 
+              shift = c("Isolated", "Sustained"), 
+              lambda2 = 5, burnin = 100, nbeta = 1000, ntry = 10, 
+              side = "one-sided",
+              DivType = "Residual", 
+              nref = 1000,
+              interval = c(0, 10), tol = 1e-6, seed = 12345 + no)
+  out <- rbind(out, tmp)
+  save(out, file = addr)
+}
+
