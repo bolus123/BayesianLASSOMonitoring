@@ -248,9 +248,9 @@ while(i < ntry && flg == 0) {
   
   
   if (class(ee) == "try-error") {
-    flg = 0
+    flg <- 0
   } else {
-    flg = 1
+    flg <- 1
   }
   
   end <- Sys.time()
