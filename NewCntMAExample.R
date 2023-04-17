@@ -3,9 +3,12 @@ library(breakfast)
 library(pscl)
 library(glmnet)
 
-dat <-read.csv(file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
+#dat <-read.csv(file = "/Users/yuihuiyao/Library/CloudStorage/Box-Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
 
 #dat <- read.csv(file = "C:/Users/Yuhui/Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
+dat <- read.csv(file = "C:/Users/yyao17/Box/Yuhui R21/Walker County De-Identified 2016-2021 Opioid ER Visits.csv")
+
+
 
 DateTime <- strptime(dat$Admit.Date.Time, format = "%m/%d/%Y %I:%M:%S %p", tz = "America/Chicago")
 
@@ -231,14 +234,29 @@ beta <- as.vector(m0$beta)
 beta1 <- beta[1:q]
 beta2 <- beta[(q + 1):(q + p)]
 
-sta <- Sys.time()
+ntry <- 10
+i <- 0
+flg <- 0
 
-ee <- getPosterior(Y, V, XShift, lambda20, 
-             beta0, beta1, beta2, 
-             burnin = 50, nsim = 1000) 
+while(i < ntry && flg == 0) {
+  i <- i + 1
+  sta <- Sys.time()
+  
+  ee <- try(getPosterior(Y, V, XShift, lambda20, 
+                     beta0, beta1, beta2, 
+                     burnin = 50, nsim = 1000), TRUE)
+  
+  
+  if (class(ee) == "try-error") {
+    flg = 0
+  } else {
+    flg = 1
+  }
+  
+  end <- Sys.time()
+}
 
 
-end <- Sys.time()
 
 
 #save(ee, file = "C:/Users/Yuhui/Box/Yuhui R21/ee.Rdat")
