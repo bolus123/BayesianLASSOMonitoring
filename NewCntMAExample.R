@@ -234,6 +234,10 @@ beta <- as.vector(m0$beta)
 beta1 <- beta[1:q]
 beta2 <- beta[(q + 1):(q + p)]
 
+aa <- getPosteriorH0(Y, V, lambda20, 
+                     beta0, beta1, 
+                     10, 10)
+
 ntry <- 10
 i <- 0
 flg <- 0
