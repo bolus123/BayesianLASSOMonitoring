@@ -234,6 +234,14 @@ beta <- as.vector(m0$beta)
 beta1 <- beta[1:q]
 beta2 <- beta[(q + 1):(q + p)]
 
+bb <- getPosterior(Y, V, XShift, lambda20, beta0, beta1, beta2, 50, 100)
+
+aa <- BenjaminiHochberg(bb$beta[, (q + 2):(q + p + 1)], side = "two-sided")
+dd <- BenjaminiHochberg(0.1, bb$beta[, (q + 2):(q + p + 1)], side = "two-sided")
+
+aa1 <- colMeans(bb$beta[, (q + 2):(q + p + 1)] >= 0)
+aa2 <- colMeans(bb$beta[, (q + 2):(q + p + 1)] <= 0)
+
 aa <- getPosteriorH0(Y, V, lambda20, 
                      beta0, beta1, 
                      10, 10)

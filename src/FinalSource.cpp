@@ -1543,3 +1543,76 @@ arma::vec getDivergenceCS(arma::vec Y, arma::mat V, arma::mat X,
   return(arma::trans(arma::mean(out, 0)));
   
 }
+
+// [[Rcpp::export]]
+arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side)  {
+  
+  int nbeta = beta2.n_rows;
+  int p = beta2.n_cols;
+  arma::vec pvalue(p);
+  double tmp1 = 0;
+  double tmp2 = 0;
+  
+  int i = 0;
+  int j = 0;
+  
+  if (side == "two-sided") {
+    for (i = 0; i < p; i++) {
+      tmp1 = 0;
+      tmp2 = 0;
+      for (j = 0; j < nbeta; j++) {
+        if (beta2(j, i) >= 0) {
+          tmp1 = tmp1 + 1;
+        }
+        if (beta2(j, i) <= 0) {
+          tmp2 = tmp2 + 1;
+        }
+      }
+      tmp1 = tmp1 / nbeta;
+      tmp2 = tmp2 / nbeta;
+      if (tmp1 > tmp2) {
+        pvalue(i) = 2 * (1 - tmp1);
+      } else {
+        pvalue(i) = 2 * (1 - tmp2);
+      }
+    }
+  } else if (side == "upper-sided") {
+    for (i = 0; i < p; i++) {
+      tmp1 = 0;
+      for (j = 0; j < nbeta; j++) {
+        if (beta2(j, i) <= 0) {
+          tmp1 = tmp1 + 1;
+        }
+      }
+      tmp1 = tmp1 / nbeta;
+      pvalue(i) = 1 - tmp1;
+    }
+  } else if (side == "lower-sided") {
+    for (i = 0; i < p; i++) {
+      tmp1 = 0;
+      for (j = 0; j < nbeta; j++) {
+        if (beta2(j, i) >= 0) {
+          tmp1 = tmp1 + 1;
+        }
+      }
+      tmp1 = tmp1 / nbeta;
+      pvalue(i) = 1 - tmp1;
+    }
+  }
+  
+  arma::vec rank = arma::conv_to<arma::vec>::from(arma::sort_index(pvalue)) + 1.0;
+  
+  arma::mat out(p, 4);
+  out.zeros();
+  out.col(0) = pvalue;
+  out.col(1) = rank;
+  out.col(2) = rank / p * FDR;
+  
+  for (i = 0; i < p; i++) {
+    if (pvalue(i) < out(i, 2)) {
+      out(i, 3) = 1.0;
+    }
+  }
+  
+  return(out);
+}

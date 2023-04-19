@@ -44,19 +44,19 @@ getModel <- function(Y, V, shift = c("Isolated", "Sustained"),
   beta1 <- beta[1:q]
   beta2 <- beta[(q + 1):(q + p)]
   ###############################################
-  i <- 0
-  flg <- 0
-  while(i < ntry && flg == 0) {
-    i <- i + 1
-    m0 <- try(getPosteriorH0(Y, V, lambda2, 
-                             beta0, beta1, 
-                             burnin = burnin, nsim = nsim), TRUE)
-    if (class(m0) == "try-error") {
-      flg <- 0
-    } else {
-      flg <- 1
-    }
-  }
+  ##i <- 0
+  ##flg <- 0
+  ##while(i < ntry && flg == 0) {
+  ##  i <- i + 1
+  ##  m0 <- try(getPosteriorH0(Y, V, lambda2, 
+  ##                           beta0, beta1, 
+  ##                           burnin = burnin, nsim = nsim), TRUE)
+  ##  if (class(m0) == "try-error") {
+  ##    flg <- 0
+  ##  } else {
+  ##    flg <- 1
+  ##  }
+  ##}
   ###############################################
   i <- 0
   flg <- 0
@@ -72,7 +72,8 @@ getModel <- function(Y, V, shift = c("Isolated", "Sustained"),
     }
   }
   ###############################################
-  list(m0 = m0, m1 = m1)
+  #list(m0 = m0, m1 = m1)
+  m1
 }
 
 #################################################
@@ -152,12 +153,14 @@ wrap <- function(X, pars, tau,
     realization <- simAR1(T, q, psi, sigma2, delta, tau)
     model <- getModel(realization$Y, realization$V, shift = shift, 
                    lambda2 = lambda2, burnin = burnin, nsim = nbeta, ntry = ntry)
-    chart <- getChart(FAP0, realization$Y, realization$V, model$m0, model$m1, 
-                      shift = shift, side = side,
-                      DivType = DivType, 
-                      nsim = nref,
-                      interval = interval, tol = tol)
-    out[i] <- sum(chart$sig) > 0
+    #chart <- getChart(FAP0, realization$Y, realization$V, model$m0, model$m1, 
+    #                  shift = shift, side = side,
+    #                  DivType = DivType, 
+    #                  nsim = nref,
+    #                  interval = interval, tol = tol)
+    #out[i] <- sum(chart$sig) > 0
+    BH <- BenjaminiHochberg(FAP0, model$beta[, (q + 2):(1 + q + 2 * T - 2)], side = "two-sided")
+    out[i] <- sum(BH[, 4]) > 0
   }
   out
   
@@ -215,9 +218,7 @@ addr <- paste("C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/out", no
 
 out <- vector()
 
-for (i in 1:100) {
-  undebug(wrap)
-  undebug(getModel)
+for (i in 1:10) {
   tmp <- wrap(i, pars, 183, 
               shift = c("Isolated", "Sustained"), 
               lambda2 = 5, burnin = 100, nbeta = 1000, ntry = 10, 
