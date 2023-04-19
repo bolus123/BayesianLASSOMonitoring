@@ -203,7 +203,7 @@ wrap <- function(X, pars, tau,
 
 #################################################
 
-FAP0vec <- c(0.1)
+FAP0vec <- c(0.2)
 Tvec <- c(365)
 qvec <- c(5)
 psivec <- c(0, 0.5)
@@ -218,7 +218,7 @@ addr <- paste("C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/out", no
 
 out <- vector()
 
-for (i in 1:10) {
+for (i in 1:100) {
   tmp <- wrap(i, pars, 183, 
               shift = c("Isolated", "Sustained"), 
               lambda2 = 5, burnin = 100, nbeta = 1000, ntry = 10, 
