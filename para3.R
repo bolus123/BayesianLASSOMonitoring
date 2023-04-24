@@ -124,6 +124,18 @@ getChart <- function(FAP0, Y, V, m0, m1,
   list(cs = cs, cc = cc, sig = sig)
 }
 
+BenjaminiHochberg <- function(FDR, beta2, side) {
+  
+  pvalue <- getPvalue(beta2, side)
+  idx <- rank(pvalue, ties.method = "random")
+  BH <- FDR * idx / dim(beta2)[2]
+  sig <- as.numeric(pvalue < BH)
+  
+  out <- cbind(pvalue, idx, BH, sig)
+  out
+  
+}
+
 #################################################
 
 wrap <- function(X, pars, tau, 
@@ -152,14 +164,14 @@ wrap <- function(X, pars, tau,
     
     realization <- simAR1(T, q, psi, sigma2, delta, tau)
     model <- getModel(realization$Y, realization$V, shift = shift, 
-                      lambda2 = lambda2, burnin = burnin, nsim = nbeta, ntry = ntry)
+                   lambda2 = lambda2, burnin = burnin, nsim = nbeta, ntry = ntry)
     #chart <- getChart(FAP0, realization$Y, realization$V, model$m0, model$m1, 
     #                  shift = shift, side = side,
     #                  DivType = DivType, 
     #                  nsim = nref,
     #                  interval = interval, tol = tol)
     #out[i] <- sum(chart$sig) > 0
-    BH <- BenjaminiHochberg(FAP0, model$beta[, (q + 2):(1 + q + 2 * T - 2)], side = "two-sided")
+    BH <- BenjaminiHochberg(FAP0, model$beta[, (q + 2):(1 + q +  T - 2)], side = "two-sided")
     out[i] <- sum(BH[, 4]) > 0
   }
   out
@@ -215,13 +227,12 @@ pars <- expand.grid(FAP0vec, Tvec, qvec, psivec, sigma2vec, deltavec)
 no <- 3
 addr <- paste("C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/out", no, '.Rdat', sep = "")
 
-
 out <- vector()
 
-for (i in 1:100) {
+for (i in 1:10) {
   tmp <- wrap(i, pars, 183, 
-              shift = c("Isolated", "Sustained"), 
-              lambda2 = 5, burnin = 100, nbeta = 1000, ntry = 10, 
+              shift = c("Sustained"), 
+              lambda2 = 5, burnin = 50, nbeta = 10000, ntry = 10, 
               side = "one-sided",
               DivType = "Residual", 
               nref = 1000,

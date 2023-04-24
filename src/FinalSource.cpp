@@ -1545,7 +1545,7 @@ arma::vec getDivergenceCS(arma::vec Y, arma::mat V, arma::mat X,
 }
 
 // [[Rcpp::export]]
-arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side)  {
+arma::vec getPvalue(arma::mat beta2, Rcpp::String side)  {
   
   int nbeta = beta2.n_rows;
   int p = beta2.n_cols;
@@ -1600,19 +1600,6 @@ arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side)  {
     }
   }
   
-  arma::vec rank = arma::conv_to<arma::vec>::from(arma::sort_index(pvalue)) + 1.0;
   
-  arma::mat out(p, 4);
-  out.zeros();
-  out.col(0) = pvalue;
-  out.col(1) = rank;
-  out.col(2) = rank / p * FDR;
-  
-  for (i = 0; i < p; i++) {
-    if (pvalue(i) < out(i, 2)) {
-      out(i, 3) = 1.0;
-    }
-  }
-  
-  return(out);
+  return(pvalue);
 }
