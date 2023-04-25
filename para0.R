@@ -124,17 +124,17 @@ getChart <- function(FAP0, Y, V, m0, m1,
   list(cs = cs, cc = cc, sig = sig)
 }
 
-BenjaminiHochberg <- function(FDR, beta2, side) {
-  
-  pvalue <- getPvalue(beta2, side)
-  idx <- rank(pvalue, ties.method = "random")
-  BH <- FDR * idx / dim(beta2)[2]
-  sig <- as.numeric(pvalue < BH)
-  
-  out <- cbind(pvalue, idx, BH, sig)
-  out
-  
-}
+#BenjaminiHochberg1 <- function(FDR, beta2, side) {
+#  
+#  pvalue <- getPvalue(beta2, side)
+#  idx <- rank(pvalue, ties.method = "random")
+#  BH <- FDR * idx / dim(beta2)[2]
+#  sig <- as.numeric(pvalue < BH)
+#  
+#  out <- cbind(pvalue, idx, BH, sig)
+#  out
+#  
+#}
 
 #################################################
 
@@ -142,11 +142,7 @@ wrap <- function(X, pars, tau,
                  shift = c("Isolated", "Sustained"), 
                  lambda2 = 5, burnin = 50, nbeta = 1000, ntry = 10, 
                  side = "one-sided",
-                 DivType = "Residual", 
-                 nref = 1000,
-                 interval = c(0, 10), tol = 1e-6, seed = 12345) {
-  
-  #Rcpp::sourceCpp(file = "C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/src/FinalSource.cpp")
+                 seed = 12345) {
   
   set.seed(seed + X)
   
@@ -165,13 +161,19 @@ wrap <- function(X, pars, tau,
     realization <- simAR1(T, q, psi, sigma2, delta, tau)
     model <- getModel(realization$Y, realization$V, shift = shift, 
                    lambda2 = lambda2, burnin = burnin, nsim = nbeta, ntry = ntry)
-    #chart <- getChart(FAP0, realization$Y, realization$V, model$m0, model$m1, 
-    #                  shift = shift, side = side,
-    #                  DivType = DivType, 
-    #                  nsim = nref,
-    #                  interval = interval, tol = tol)
-    #out[i] <- sum(chart$sig) > 0
-    BH <- BenjaminiHochberg(FAP0, model$beta[, (q + 2):(1 + q +  T - 2)], side = "two-sided")
+ 
+    sta <- q + 2;
+    end <- 1 + q
+    
+    if ("Isolated" %in% shift) {
+      end <- end + T
+    } 
+    
+    if ("Sustained" %in% shift) {
+      end <- end + T - 2
+    } 
+    
+    BH <- BenjaminiHochberg(FAP0, model$beta[, sta:end], side = "two-sided")
     out[i] <- sum(BH[, 4]) > 0
   }
   out
@@ -229,14 +231,14 @@ addr <- paste("C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/out", no
 
 out <- vector()
 
+
+debug(wrap)
+
 for (i in 1:10) {
   tmp <- wrap(i, pars, 183, 
               shift = c("Sustained"), 
-              lambda2 = 5, burnin = 50, nbeta = 10000, ntry = 10, 
-              side = "one-sided",
-              DivType = "Residual", 
-              nref = 1000,
-              interval = c(0, 10), tol = 1e-6, seed = 12345 + no)
+              lambda2 = 5, burnin = 50, nbeta = 100, ntry = 10, 
+              side = "one-sided", seed = 12345 + no)
   out <- rbind(out, tmp)
   save(out, file = addr)
 }
