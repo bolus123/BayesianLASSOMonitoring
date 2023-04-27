@@ -10,7 +10,7 @@ simAR1 <- function(T, q, psi, sigma2, delta, tau) {
   tmp <- arima.sim(list(ar = c(psi)), T + q, sd = sqrt(sigma2))
   tmp[(tau + q):(T + q)] <- tmp[(tau + q):(T + q)] + 
     sqrt(sigma2 / (1 - psi ^ 2)) * delta
-  V <- getT(tmp, q)
+  V <- getV(tmp, q)
   V <- V[-c(1:q), ]
   Y <- tmp[-c(1:q)]
   list(Y = Y, V = V)

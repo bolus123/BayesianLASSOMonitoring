@@ -171,7 +171,7 @@ for (i in 1:dim(dat1)[1]) {
 
 #############
 q <- 5
-V <- getT(cntma, q)
+V <- getV(cntma, q)
 
 check <- which(as.Date("2018-01-01") <= as.Date(dat1[, 1]) & 
                  as.Date(dat1[, 1]) <= as.Date("2018-12-31"))
@@ -677,13 +677,13 @@ getKLResiCSPPP <- function(Y, V, beta0, beta1, nsim, breaks = 10) {
   resi0 <- resi0rep
   
   p <- dim(beta1)[2]
-  #V <- getT(c(initial, Y), p)[-c(1:p), ]
+  #V <- getV(c(initial, Y), p)[-c(1:p), ]
     
   initial <- V[1, ]
   
   for (i in 1:nsim) {
     Yrep <- SimLinear(Y, beta0[i], beta1[i, ], initial) 
-    Vrep <- getT(c(initial, Yrep), p)[-c(1:p), ]
+    Vrep <- getV(c(initial, Yrep), p)[-c(1:p), ]
     resi0rep[i, ] <- Yrep -  beta0[i] - Vrep %*% beta1[i, ]
     resi0[i, ] <- Y -  beta0[i] - V %*% beta1[i, ]
   }
@@ -907,7 +907,7 @@ getResiCSLinear <- function(Y, V, beta0, beta1, nsim, initial = rep(0, length(be
     resi0Mat[i, ] <- Y - beta0[i] - V %*% beta1[i, ]
     sigma2 <- var(resi0Mat[i, ])
     Yrep <- SimLinear(Y, beta0[i], beta1[i, ], initial = initial)
-    Vrep <- getT(c(initial, Yrep), p)[-c(1:p), ]
+    Vrep <- getV(c(initial, Yrep), p)[-c(1:p), ]
     resi0repMat[i, ] <- Yrep - beta0[i] - Vrep %*% beta1[i, ]
     out[i, ] <- (resi0Mat[i, ] - resi0repMat[i, ]) ^ 2  / sigma2
   }

@@ -561,7 +561,7 @@ arma::vec getExpectedTau2(arma::vec beta, double sigma2, double lambda2) {
 }
 
 // [[Rcpp::export]]
-arma::mat getT(arma::vec V, int p) {
+arma::mat getV(arma::vec V, int p) {
   int n = V.n_elem;
   arma::mat T(n, p);
   
@@ -597,121 +597,6 @@ arma::vec loglikelihood(arma::vec resi, double sigma2){
   return out;
 }
 
-arma::vec optim_rcpp(arma::vec init_beta_hat,
-                     arma::vec y, arma::mat x){
-  
-  // Extract R's optim function
-  Rcpp::Environment stats("package:stats"); 
-  Rcpp::Function optim = stats["optim"];
-  
-  // Call the optim function from R in C++ 
-  Rcpp::List opt_results = optim(Rcpp::_["par"]    = init_beta_hat,
-                                 // Make sure this function is not exported!
-                                 Rcpp::_["fn"]     = Rcpp::InternalFunction(&obj_fun_rcpp),
-                                 Rcpp::_["method"] = "BFGS",
-                                 // Pass in the other parameters as everything
-                                 // is scoped environmentally
-                                 Rcpp::_["y"] = y,
-                                 Rcpp::_["x"] = x);
-  
-  // Extract out the estimated parameter values
-  arma::vec out = Rcpp::as<arma::vec>(opt_results[0]);
-  
-  // Return estimated values
-  return out;
-}
-
-
-Rcpp::List fastLm(const arma::vec & y, const arma::mat & X) {
-  
-  int n = X.n_rows, k = X.n_cols;
-  
-  arma::colvec coef = arma::solve(X, y); 
-  arma::colvec resid = y - X*coef; 
-  
-  double sig2 = arma::as_scalar(arma::trans(resid)*resid/(n-k));
-  
-  return Rcpp::List::create(Rcpp::Named("coefs") = coef,
-                            Rcpp::Named("sig2") = sig2);
-}
-
-
-arma::vec idetect_rcpp(arma::vec y, int K){
-  
-  // Extract R's optim function
-  Rcpp::Environment breakfast("package:breakfast"); 
-  Rcpp::Function idetect = breakfast["sol.idetect"];
-  
-  // Call the optim function from R in C++ 
-  Rcpp::List results = idetect(Rcpp::_["x"]    = y,
-                               // Make sure this function is not exported!
-                               Rcpp::_["thr_ic"] = 0.9,
-                               Rcpp::_["points"] = 3);
-  
-  // Extract out the estimated parameter values
-  arma::mat results1 = Rcpp::as<arma::mat>(results["cands"]);
-  //Rcpp::Rcout << results1 << std::endl;
-  int ncol = results1.n_cols;
-  //Rcpp::Rcout << ncol << std::endl;
-  arma::vec out = results1.col(ncol - 2);
-  
-  // Return estimated values
-  return (out.subvec(0, K - 1) - 1);
-}
-
-arma::vec checkDim(Rcpp::Nullable<Rcpp::NumericMatrix> X=R_NilValue,
-                   Rcpp::Nullable<Rcpp::NumericMatrix> T=R_NilValue,
-                   Rcpp::Nullable<Rcpp::NumericMatrix> U=R_NilValue,
-                   Rcpp::Nullable<Rcpp::NumericMatrix> W=R_NilValue) {
-  
-  int q;
-  int p;
-  int K;
-  int r;
-  
-  arma::mat X_;
-  arma::mat T_;
-  arma::mat U_;
-  arma::mat W_;
-  
-  if (X.isNotNull()) {
-    X_ = Rcpp::as<arma::mat>(X);
-    q = X_.n_cols;
-  } else {
-    q = 0;
-  }
-  
-  if (T.isNotNull()) {
-    T_ = Rcpp::as<arma::mat>(T);
-    p = T_.n_cols;
-  } else {
-    p = 0;
-  }
-  
-  if (U.isNotNull()) {
-    U_ = Rcpp::as<arma::mat>(U);
-    K = U_.n_cols;
-  } else {
-    K = 0;
-  }
-  
-  if (W.isNotNull()) {
-    W_ = Rcpp::as<arma::mat>(W);
-    r = W_.n_cols;
-  } else {
-    r = 0;
-  }
-  
-  arma::vec out;
-  out.zeros(4);
-  out(0) = q;
-  out(1) = p;
-  out(2) = K;
-  out(3) = r;
-  
-  return(out);
-  
-}
 
 // [[Rcpp::export]]
 arma::mat IsolatedShift(int T) {
