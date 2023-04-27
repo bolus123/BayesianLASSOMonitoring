@@ -318,7 +318,6 @@ Rcpp::List getUWithoutW_MC(arma::vec zetadelta, int K,
   arma::rowvec tmpout; 
   
   int i;
-  int j;
   //Rcpp::Rcout << "b" << std::endl;
   
   for (i = 0; i < n; i++) {
@@ -429,7 +428,6 @@ double rinvgammaCpp(double shape, double rate) {
   
 }
 
-// [[Rcpp::export]]
 double getSigma2(arma::vec resi,
                  arma::vec BetaDelta,
                  arma::vec Tau2,
@@ -476,7 +474,6 @@ double getSigma2(arma::vec resi,
   
 }
 
-// [[Rcpp::export]]
 double rgammaCpp(double shape, double rate) {
   double scale = 1 / rate;
   double out = R::rgamma(shape, scale);
@@ -883,7 +880,6 @@ Rcpp::List getPosterior(arma::vec Y, arma::mat V, arma::mat X, double lambda2,
   
   
   int i = 0;
-  int k = 0;
   
   for (i = 0; i < (nsim + burnin); i++) {
     tau2 = getTau2(beta, sigma2, lambda2_);
@@ -968,7 +964,6 @@ Rcpp::List getPosteriorH0(arma::vec Y, arma::mat V, double lambda2,
   
   
   int i = 0;
-  int k = 0;
   
   for (i = 0; i < (nsim + burnin); i++) {
     tau2 = getTau2(beta, sigma2, lambda2_);

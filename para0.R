@@ -1,6 +1,4 @@
 library(GIGrvg)
-library(breakfast)
-library(pscl)
 library(glmnet)
 library(parallel)
 Rcpp::sourceCpp(file = "C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/src/FinalSource.cpp")
