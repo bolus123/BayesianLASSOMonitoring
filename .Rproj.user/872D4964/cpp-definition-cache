@@ -1,0 +1,339 @@
+[
+    {
+        "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+        "file_last_write": 1682624122.0,
+        "definitions": [
+            {
+                "usr": "c:@F@getInvTau2#$@N@arma@S@Col>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getInvTau2(arma::vec)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 20,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@rmvnormCpp#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rmvnormCpp(arma::vec, arma::mat)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 36,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getBetaNonMonotonicity#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S0_#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getBetaNonMonotonicity(arma::vec, arma::mat, arma::vec, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 59,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@rtrnormCpp#d#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rtrnormCpp(double, double, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 93,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@dtrnormCpp#d#d#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "dtrnormCpp(double, double, double, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 115,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getBetaMonotonicity#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S0_#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getBetaMonotonicity(arma::vec, arma::mat, arma::vec, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 142,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getUW#$@N@arma@S@Mat>#d#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUW(arma::mat, arma::mat)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 220,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getTheta#$@N@arma@S@Col>#d#S0_#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getTheta(arma::vec, arma::vec, arma::vec, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 237,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getEta#d#$@N@arma@S@Col>#d#S0_#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getEta(double, arma::vec, arma::vec, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 252,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getUWithW#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#I#S0_#S0_#d#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUWithW(arma::vec, arma::mat, int, arma::vec, arma::vec, double, arma::vec)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 260,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getUWithoutW_MC#$@N@arma@S@Col>#d#I#S0_#d#$@N@arma@S@Mat>#d#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUWithoutW_MC(arma::vec, int, arma::vec, double, arma::mat, arma::vec)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 310,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getUWithoutW#$@N@arma@S@Col>#d#I#S0_#d#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUWithoutW(arma::vec, int, arma::vec, double, arma::vec)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 374,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@rinvgammaCpp#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rinvgammaCpp(double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 437,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getSigma2#$@N@arma@S@Col>#d#S0_#S0_#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getSigma2(arma::vec, arma::vec, arma::vec, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 446,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@rgammaCpp#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rgammaCpp(double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 492,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getLambda2#$@N@arma@S@Col>#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getLambda2(arma::vec, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 498,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getLambda2EM#$@N@arma@S@Col>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getLambda2EM(arma::vec)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 512,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@rgig_cpp#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rgig_cpp(double, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 518,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getTau2#$@N@arma@S@Col>#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getTau2(arma::vec, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 534,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@modifiedBesselfunction2nd#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "modifiedBesselfunction2nd(double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 544,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getExpectedTau2#$@N@arma@S@Col>#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getExpectedTau2(arma::vec, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 557,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getV#$@N@arma@S@Col>#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getV(arma::vec, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 576,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@obj_fun_rcpp#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "obj_fun_rcpp(arma::vec, arma::vec, arma::mat)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 590,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@loglikelihood#$@N@arma@S@Col>#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "loglikelihood(arma::vec, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 598,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@IsolatedShift#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "IsolatedShift(int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 614,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@SustainedShift#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "SustainedShift(int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 621,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@GradualShift#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "GradualShift(int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 640,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getGaussianPosteriorCM#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#S0_#S0_#S0_#S0_#S0_#S0_#d#d#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getGaussianPosteriorCM(arma::vec, arma::mat, arma::mat, arma::vec, arma::vec, arma::vec, arma::vec, arma::vec, arma::vec, double, double, int, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 658,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getGaussianPosteriorCMH0#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S0_#S0_#S0_#S0_#d#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getGaussianPosteriorCMH0(arma::vec, arma::mat, arma::vec, arma::vec, arma::vec, arma::vec, double, double, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 771,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getPosterior#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#S0_#S0_#S0_#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getPosterior(arma::vec, arma::mat, arma::mat, double, arma::vec, arma::vec, arma::vec, int, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 858,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getPosteriorH0#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#d#S0_#S0_#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getPosteriorH0(arma::vec, arma::mat, double, arma::vec, arma::vec, int, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 945,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getPvalue#$@N@arma@S@Mat>#d#$@N@Rcpp@S@String#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getPvalue(arma::mat, Rcpp::String)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 1032,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@BenjaminiHochberg#d#$@N@arma@S@Mat>#d#$@N@Rcpp@S@String#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "BenjaminiHochberg(double, arma::mat, Rcpp::String)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianMonitoring1/src/BayesianMonitoring.cpp",
+                "line": 1092,
+                "column": 11,
+                "hidden": false
+            }
+        ],
+        "hidden": false
+    }
+]

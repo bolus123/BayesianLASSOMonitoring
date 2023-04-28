@@ -1,0 +1,4 @@
+useDynLib(BayesianMonitoring1, .registration=TRUE)
+import(GIGrvg)
+importFrom(Rcpp, evalCpp)
+exportPattern("^[[:alpha:]]+")
