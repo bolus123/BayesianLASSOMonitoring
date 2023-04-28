@@ -1,0 +1,305 @@
+[
+    {
+        "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+        "file_last_write": 1682699281.0,
+        "definitions": [
+            {
+                "usr": "c:@F@getInvTau2#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getInvTau2(int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 22,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@rmvnormCpp#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rmvnormCpp(int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 38,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@getBetaNonMonotonicity#I#I#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getBetaNonMonotonicity(int, int, int, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 61,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@rtrnormCpp#d#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rtrnormCpp(double, double, double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 95,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@dtrnormCpp#d#d#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "dtrnormCpp(double, double, double, double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 117,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@getBetaMonotonicity#I#I#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getBetaMonotonicity(int, int, int, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 144,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@getUW#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUW(int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 222,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@getTheta#I#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getTheta(int, int, int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 239,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@getEta#d#I#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getEta(double, int, int, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 254,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@getUWithW#I#I#I#I#I#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUWithW(int, int, int, int, int, double, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 262,
+                "column": 12
+            },
+            {
+                "usr": "c:@F@getUWithoutW_MC#I#I#I#d#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUWithoutW_MC(int, int, int, double, int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 312,
+                "column": 12
+            },
+            {
+                "usr": "c:@F@getUWithoutW#I#I#I#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getUWithoutW(int, int, int, double, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 376,
+                "column": 12
+            },
+            {
+                "usr": "c:@F@rinvgammaCpp#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rinvgammaCpp(double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 439,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@getSigma2#I#I#I#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getSigma2(int, int, int, double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 448,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@rgammaCpp#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rgammaCpp(double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 494,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@getLambda2#I#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getLambda2(int, double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 500,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@getLambda2EM#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getLambda2EM(int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 514,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@rgig_cpp#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rgig_cpp(double, double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 536,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@getTau2#I#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getTau2(int, double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 543,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@modifiedBesselfunction2nd#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "modifiedBesselfunction2nd(double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 553,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@getExpectedTau2#I#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getExpectedTau2(int, double, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 566,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@getV#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getV(int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 585,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@obj_fun_rcpp#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "obj_fun_rcpp(int, int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 599,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@loglikelihood#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "loglikelihood(int, double)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 607,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@IsolatedShift#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "IsolatedShift(int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 623,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@SustainedShift#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "SustainedShift(int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 630,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@GradualShift#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "GradualShift(int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 649,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@getGaussianPosteriorCM#I#I#I#I#I#I#I#I#I#d#d#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getGaussianPosteriorCM(int, int, int, int, int, int, int, int, int, double, double, int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 667,
+                "column": 12
+            },
+            {
+                "usr": "c:@F@getGaussianPosteriorCMH0#I#I#I#I#I#I#d#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getGaussianPosteriorCMH0(int, int, int, int, int, int, double, double, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 780,
+                "column": 12
+            },
+            {
+                "usr": "c:@F@getPosterior#I#I#I#d#I#I#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getPosterior(int, int, int, double, int, int, int, int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 867,
+                "column": 12
+            },
+            {
+                "usr": "c:@F@getPosteriorH0#I#I#d#I#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getPosteriorH0(int, int, double, int, int, int, int)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 954,
+                "column": 12
+            },
+            {
+                "usr": "c:@F@getPvalue#I#$@N@Rcpp@S@String#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getPvalue(int, Rcpp::String)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 1041,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@BenjaminiHochberg#d#I#$@N@Rcpp@S@String#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "BenjaminiHochberg(double, int, Rcpp::String)",
+                "file": "C:/Users/Yuhui/OneDrive/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 1101,
+                "column": 11
+            }
+        ]
+    }
+]

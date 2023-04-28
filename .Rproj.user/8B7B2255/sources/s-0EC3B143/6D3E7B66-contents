@@ -1,4 +1,0 @@
-useDynLib(BayesianLassoMonitoring, .registration=TRUE)
-import(GIGrvg)
-importFrom(Rcpp, evalCpp)
-exportPattern("^[[:alpha:]]+")
