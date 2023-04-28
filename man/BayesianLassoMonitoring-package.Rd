@@ -1,24 +1,24 @@
-\name{BayesianMonitoring1-package}
-\alias{BayesianMonitoring1-package}
-\alias{BayesianMonitoring1}
+\name{BayesianLassoMonitoring-package}
+\alias{BayesianLassoMonitoring-package}
+\alias{BayesianLassoMonitoring}
 \docType{package}
 \title{
-\packageTitle{BayesianMonitoring1}
+\packageTitle{BayesianLassoMonitoring}
 }
 \description{
-\packageDescription{BayesianMonitoring1}
+\packageDescription{BayesianLassoMonitoring}
 }
 \details{
 
 The DESCRIPTION file:
-\packageDESCRIPTION{BayesianMonitoring1}
-\packageIndices{BayesianMonitoring1}
+\packageDESCRIPTION{BayesianLassoMonitoring}
+\packageIndices{BayesianLassoMonitoring}
 ~~ An overview of how to use the package, including the most important functions ~~
 }
 \author{
-\packageAuthor{BayesianMonitoring1}
+\packageAuthor{BayesianLassoMonitoring}
 
-Maintainer: \packageMaintainer{BayesianMonitoring1}
+Maintainer: \packageMaintainer{BayesianLassoMonitoring}
 }
 \references{
 ~~ Literature or other references for background information ~~

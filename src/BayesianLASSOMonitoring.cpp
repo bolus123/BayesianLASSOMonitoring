@@ -15,6 +15,8 @@
 // available from R
 //
 
+#include <GIGrvg.h>
+
 using namespace Rcpp;
 
 arma::mat getInvTau2(arma::vec Tau2) {
@@ -515,19 +517,26 @@ double getLambda2EM(arma::vec ExpectedTau2) {
   return(out);
 }
 
+//double rgig_cpp(double chi, double psi, double lambda) {
+//  // Extract R's optim function
+//  Rcpp::Environment GIGrvg("package:GIGrvg"); 
+//  Rcpp::Function rgig = GIGrvg["rgig"];
+//  
+//  // Call the optim function from R in C++ 
+//  Rcpp::List out = rgig(Rcpp::_["n"] = 1,
+//                        Rcpp::_["lambda"]  = lambda,
+//                        Rcpp::_["chi"] = chi,
+//                        Rcpp::_["psi"] = psi);
+//  
+//  // Return estimated values
+//  return out(0);
+//}
+
+// (internal) wrapper function for do_rgig in GIGrvg package
 double rgig_cpp(double chi, double psi, double lambda) {
-  // Extract R's optim function
-  Rcpp::Environment GIGrvg("package:GIGrvg"); 
-  Rcpp::Function rgig = GIGrvg["rgig"];
-  
-  // Call the optim function from R in C++ 
-  Rcpp::List out = rgig(Rcpp::_["n"] = 1,
-                        Rcpp::_["lambda"]  = lambda,
-                        Rcpp::_["chi"] = chi,
-                        Rcpp::_["psi"] = psi);
-  
-  // Return estimated values
-  return out(0);
+  SEXP (*fun)(int, double, double, double) = NULL;
+  if (!fun) fun = (SEXP(*)(int, double, double, double)) R_GetCCallable("GIGrvg", "do_rgig");
+  return as<double>(fun(1, lambda, chi, psi));
 }
 
 
