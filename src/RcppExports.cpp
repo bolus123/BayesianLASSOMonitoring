@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // getV
 arma::mat getV(arma::vec V, int p);
-RcppExport SEXP _BayesianMonitoring1_getV(SEXP VSEXP, SEXP pSEXP) {
+RcppExport SEXP _BayesianLassoMonitoring_getV(SEXP VSEXP, SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -25,7 +25,7 @@ END_RCPP
 }
 // IsolatedShift
 arma::mat IsolatedShift(int T);
-RcppExport SEXP _BayesianMonitoring1_IsolatedShift(SEXP TSEXP) {
+RcppExport SEXP _BayesianLassoMonitoring_IsolatedShift(SEXP TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,7 +36,7 @@ END_RCPP
 }
 // SustainedShift
 arma::mat SustainedShift(int T);
-RcppExport SEXP _BayesianMonitoring1_SustainedShift(SEXP TSEXP) {
+RcppExport SEXP _BayesianLassoMonitoring_SustainedShift(SEXP TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -47,7 +47,7 @@ END_RCPP
 }
 // GradualShift
 arma::mat GradualShift(int T);
-RcppExport SEXP _BayesianMonitoring1_GradualShift(SEXP TSEXP) {
+RcppExport SEXP _BayesianLassoMonitoring_GradualShift(SEXP TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -58,7 +58,7 @@ END_RCPP
 }
 // getPosterior
 Rcpp::List getPosterior(arma::vec Y, arma::mat V, arma::mat X, double lambda2, arma::vec beta0, arma::vec beta1, arma::vec beta2, int burnin, int nsim);
-RcppExport SEXP _BayesianMonitoring1_getPosterior(SEXP YSEXP, SEXP VSEXP, SEXP XSEXP, SEXP lambda2SEXP, SEXP beta0SEXP, SEXP beta1SEXP, SEXP beta2SEXP, SEXP burninSEXP, SEXP nsimSEXP) {
+RcppExport SEXP _BayesianLassoMonitoring_getPosterior(SEXP YSEXP, SEXP VSEXP, SEXP XSEXP, SEXP lambda2SEXP, SEXP beta0SEXP, SEXP beta1SEXP, SEXP beta2SEXP, SEXP burninSEXP, SEXP nsimSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -77,7 +77,7 @@ END_RCPP
 }
 // getPosteriorH0
 Rcpp::List getPosteriorH0(arma::vec Y, arma::mat V, double lambda2, arma::vec beta0, arma::vec beta1, int burnin, int nsim);
-RcppExport SEXP _BayesianMonitoring1_getPosteriorH0(SEXP YSEXP, SEXP VSEXP, SEXP lambda2SEXP, SEXP beta0SEXP, SEXP beta1SEXP, SEXP burninSEXP, SEXP nsimSEXP) {
+RcppExport SEXP _BayesianLassoMonitoring_getPosteriorH0(SEXP YSEXP, SEXP VSEXP, SEXP lambda2SEXP, SEXP beta0SEXP, SEXP beta1SEXP, SEXP burninSEXP, SEXP nsimSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -94,7 +94,7 @@ END_RCPP
 }
 // BenjaminiHochberg
 arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side);
-RcppExport SEXP _BayesianMonitoring1_BenjaminiHochberg(SEXP FDRSEXP, SEXP beta2SEXP, SEXP sideSEXP) {
+RcppExport SEXP _BayesianLassoMonitoring_BenjaminiHochberg(SEXP FDRSEXP, SEXP beta2SEXP, SEXP sideSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -107,17 +107,17 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BayesianMonitoring1_getV", (DL_FUNC) &_BayesianMonitoring1_getV, 2},
-    {"_BayesianMonitoring1_IsolatedShift", (DL_FUNC) &_BayesianMonitoring1_IsolatedShift, 1},
-    {"_BayesianMonitoring1_SustainedShift", (DL_FUNC) &_BayesianMonitoring1_SustainedShift, 1},
-    {"_BayesianMonitoring1_GradualShift", (DL_FUNC) &_BayesianMonitoring1_GradualShift, 1},
-    {"_BayesianMonitoring1_getPosterior", (DL_FUNC) &_BayesianMonitoring1_getPosterior, 9},
-    {"_BayesianMonitoring1_getPosteriorH0", (DL_FUNC) &_BayesianMonitoring1_getPosteriorH0, 7},
-    {"_BayesianMonitoring1_BenjaminiHochberg", (DL_FUNC) &_BayesianMonitoring1_BenjaminiHochberg, 3},
+    {"_BayesianLassoMonitoring_getV", (DL_FUNC) &_BayesianLassoMonitoring_getV, 2},
+    {"_BayesianLassoMonitoring_IsolatedShift", (DL_FUNC) &_BayesianLassoMonitoring_IsolatedShift, 1},
+    {"_BayesianLassoMonitoring_SustainedShift", (DL_FUNC) &_BayesianLassoMonitoring_SustainedShift, 1},
+    {"_BayesianLassoMonitoring_GradualShift", (DL_FUNC) &_BayesianLassoMonitoring_GradualShift, 1},
+    {"_BayesianLassoMonitoring_getPosterior", (DL_FUNC) &_BayesianLassoMonitoring_getPosterior, 9},
+    {"_BayesianLassoMonitoring_getPosteriorH0", (DL_FUNC) &_BayesianLassoMonitoring_getPosteriorH0, 7},
+    {"_BayesianLassoMonitoring_BenjaminiHochberg", (DL_FUNC) &_BayesianLassoMonitoring_BenjaminiHochberg, 3},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_BayesianMonitoring1(DllInfo *dll) {
+RcppExport void R_init_BayesianLassoMonitoring(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

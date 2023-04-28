@@ -2,30 +2,30 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 getV <- function(V, p) {
-    .Call(`_BayesianMonitoring1_getV`, V, p)
+    .Call(`_BayesianLassoMonitoring_getV`, V, p)
 }
 
 IsolatedShift <- function(T) {
-    .Call(`_BayesianMonitoring1_IsolatedShift`, T)
+    .Call(`_BayesianLassoMonitoring_IsolatedShift`, T)
 }
 
 SustainedShift <- function(T) {
-    .Call(`_BayesianMonitoring1_SustainedShift`, T)
+    .Call(`_BayesianLassoMonitoring_SustainedShift`, T)
 }
 
 GradualShift <- function(T) {
-    .Call(`_BayesianMonitoring1_GradualShift`, T)
+    .Call(`_BayesianLassoMonitoring_GradualShift`, T)
 }
 
 getPosterior <- function(Y, V, X, lambda2, beta0, beta1, beta2, burnin, nsim) {
-    .Call(`_BayesianMonitoring1_getPosterior`, Y, V, X, lambda2, beta0, beta1, beta2, burnin, nsim)
+    .Call(`_BayesianLassoMonitoring_getPosterior`, Y, V, X, lambda2, beta0, beta1, beta2, burnin, nsim)
 }
 
 getPosteriorH0 <- function(Y, V, lambda2, beta0, beta1, burnin, nsim) {
-    .Call(`_BayesianMonitoring1_getPosteriorH0`, Y, V, lambda2, beta0, beta1, burnin, nsim)
+    .Call(`_BayesianLassoMonitoring_getPosteriorH0`, Y, V, lambda2, beta0, beta1, burnin, nsim)
 }
 
 BenjaminiHochberg <- function(FDR, beta2, side) {
-    .Call(`_BayesianMonitoring1_BenjaminiHochberg`, FDR, beta2, side)
+    .Call(`_BayesianLassoMonitoring_BenjaminiHochberg`, FDR, beta2, side)
 }
 

@@ -1,0 +1,24 @@
+{
+    "args": [
+        "-std=gnu++11",
+        "-IC:/PROGRA~1/R/R-42~1.0/include",
+        "-DNDEBUG",
+        "-fopenmp",
+        "-IC:/Users/Yuhui/AppData/Local/R/win-library/4.2/Rcpp/include",
+        "-IC:/Users/Yuhui/AppData/Local/R/win-library/4.2/RcppArmadillo/include",
+        "-IC:/Users/Yuhui/AppData/Local/R/win-library/4.2/GIGrvg/include",
+        "-nostdinc",
+        "-IC:/RBuildTools/4.0/mingw64/include/c++/8.3.0",
+        "-IC:/RBuildTools/4.0/mingw64/include/c++/8.3.0/x86_64-w64-mingw32",
+        "-IC:/RBuildTools/4.0/mingw64/include/c++/8.3.0/backward",
+        "-IC:/RBuildTools/4.0/mingw64/lib/gcc/x86_64-w64-mingw32/8.3.0/include",
+        "-IC:/RBuildTools/4.0/mingw64/include",
+        "-IC:/RBuildTools/4.0/mingw64/lib/gcc/x86_64-w64-mingw32/8.3.0/include-fixed",
+        "-IC:/RBuildTools/4.0/mingw64/x86_64-w64-mingw32/include"
+    ],
+    "pch": "RcppArmadillo",
+    "is_cpp": true,
+    "hash": "168269806216826980621682698062",
+    "compiler": "14695981039346656037",
+    "rversion": "4.2.0"
+}
