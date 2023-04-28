@@ -29,3 +29,7 @@ BenjaminiHochberg <- function(FDR, beta2, side) {
     .Call(`_BayesianLassoMonitoring_BenjaminiHochberg`, FDR, beta2, side)
 }
 
+BonferroniCorrection <- function(FAP, beta2, side) {
+    .Call(`_BayesianLassoMonitoring_BonferroniCorrection`, FAP, beta2, side)
+}
+

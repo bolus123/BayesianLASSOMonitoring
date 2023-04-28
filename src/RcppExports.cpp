@@ -105,6 +105,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// BonferroniCorrection
+arma::mat BonferroniCorrection(double FAP, arma::mat beta2, Rcpp::String side);
+RcppExport SEXP _BayesianLassoMonitoring_BonferroniCorrection(SEXP FAPSEXP, SEXP beta2SEXP, SEXP sideSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type FAP(FAPSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta2(beta2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::String >::type side(sideSEXP);
+    rcpp_result_gen = Rcpp::wrap(BonferroniCorrection(FAP, beta2, side));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLassoMonitoring_getV", (DL_FUNC) &_BayesianLassoMonitoring_getV, 2},
@@ -114,6 +127,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLassoMonitoring_getPosterior", (DL_FUNC) &_BayesianLassoMonitoring_getPosterior, 9},
     {"_BayesianLassoMonitoring_getPosteriorH0", (DL_FUNC) &_BayesianLassoMonitoring_getPosteriorH0, 7},
     {"_BayesianLassoMonitoring_BenjaminiHochberg", (DL_FUNC) &_BayesianLassoMonitoring_BenjaminiHochberg, 3},
+    {"_BayesianLassoMonitoring_BonferroniCorrection", (DL_FUNC) &_BayesianLassoMonitoring_BonferroniCorrection, 3},
     {NULL, NULL, 0}
 };
 

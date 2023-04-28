@@ -3,7 +3,7 @@
     "path": "~/GitHub/BayesianLassoMonitoringExample.R",
     "project_path": null,
     "type": "r_source",
-    "hash": "511866639",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1682702294749.0,
@@ -13,15 +13,15 @@
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "48,62",
-        "scrollLine": "27"
+        "cursorPosition": "59,62",
+        "scrollLine": "38"
     },
     "folds": "",
-    "lastKnownWriteTime": 1682703478,
+    "lastKnownWriteTime": 1682709554,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1682703478108,
+    "last_content_update": 1682709554808,
     "read_only": false,
     "read_only_alternatives": []
 }

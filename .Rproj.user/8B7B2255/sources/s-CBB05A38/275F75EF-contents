@@ -1,10 +1,13 @@
 library(glmnet)
 library(BayesianLassoMonitoring)
 
+seed <- 12345
+
+controlStat <- 0.2
+
 q <- 5
 lambda2 <- 5
 T <- 100
-seed <- 12345
 
 #######################################
 set.seed(seed)
@@ -42,8 +45,16 @@ beta2 <- M1$beta[, (q + 1 + 1):(q + 1 + T + T - 2)]
 #######################################
 # test the effect of shifts using the Benjamini-Hochberg Procedure.  
 # Note that it controls FDR rather than FAP (or FWER).
-BH <- BenjaminiHochberg(FDR = 0.2, beta2 = beta2, side = "two-sided")
+BH <- BenjaminiHochberg(FDR = controlStat, beta2 = beta2, side = "two-sided")
 # the first column represents for p-values.
 # the second column represents for the ranks of p-values.
 # the third column represents for the significant levels of the corresponding p-values calculated using the BH procedure.
+# the forth column shows whether the p-values are significant.
+
+# test the effect of shifts using the Bonferroni Correction.  
+# Note that it controls FAP (or FWER).
+BC <- BonferroniCorrection(FAP = controlStat, beta2 = beta2, side = "two-sided")
+# the first column represents for p-values.
+# the second column is a placeholder for the ranks of p-values.
+# the third column represents for the significant levels of the corresponding p-values calculated using the Bonferroni correction.
 # the forth column shows whether the p-values are significant.
