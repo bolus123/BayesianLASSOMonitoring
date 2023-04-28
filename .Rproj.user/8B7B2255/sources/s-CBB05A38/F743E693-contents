@@ -1,0 +1,55 @@
+aa <- getModel(Y, V, shift = c("Isolated", "Sustained"), 
+                     lambda2 = 5, burnin = 50, nsim = 1000, ntry = 10) 
+
+wrap <- function(X, pars, tau, 
+                 shift = c("Isolated", "Sustained"),
+                 lambda2 = 5, burnin = 50, nbeta = 1000, ntry = 10, 
+                 side = "one-sided",
+                 seed = 12345) {
+  
+  set.seed(seed + X)
+  
+  s <- dim(pars)[1]
+  
+  out <- rep(NA, 3 * s)
+  
+  k <- 0
+  for (i in 1:s) {
+    FAP0 <- pars[i, 1]
+    T <- pars[i, 2]
+    q <- pars[i, 3]
+    psi <- pars[i, 4]
+    sigma2 <- pars[i, 5]
+    delta <- pars[i, 6]
+    
+    realization <- simAR1(T, q, psi, sigma2, delta, tau)
+    model <- getModel(realization$Y, realization$V, shift = shift, 
+                      lambda2 = lambda2, burnin = burnin, nsim = nbeta, ntry = ntry)
+    
+    sta <- q + 2;
+    end <- 1 + q
+    
+    if ("Isolated" %in% shift) {
+      end <- end + T
+    } 
+    
+    if ("Sustained" %in% shift) {
+      end <- end + T - 2
+    } 
+    
+    k <- k + 1
+    BH <- BenjaminiHochberg(FAP0, model$beta[, sta:end], side = "two-sided")
+    out[k] <- sum(BH[, 4]) > 0
+    
+    k <- k + 1
+    BC <- BonferroniCorrection(FAP0, model$beta[, sta:end], side = "two-sided")
+    out[k] <- sum(BC[, 4]) > 0
+    
+    k <- k + 1
+    RSP <- rsp(realization$Y, FALSE, alpha = FAP0, lmin = 2)
+    out[k] <- as.numeric(RSP$p[1]) < FAP0
+    
+  }
+  out
+  
+}

@@ -1,0 +1,175 @@
+
+library(glmnet)
+library(parallel)
+library(BayesianLassoMonitoring)
+library(dfphase1)
+
+#################################################
+
+simAR1 <- function(T, q, psi, sigma2, delta, tau) {
+  tmp <- arima.sim(list(ar = c(psi)), T + q, sd = sqrt(sigma2))
+  tmp[(tau + q):(T + q)] <- tmp[(tau + q):(T + q)] + 
+    sqrt(sigma2 / (1 - psi ^ 2)) * delta
+  V <- getV(tmp, q)
+  V <- V[-c(1:q), ]
+  Y <- tmp[-c(1:q)]
+  list(Y = Y, V = V)
+}
+
+#################################################
+
+getModel <- function(Y, V, shift = c("Isolated", "Sustained"), 
+                     lambda2 = 5, burnin = 50, nsim = 1000, ntry = 10) {
+  T <- length(Y)
+  
+  XShift <- vector()
+  if (sum(shift %in% "Isolated") > 0) {
+    XShift <- cbind(XShift, IsolatedShift(T))
+  }
+  
+  if (sum(shift %in% "Sustained") > 0) {
+    XShift <- cbind(XShift, SustainedShift(T))
+  }
+  
+  q <- dim(V)[2]
+  p <- dim(XShift)[2]
+  
+  betamat1 <- matrix(NA, nrow = nsim, ncol = 1 + q + p)
+  ###############################################
+  X <- cbind(V, XShift)
+  m0 <- glmnet::glmnet(X, Y, lambda = sqrt(lambda2), intercept = TRUE)
+  
+  beta0 <- m0$a0
+  beta <- as.numeric(m0$beta)
+  beta1 <- as.numeric(beta[1:q])
+  beta2 <- as.numeric(beta[(q + 1):(q + p)])
+  ###############################################
+  ##i <- 0
+  ##flg <- 0
+  ##while(i < ntry && flg == 0) {
+  ##  i <- i + 1
+  ##  m0 <- try(getPosteriorH0(Y, V, lambda2, 
+  ##                           beta0, beta1, 
+  ##                           burnin = burnin, nsim = nsim), TRUE)
+  ##  if (class(m0) == "try-error") {
+  ##    flg <- 0
+  ##  } else {
+  ##    flg <- 1
+  ##  }
+  ##}
+  ###############################################
+  i <- 0
+  flg <- 0
+  while(i < ntry && flg == 0) {
+    i <- i + 1
+    m1 <- try(getPosterior(Y, V, XShift, lambda2, 
+                           beta0, beta1, beta2, 
+                           burnin = burnin, nsim = nsim), TRUE)
+    if (class(m1) == "try-error") {
+      flg <- 0
+    } else {
+      flg <- 1
+    }
+  }
+  ###############################################
+  #list(m0 = m0, m1 = m1)
+  m1
+}
+
+#################################################
+
+#################################################
+
+wrap <- function(X, pars, tau, 
+                 shift = c("Isolated", "Sustained"),
+                 lambda2 = 5, burnin = 50, nbeta = 1000, ntry = 10, 
+                 side = "two-sided",
+                 seed = 12345) {
+  
+  set.seed(seed + X)
+  
+  s <- dim(pars)[1]
+  
+  out <- rep(NA, 3 * s)
+  
+  k <- 0
+  for (i in 1:s) {
+    FAP0 <- pars[i, 1]
+    T <- pars[i, 2]
+    q <- pars[i, 3]
+    psi <- pars[i, 4]
+    sigma2 <- pars[i, 5]
+    delta <- pars[i, 6]
+    
+    realization <- simAR1(T, q, psi, sigma2, delta, tau)
+    model <- getModel(realization$Y, realization$V, shift = shift, 
+                      lambda2 = lambda2, burnin = burnin, nsim = nbeta, ntry = ntry)
+    
+    
+      sta <- q + 2;
+      end <- 1 + q
+      
+      if ("Isolated" %in% shift) {
+        end <- end + T
+      } 
+      
+      if ("Sustained" %in% shift) {
+        end <- end + T - 2
+      } 
+      
+      k <- k + 1
+      if (class(model) != "try-error") {
+        BH <- BenjaminiHochberg(FAP0, model$beta[, sta:end], side = side)
+        out[k] <- sum(BH[, 4]) > 0
+      }
+      
+      
+      k <- k + 1
+      if (class(model) != "try-error") {
+        BC <- BonferroniCorrection(FAP0, model$beta[, sta:end], side = side)
+        out[k] <- sum(BC[, 4]) > 0
+      }
+      
+      k <- k + 1
+      if (class(model) != "try-error") {
+        RSP <- rsp(realization$Y, FALSE, alpha = FAP0, lmin = 2)
+        out[k] <- as.numeric(RSP$p[1]) < FAP0
+      }
+      
+      #addr <- paste("C:/Users/yyao17/Documents/GitHub/BayesianLassoMonitoring/out", X, '.Rdat', sep = "")
+
+    
+  }
+  out
+  
+}
+
+
+#################################################
+
+nsim <- 10
+
+FAP0vec <- c(0.2)
+Tvec <- c(365)
+qvec <- c(5)
+psivec <- c(0, 0.5)
+sigma2vec <- c(1)
+deltavec <- c(0, 1, 2, 3)
+pars <- expand.grid(FAP0vec, Tvec, qvec, psivec, sigma2vec, deltavec)
+
+
+cl <- parallel::makeCluster(10)
+clusterEvalQ(cl, require(glmnet))
+clusterEvalQ(cl, require(BayesianLassoMonitoring))
+clusterEvalQ(cl, require(dfphase1))
+clusterExport(cl, c("simAR1", "getModel"))
+
+out <- parLapplyLB(cl, 1:nsim, wrap, 
+                   pars = pars, tau = 183, 
+                   shift = c("Isolated", "Sustained"), 
+                   lambda2 = 5, burnin = 100, nbeta = 10000, ntry = 10, 
+                   side = "two-sided",
+                   seed = 12345)
+
+
+closeAllConnections()
