@@ -5,12 +5,14 @@
   BonferroniCorrection
 }
 \usage{
-BonferroniCorrection(FAP, beta2, side)
+BonferroniCorrection(FAP, beta2, side, KernelSmoothing, bandwidth)
 }
 \arguments{
   \item{FAP}{a numeric vector}
   \item{beta2}{a numeric vector}
   \item{side}{a numeric vector}
+  \item{KernelSmoothing}{a numeric vector}
+  \item{bandwidth}{a numeric vector}
 }
 \value{
   value

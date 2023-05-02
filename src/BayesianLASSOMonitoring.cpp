@@ -1037,7 +1037,6 @@ Rcpp::List getPosteriorH0(arma::vec Y, arma::mat V, double lambda2,
   
 }
 
-
 arma::vec getPvalue(arma::mat beta2, Rcpp::String side)  {
   
   int nbeta = beta2.n_rows;
@@ -1097,11 +1096,75 @@ arma::vec getPvalue(arma::mat beta2, Rcpp::String side)  {
   return(pvalue);
 }
 
+
+
+double cdfKernelEstimationGaussian(double x, arma::vec beta, double bandwidth)  {
+  int n = beta.n_elem;
+  double p = 0; 
+  int i;
+  
+  for (i = 0; i < n; i++) {
+    p = p + R::pnorm5(x, beta(i), bandwidth, 1, 0);
+  }
+  
+  return(p / n);
+}
+
+arma::vec getPvalueKernelEstimationGaussian(arma::mat beta2, 
+                                            Rcpp::String side, double bandwidth)  {
+  
+  int nbeta = beta2.n_rows;
+  int p = beta2.n_cols;
+  arma::vec pvalue(p);
+  double tmp1 = 0;
+  double tmp2 = 0;
+  
+  int i = 0;
+  int j = 0;
+  
+  if (side == "two-sided") {
+    for (i = 0; i < p; i++) {
+      
+      tmp2 = cdfKernelEstimationGaussian(0.0, beta2.col(i), bandwidth);
+      tmp1 = 1.0 - tmp2;
+      
+      if (tmp1 > tmp2) {
+        pvalue(i) = 2 * (1 - tmp1);
+      } else {
+        pvalue(i) = 2 * (1 - tmp2);
+      }
+    }
+  } else if (side == "upper-sided") {
+    for (i = 0; i < p; i++) {
+      tmp1 = cdfKernelEstimationGaussian(0.0, beta2.col(i), bandwidth);
+      pvalue(i) = 1 - tmp1;
+    }
+  } else if (side == "lower-sided") {
+    for (i = 0; i < p; i++) {
+      tmp2 = cdfKernelEstimationGaussian(0.0, beta2.col(i), bandwidth);
+      //tmp1 = 1.0 - tmp2;
+      pvalue(i) = tmp2;
+    }
+  }
+  
+  
+  return(pvalue);
+}
+
+
 // [[Rcpp::export]]
-arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side)  {
+arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side, 
+                            int KernelSmoothing, double bandwidth)  {
   
   int n = beta2.n_cols;
-  arma::vec pvalue = getPvalue(beta2, side);
+  arma::vec pvalue(n);
+  if (KernelSmoothing == 0) {
+    pvalue = getPvalue(beta2, side);
+  } else {
+    pvalue = getPvalueKernelEstimationGaussian(
+                              beta2, side, bandwidth);
+  }
+  
   arma::uvec idx = arma::sort_index(pvalue);
   
   int i;
@@ -1135,11 +1198,17 @@ arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side)  {
 }
 
 // [[Rcpp::export]]
-arma::mat BonferroniCorrection(double FAP, arma::mat beta2, Rcpp::String side)  {
+arma::mat BonferroniCorrection(double FAP, arma::mat beta2, Rcpp::String side, 
+                               int KernelSmoothing, double bandwidth)  {
   
   int n = beta2.n_cols;
-  arma::vec pvalue = getPvalue(beta2, side);
-  //arma::uvec idx = arma::sort_index(pvalue);
+  arma::vec pvalue(n);
+  if (KernelSmoothing == 0) {
+    pvalue = getPvalue(beta2, side);
+  } else {
+    pvalue = getPvalueKernelEstimationGaussian(
+      beta2, side, bandwidth);
+  }
   
   int i;
   arma::vec lim(n); 

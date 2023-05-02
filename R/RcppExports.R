@@ -25,11 +25,11 @@ getPosteriorH0 <- function(Y, V, lambda2, beta0, beta1, burnin, nsim) {
     .Call(`_BayesianLassoMonitoring_getPosteriorH0`, Y, V, lambda2, beta0, beta1, burnin, nsim)
 }
 
-BenjaminiHochberg <- function(FDR, beta2, side) {
-    .Call(`_BayesianLassoMonitoring_BenjaminiHochberg`, FDR, beta2, side)
+BenjaminiHochberg <- function(FDR, beta2, side, KernelSmoothing, bandwidth) {
+    .Call(`_BayesianLassoMonitoring_BenjaminiHochberg`, FDR, beta2, side, KernelSmoothing, bandwidth)
 }
 
-BonferroniCorrection <- function(FAP, beta2, side) {
-    .Call(`_BayesianLassoMonitoring_BonferroniCorrection`, FAP, beta2, side)
+BonferroniCorrection <- function(FAP, beta2, side, KernelSmoothing, bandwidth) {
+    .Call(`_BayesianLassoMonitoring_BonferroniCorrection`, FAP, beta2, side, KernelSmoothing, bandwidth)
 }
 
