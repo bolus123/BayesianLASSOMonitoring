@@ -1,7 +1,7 @@
 [
     {
         "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-        "file_last_write": 1683040311.0,
+        "file_last_write": 1687535499.0,
         "definitions": [
             {
                 "usr": "c:@F@getInvTau2#$@N@arma@S@Col>#d#",
@@ -124,42 +124,12 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@rinvgammaCpp#d#d#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "rinvgammaCpp(double, double)",
-                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 439,
-                "column": 8,
-                "hidden": false
-            },
-            {
-                "usr": "c:@F@getSigma2#$@N@arma@S@Col>#d#S0_#S0_#d#d#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "getSigma2(arma::vec, arma::vec, arma::vec, double, double)",
-                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 448,
-                "column": 8,
-                "hidden": false
-            },
-            {
-                "usr": "c:@F@rgammaCpp#d#d#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "rgammaCpp(double, double)",
-                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 494,
-                "column": 8,
-                "hidden": false
-            },
-            {
                 "usr": "c:@F@getLambda2#$@N@arma@S@Col>#d#d#d#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "getLambda2(arma::vec, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 500,
+                "line": 514,
                 "column": 8,
                 "hidden": false
             },
@@ -169,7 +139,7 @@
                 "parent_name": "",
                 "name": "getLambda2EM(arma::vec)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 514,
+                "line": 523,
                 "column": 8,
                 "hidden": false
             },
@@ -179,7 +149,37 @@
                 "parent_name": "",
                 "name": "rgig_cpp(double, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 536,
+                "line": 545,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@rigamma_cpp#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "rigamma_cpp(double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 551,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getSigma2#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S0_#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getSigma2(arma::vec, arma::mat, arma::vec, arma::vec)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 557,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@riGaussian#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "riGaussian(double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 569,
                 "column": 8,
                 "hidden": false
             },
@@ -189,7 +189,7 @@
                 "parent_name": "",
                 "name": "getTau2(arma::vec, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 543,
+                "line": 580,
                 "column": 11,
                 "hidden": false
             },
@@ -199,7 +199,7 @@
                 "parent_name": "",
                 "name": "modifiedBesselfunction2nd(double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 553,
+                "line": 603,
                 "column": 8,
                 "hidden": false
             },
@@ -209,7 +209,7 @@
                 "parent_name": "",
                 "name": "getExpectedTau2(arma::vec, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 566,
+                "line": 616,
                 "column": 11,
                 "hidden": false
             },
@@ -219,7 +219,7 @@
                 "parent_name": "",
                 "name": "getV(arma::vec, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 585,
+                "line": 635,
                 "column": 11,
                 "hidden": false
             },
@@ -229,7 +229,7 @@
                 "parent_name": "",
                 "name": "obj_fun_rcpp(arma::vec, arma::vec, arma::mat)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 599,
+                "line": 649,
                 "column": 8,
                 "hidden": false
             },
@@ -239,7 +239,7 @@
                 "parent_name": "",
                 "name": "loglikelihood(arma::vec, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 607,
+                "line": 657,
                 "column": 11,
                 "hidden": false
             },
@@ -249,7 +249,7 @@
                 "parent_name": "",
                 "name": "IsolatedShift(int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 623,
+                "line": 673,
                 "column": 11,
                 "hidden": false
             },
@@ -259,7 +259,7 @@
                 "parent_name": "",
                 "name": "SustainedShift(int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 630,
+                "line": 680,
                 "column": 11,
                 "hidden": false
             },
@@ -269,7 +269,7 @@
                 "parent_name": "",
                 "name": "GradualShift(int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 649,
+                "line": 699,
                 "column": 11,
                 "hidden": false
             },
@@ -279,7 +279,17 @@
                 "parent_name": "",
                 "name": "getGaussianPosteriorCM(arma::vec, arma::mat, arma::mat, arma::vec, arma::vec, arma::vec, arma::vec, arma::vec, arma::vec, double, double, int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 667,
+                "line": 717,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getGaussianPosteriorCMNew#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#S0_#S0_#S0_#S0_#d#d#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getGaussianPosteriorCMNew(arma::vec, arma::mat, arma::mat, arma::vec, arma::vec, arma::vec, arma::vec, double, double, int, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 830,
                 "column": 12,
                 "hidden": false
             },
@@ -289,7 +299,7 @@
                 "parent_name": "",
                 "name": "getGaussianPosteriorCMH0(arma::vec, arma::mat, arma::vec, arma::vec, arma::vec, arma::vec, double, double, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 780,
+                "line": 947,
                 "column": 12,
                 "hidden": false
             },
@@ -299,7 +309,17 @@
                 "parent_name": "",
                 "name": "getPosterior(arma::vec, arma::mat, arma::mat, double, arma::vec, arma::vec, arma::vec, int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 867,
+                "line": 1034,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getPosteriorNew#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#d#S0_#S0_#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getPosteriorNew(arma::vec, arma::mat, double, arma::vec, arma::vec, int, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 1121,
                 "column": 12,
                 "hidden": false
             },
@@ -309,7 +329,7 @@
                 "parent_name": "",
                 "name": "getPosteriorH0(arma::vec, arma::mat, double, arma::vec, arma::vec, int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 954,
+                "line": 1255,
                 "column": 12,
                 "hidden": false
             },
@@ -319,7 +339,7 @@
                 "parent_name": "",
                 "name": "getPvalue(arma::mat, Rcpp::String)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1040,
+                "line": 1341,
                 "column": 11,
                 "hidden": false
             },
@@ -329,7 +349,7 @@
                 "parent_name": "",
                 "name": "cdfKernelEstimationGaussian(double, arma::vec, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1101,
+                "line": 1402,
                 "column": 8,
                 "hidden": false
             },
@@ -339,7 +359,7 @@
                 "parent_name": "",
                 "name": "getPvalueKernelEstimationGaussian(arma::mat, Rcpp::String, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1113,
+                "line": 1414,
                 "column": 11,
                 "hidden": false
             },
@@ -349,7 +369,7 @@
                 "parent_name": "",
                 "name": "BenjaminiHochberg(double, arma::mat, Rcpp::String, int, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1156,
+                "line": 1457,
                 "column": 11,
                 "hidden": false
             },
@@ -359,7 +379,7 @@
                 "parent_name": "",
                 "name": "BonferroniCorrection(double, arma::mat, Rcpp::String, int, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLassoMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1201,
+                "line": 1502,
                 "column": 11,
                 "hidden": false
             }

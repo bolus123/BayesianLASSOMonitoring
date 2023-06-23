@@ -4,7 +4,32 @@ library(VGAM) # rinv.gaussian
 #library(miscTools) # colMeans
 library(mvtnorm)
 library(truncnorm)
+library(pracma)
+library(BayesianLassoMonitoring)
+library(parallel)
 
+#getV <- function(Y, q) {
+#  n <- length(Y)
+#  out <- matrix(0, nrow = n, ncol = q)
+#  for (i in 2:n) {
+#    if (i <= q) {
+#      out[i, 1:(i - 1)] <- Y[(i -1):1] 
+#    } else {
+#      out[i, ] <- Y[(i - 1):(i - q)]
+#    }
+#  }
+#  out
+#}
+# 
+#IsolatedShift <- function(n) {
+#  eye(n)
+#}
+#
+#SustainedShift <- function(n) {
+#  out <- matrix(1, n, n)
+#  out <- tril(out)
+#  out[, c(-1, -n)]
+#}
 
 
 rmvnormMono <- function(mean, varcov) {
@@ -115,7 +140,7 @@ gibbsBLasso <- function(Y, V, X,
     mean2 <- invA2 %*% XY
     varcov2 <- sigma2 * invA2
     #beta <- drop(rmnorm(1, mean, varcov))
-    beta2 <- drop(rmvnorm(1, mean2, varcov2))
+    beta2 <- drop(rmvnorm(1, mean2, varcov2, checkSymmetry = FALSE))
     beta2Samples[k,] <- beta2
     
     beta <- c(beta1, beta2)
@@ -173,125 +198,88 @@ gibbsBLasso <- function(Y, V, X,
 
 ######################################
 
-library(glmnet)
-library(BayesianLassoMonitoring)
+getSim <- function(X, pars, q, seed, nsamp = 1000, burnin = 50, step = 1) {
+  
+  set.seed(seed + X)
+  
+  fap0 <- pars[X, 1]
+  n <- pars[X, 2]
+  phi <- pars[X, 3]
+  delta <- pars[X, 4]
+  
+  ############################
+  
+  Y <- arima.sim(list(ar = phi), n = n)
+  Y[(round(n/2) + 1):n] <- Y[(round(n/2) + 1):n] + delta * sqrt(1 / (1 - phi ^ 2))
+  
+  ############################
+  
+  intercept <- mean(Y)
+  Y1 <- Y - intercept
+  
+  ############################
+  
+  V <- getV(Y1, q)
+  
+  Y1 <- Y1[-c(1:q)]
+  V <- V[-c(1:q), ]
+  
+  
+  IS <- IsolatedShift(n - q)
+  SS <- SustainedShift(n - q)
+  
+  X <- cbind(IS, SS)
+  
+  aa1 <- gibbsBLasso(Y1, V, X, 
+                     lambda = NULL,
+                     r = 1, 
+                     delta = 0.1,
+                     nsamp = nsamp,
+                     burnin = burnin,
+                     step = step) 
+  
+  #bb1 <- getPvalue(aa1$beta2, "two-sided")
+  
+  cc1 <- BenjaminiHochberg(fap0, aa1$beta2, "two-sided", 
+                           1, 0.0001)
+  
+  dd1 <- BonferroniCorrection(fap0, aa1$beta2, "two-sided", 
+                              1, 0.0001)
+  
+  
+  ############################
+  
+  c(sum(cc1[, 4]) == 0, sum(dd1[, 4]) == 0)
+  
+  
+}
+
+
+######################################
+
+nsim <- 1000
 
 seed <- 12345
-
-controlStat <- 0.2
-
 q <- 5
-T <- 300
 
-#######################################
-set.seed(seed)
+fap0vec <- c(0.2)
+phiVec <- c(0.5)
+#tVec <- c(100, 200, 300)
+tVec <- c(100)
+deltaVec <- c(0, 0.1)
 
+pars <- expand.grid(fap0vec, tVec, phiVec, deltaVec)
 
+######################################
 
-#######################################
+cl <- parallel::makeCluster(2)
+parallel::clusterEvalQ(cl, require(VGAM))
+parallel::clusterEvalQ(cl, require(mvtnorm))
+parallel::clusterEvalQ(cl, require(truncnorm))
+parallel::clusterEvalQ(cl, require(pracma))
+parallel::clusterEvalQ(cl, require(BayesianLassoMonitoring))
+parallel::clusterExport(cl, c("rmvnormMono", "gibbsBLasso", "getSim"))
 
-# get a simulated process
-Y <- arima.sim(list(ar = 0.5), n = T)
+parallel::parLapplyLB(cl = cl, X = 1:nsim, fun = getSim, pars = pars, q = q, 
+                      seed = seed, nsamp = 1000, burnin = 50, step = 1)
 
-#####
-#Y[(round(T/2) + 1):T] <- Y[(round(T/2) + 1):T] + 2 * sqrt(1 / (1 - 0.5 ^ 2))
-
-intercept <- mean(Y)
-Y <- Y - intercept
-
-# get lagged variables
-V <- getV(Y, q)
-
-# get shifts
-IS <- IsolatedShift(T)
-SS <- SustainedShift(T)
-
-X <- cbind(IS, SS)
-
-aa1 <- gibbsBLasso(Y, V, X, 
-                       lambda = NULL,
-                       r = 1, 
-                       delta = 0.1,
-                       nsamp = 10000,
-                       burnin = 100,
-                       step = 1) 
-
-bb1 <- getPvalue(aa1$beta2, "two-sided")
-
-cc1 <- BenjaminiHochberg(0.2, aa1$beta2, "two-sided", 
-                  1, 0.0001)
-
-dd1 <- BonferroniCorrection(0.2, aa1$beta2, "two-sided", 
-                        1, 0.0001)
-
-#######################################
-
-# get a simulated process
-Y <- arima.sim(list(ar = 0.5), n = T)
-
-#####
-#Y[(round(T/2) + 1):T] <- Y[(round(T/2) + 1):T] + 2 * sqrt(1 / (1 - 0.5 ^ 2))
-
-intercept <- mean(Y)
-Y <- Y - intercept
-
-# get lagged variables
-V <- getV(Y, q)
-
-# get shifts
-IS <- IsolatedShift(T)
-SS <- SustainedShift(T)
-
-X <- cbind(IS, SS)
-
-aa2 <- gibbsBLasso(Y, V, X, 
-                  lambda = NULL,
-                  r = 1, 
-                  delta = 0.1,
-                  nsamp = 10000,
-                  burnin = 100,
-                  step = 1) 
-
-bb2 <- getPvalue(aa2$beta2, "two-sided")
-
-cc2 <- BenjaminiHochberg(0.2, aa2$beta2, "two-sided", 
-                        1, 0.0001)
-
-dd2 <- BonferroniCorrection(0.2, aa2$beta2, "two-sided", 
-                           1, 0.0001)
-
-#######################################
-
-# get a simulated process
-Y <- arima.sim(list(ar = 0.5), n = T)
-
-#####
-#Y[(round(T/2) + 1):T] <- Y[(round(T/2) + 1):T] + 2 * sqrt(1 / (1 - 0.5 ^ 2))
-
-intercept <- mean(Y)
-Y <- Y - intercept
-
-# get lagged variables
-V <- getV(Y, q)
-
-# get shifts
-IS <- IsolatedShift(T)
-SS <- SustainedShift(T)
-
-X <- cbind(IS, SS)
-
-aa3 <- gibbsBLasso(Y, V, X, 
-                  lambda = NULL,
-                  r = 1, 
-                  delta = 0.1,
-                  nsamp = 10000,
-                  burnin = 100,
-                  step = 1) 
-
-bb3 <- getPvalue(aa3$beta2, "two-sided")
-
-cc3 <- BenjaminiHochberg(0.2, aa3$beta2, "two-sided", 
-                        1, 0.0001)
-
-dd3 <- BonferroniCorrection(0.2, aa3$beta2, "two-sided", 
-                           1, 0.0001)
