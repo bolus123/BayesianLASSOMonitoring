@@ -228,9 +228,9 @@ getSim <- function(X, pars, q, seed, nsamp = 1000, burnin = 50, step = 1) {
   IS <- IsolatedShift(n - q)
   SS <- SustainedShift(n - q)
   
-  X <- cbind(IS, SS)
+  XX <- cbind(IS, SS)
   
-  aa1 <- gibbsBLasso(Y1, V, X, 
+  aa1 <- gibbsBLasso(Y1, V, XX, 
                      lambda = NULL,
                      r = 1, 
                      delta = 0.1,
