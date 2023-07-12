@@ -95,6 +95,8 @@ rtwosegnorm <- function(n, a, b, mean = 0, sd = 1) {
   a2 <- (a - mean) / sd
   b2 <- (b - mean) / sd
   
+  #cat("a:", a, ", b:", b, ", sd:", sd, "\n")
+  
   p1 <- pnorm(a1) - pnorm(b1)
   p2 <- pnorm(b2) - pnorm(a2)
   p <- p1 + p2
@@ -109,6 +111,28 @@ rtwosegnorm <- function(n, a, b, mean = 0, sd = 1) {
   out
 }
 
+dtwosegnorm <- function(x, a, b, mean = 0, sd = 1) {
+
+  a1 <- (-a - mean) / sd
+  b1 <- (-b - mean) / sd
+  a2 <- (a - mean) / sd
+  b2 <- (b - mean) / sd
+  
+  p1 <- pnorm(a1) - pnorm(b1)
+  p2 <- pnorm(b2) - pnorm(a2)
+  p <- p1 + p2
+  
+  xi <- (x - mean) / sd
+  
+  if ((b1 <= xi & xi <= a1) | (a2 <= xi & xi <= b2)) {
+    out <- dnorm(xi) / sd / p
+  } else {
+    out <- 0
+  }
+  
+  out
+  
+}
 
 updatebeta1mcmc <- function(Y, V, X, beta1, beta2, sigma2, invTau21, burnin = 50, ntry = 1, 
                             beta10 = Inf, beta1qplus1 = 0) {
@@ -123,23 +147,37 @@ updatebeta1mcmc <- function(Y, V, X, beta1, beta2, sigma2, invTau21, burnin = 50
     oldll <- loglik(Y, V, X, oldbeta1vec, beta2, sigma2)
     newbeta1vec <- oldbeta1vec
     
-    if (i > 1) {
-      previousbeta <- abs(oldbeta1vec[i - 1])
+    if ((1 < i) & (i < q)) {
+      b <- abs(oldbeta1vec[i - 1])
+      a <- abs(oldbeta1vec[i + 1])
+    } else if (i == q) {
+      b <- abs(oldbeta1vec[i - 1])
+      a <- abs(beta1qplus1)
     } else {
-      previousbeta <- abs(beta10)
+      b <- abs(beta10)
+      a <- abs(oldbeta1vec[i + 1])
     }
     
     for (j in 1:(burnin + ntry)) {
-      newbeta1 <- rtruncnorm(1, a = -previousbeta, b = previousbeta, 
-                             mean = oldbeta1, sd = 1)
+      newbeta1 <- rtwosegnorm(1, a, b, mean = oldbeta1, sd = 1)
       newbeta1vec[i] <- newbeta1
-      #cat("newbeta2:", newbeta2, ", invTau22i:", invTau22i, "\n")
+      #cat("newbeta1:", newbeta1, ", invTau21i:", invTau21i, "\n")
       newll <- loglik(Y, V, X, newbeta1vec, beta2, sigma2)
       difb1i <- diflogfbetai(newbeta1, oldbeta1, invTau21i, sigma2)
+      #cat("sigma2:", sigma2, "\n")
       difll <- newll - oldll + difb1i
-      ratio <- exp(difll) * 
-        exp(log(dtruncnorm(oldbeta1, a = -previousbeta, b = previousbeta, mean = newbeta1, sd = 1)) - 
-              log(dtruncnorm(newbeta1, a = -previousbeta, b = previousbeta, mean = oldbeta1, sd = 1)))
+      #cat("difll:", difll, "\n")
+      rr <- exp(log(dtwosegnorm(oldbeta1, a, b, mean = newbeta1, sd = 1)) - 
+                  log(dtwosegnorm(newbeta1, a, b, mean = oldbeta1, sd = 1)))
+      #cat("rr:", rr, "\n")
+      #cat("exp(difll):", exp(difll), "\n")
+      #if (is.infinite(rr)) {
+      #  ratio <- Inf
+      #} else {
+        ratio <- exp(difll) * rr
+      #}
+      #cat("a:", a, ", b:", b, "\n")
+      #cat("oldbeta1:", oldbeta1, ", newbeta1:", newbeta1, "\n")
       #cat("ratio:", ratio, "\n")
       alpha <- min(c(1, ratio))
       #cat("alpha:", alpha, "\n")
@@ -386,16 +424,16 @@ gibbsBLassomcmc <- function(Y, V, X,
     k <- k + 1
     
     #if (k %% 100 == 0) {
-    #  cat('Iteration:', k, "\r")
+      cat('Iteration:', k, "\r")
     #}
     
     # sample beta1
-    beta1 <- updatebeta1mcmc(Y, V, X, beta1, beta2, sigma2, invTau21, burnin = 50, ntry = 1)
+    beta1 <- updatebeta1mcmc(Y, V, X, beta1, beta2, sigma2, invTau21, burnin = burnin, ntry = 1)
     
     beta1Samples[k,] <- beta1
     
     # sample beta2
-    beta2 <- updatebeta2mcmc(Y, V, X, beta1, beta2, sigma2, invTau22, burnin = 50, ntry = 1)
+    beta2 <- updatebeta2mcmc(Y, V, X, beta1, beta2, sigma2, invTau22, burnin = burnin, ntry = 1)
 
     beta2Samples[k,] <- beta2
     
