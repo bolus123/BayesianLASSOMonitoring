@@ -24,6 +24,7 @@ test1 <- updatebeta1mcmc(YY, V, XX, aa1$beta1[1, ], aa1$beta2[1, ], aa1$sigma2[1
 
 debug(updatebeta1mcmc)
 set.seed(12345)
+start <- Sys.time()
 test <- gibbsBLassomcmc(YY, V, XX, 
                 lambda = NULL,
                 updateLambda = TRUE,
@@ -33,3 +34,5 @@ test <- gibbsBLassomcmc(YY, V, XX,
                 burnin = 50,
                 step = 1
 )
+end <- Sys.time()
+end - start
