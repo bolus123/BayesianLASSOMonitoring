@@ -3,7 +3,7 @@ q <- 5
 IS <- IsolatedShift(n - q)
 SS <- SustainedShift(n - q)
 
-XX <- cbind(IS, SS)
+XX <- cbind(1, IS, SS)
 
 n <- length(Y)
 
@@ -33,6 +33,78 @@ test <- gibbsBLassomcmc(YY, V, XX,
                 nsamp = 1000,
                 burnin = 50,
                 step = 1
+)
+end <- Sys.time()
+end - start
+
+
+start <- Sys.time()
+test11 <- gibbsBLassomcmc1(YY, V, XX, 
+                        lambda = NULL,
+                        updateLambda = TRUE,
+                        r = 1, 
+                        delta = 0.1,
+                        nsamp = 1000,
+                        burnin = 50,
+                        step = 1
+)
+end <- Sys.time()
+end - start
+
+
+################################################
+set.seed(12345)
+start <- Sys.time()
+test <- gibbsBLassomcmc1(YY, V, XX, 
+                         lambda = 100,
+                         updateLambda = FALSE,
+                         r = 1, 
+                         delta = 0.1,
+                         nsamp = 1000,
+                         burnin = 50,
+                         step = 1
+)
+end <- Sys.time()
+end - start
+
+set.seed(12345)
+start <- Sys.time()
+test <- gibbsBLassomcmc1(YY, V, XX, 
+                         lambda = 200,
+                         updateLambda = FALSE,
+                         r = 1, 
+                         delta = 0.1,
+                         nsamp = 1000,
+                         burnin = 50,
+                         step = 1
+)
+end <- Sys.time()
+end - start
+
+set.seed(12345)
+start <- Sys.time()
+test <- gibbsBLassomcmc1(YY, V, XX, 
+                        lambda = 400,
+                        updateLambda = FALSE,
+                        r = 1, 
+                        delta = 0.1,
+                        nsamp = 1000,
+                        burnin = 50,
+                        step = 1
+)
+end <- Sys.time()
+end - start
+
+set.seed(12345)
+start <- Sys.time()
+test <- gibbsBLassomcmc1(YY, V, XX, 
+                         lambda = 800,
+                         updateLambda = FALSE,
+                         r = 1, 
+                         delta = 0.1,
+                         nsamp = 1000,
+                         burnin = 50,
+                         step = 1
 )
 end <- Sys.time()
 end - start

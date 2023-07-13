@@ -492,6 +492,136 @@ gibbsBLassomcmc <- function(Y, V, X,
 }
 
 
+gibbsBLassomcmc1 <- function(Y, V, X, 
+                            lambda = NULL,
+                            updateLambda = TRUE,
+                            r = 1, 
+                            delta = 0.1,
+                            nsamp = 1000,
+                            burnin = 100,
+                            step = 5#,
+                            #max.steps = 100000, 
+                            #intercept = TRUE
+) {
+  n <- length(Y)
+  q <- ncol(V)
+  p <- ncol(X)
+  m <- p + q
+  
+  #if (intercept == TRUE) {
+  #  intercept <- mean(Y)
+  #  Y <- Y - intercept
+  #} else {
+  #  intercept <- 0
+  #}
+  
+  XtX <- t(X) %*% X
+  XY <- t(X) %*% Y
+  beta2 <- drop(backsolve(XtX + diag(nrow=p), XY))
+  
+  rX <- drop(Y - X %*% beta2)
+  
+  VtV <- t(V) %*% V
+  VrX <- t(V) %*% Y
+  beta1 <- drop(backsolve(VtV + diag(nrow=q), VrX)) 
+  
+  beta <- c(beta1, beta2)
+  
+  residue <- drop(rX - V %*% beta1)
+  sigma2 <- drop((t(residue) %*% residue) / n)
+  invTau2 <- 1 / (beta * beta)
+  invTau21 <- invTau2[1:q]
+  invTau22 <- invTau2[(q + 1):m]
+  
+  if (is.null(lambda)) {
+    lambda <- m * sqrt(sigma2) / sum(abs(beta))
+  }
+  
+  totSim <- burnin + nsamp * step
+  
+  
+  beta1Samples <- matrix(0, totSim, q)
+  beta2Samples <- matrix(0, totSim, p)
+  sigma2Samples <- rep(0, totSim)
+  invTau21Samples <- matrix(0, totSim, q)
+  invTau22Samples <- matrix(0, totSim, p)
+  lambdaSamples <- rep(0, totSim)
+  
+  
+  
+  k <- 0
+  while (k < totSim) {
+    k <- k + 1
+    
+    #if (k %% 100 == 0) {
+    cat('Iteration:', k, "\r")
+    #}
+    
+    # sample beta1
+    beta1 <- updatebeta1mcmc(Y, V, X, beta1, beta2, sigma2, invTau21, burnin = burnin, ntry = 1)
+    
+    beta1Samples[k,] <- beta1
+    
+    # sample beta2
+    beta2 <- updatebeta2mcmc(Y, V, X, beta1, beta2, sigma2, invTau22, burnin = burnin, ntry = 1)
+    
+    beta2Samples[k,] <- beta2
+    
+    beta <- c(beta1, beta2)
+    
+    
+    # sample sigma2
+    shape <- (n+m-1)/2
+    rX <- drop(Y - X %*% beta2)
+    residue <- drop(rX - V %*% beta1)
+    scale <- (t(residue) %*% residue + t(beta) %*% diag(c(invTau2)) %*% beta)/2
+    sigma2 <- 1/rgamma(1, shape, 1/scale)
+    sigma2Samples[k] <- sigma2
+    
+    # sample tau2
+    muPrime <- sqrt(lambda^2 * sigma2 / beta^2)
+    lambdaPrime <- lambda^2
+    invTau2 <- rep(0, m)
+    for (i in seq(m)) {
+      invTau2[i] <- rinv.gaussian(1, muPrime[i], lambdaPrime)
+    }
+    invTau21 <- invTau2[1:q]
+    invTau22 <- invTau2[(q + 1):m]
+    
+    invTau21Samples[k, ] <- invTau21
+    invTau22Samples[k, ] <- invTau22
+    
+    # update lambda
+    if (updateLambda == TRUE) {
+      shape = r + m/2
+      scale = delta + sum(1/invTau2)/2
+      lambda <- rgamma(1, shape, 1/scale)
+    }
+    # if (k %% 10 == 0) {
+    # low <- k - 9
+    # high <- k
+    # lambda <- sqrt( 2*m / sum(colMeans(invTau2Samples[low:high, ])) )
+    # }
+    lambdaSamples[k] <- lambda
+  }
+  
+  #colMedians(betaSamples[seq(max.steps/2, max.steps, 5), ])
+  
+  select <- seq(burnin + 1, totSim, step)
+  
+  out <- list(
+    beta1 = beta1Samples[select, ],
+    beta2 = beta2Samples[select, ],
+    invTau21 = invTau21Samples[select, ],
+    invTau22 = invTau22Samples[select, ],
+    sigma2 = sigma2Samples[select],
+    lambda = lambdaSamples[select]
+  )
+  
+  return(out)
+}
+
+
 ######################################
 
 getSim <- function(X, pars, q, seed, nsamp = 1000, burnin = 50, step = 1) {
