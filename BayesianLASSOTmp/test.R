@@ -362,6 +362,74 @@ gibbsBLasso <- function(Y, V, X,
 }
 
 
+gibbsBLassolfocv <- function(Y, V, X, 
+                        lambdavec = c(100),
+                        r = 1, 
+                        delta = 0.1,
+                        nsamp = 1000,
+                        burnin = 100,
+                        step = 5,
+                        keep = 0.9,
+                        ahead = 1,
+                        nsim = 1000
+                        #max.steps = 100000, 
+                        #intercept = TRUE
+) {
+ 
+  n <- length(Y)
+  nmin <- ceiling(n * keep)
+  nrun <- n - ahead - nmin
+  k <- length(lambdavec)
+  
+  modellist <- list()
+  ELPDlfo <- rep(NA, k)
+  
+  for (i in 1:k) {
+    
+    lfo <- rep(NA, nrun)
+    for (j in 1:nrun) {
+      lambda <- lambdavec[i]
+      Ytrain <- Y[1:(nmin + j)]
+      Vtrain <- V[1:(nmin + j), ]
+      Xtrain <- X[1:(nmin + j), ]
+      
+      Yval <- Y[(nmin + j + 1):(nmin + j + ahead)]
+      Vval <- V[(nmin + j + 1):(nmin + j + ahead), ]
+      Xval <- X[(nmin + j + 1):(nmin + j + ahead), ]
+      
+      model <- gibbsBLasso(Ytrain, Vtrain, Xtrain, 
+                lambda = lambda,
+                updateLambda = FALSE,
+                r = r, 
+                delta = delta,
+                nsamp = nsamp,
+                burnin = burnin,
+                step = step)
+      
+      psim <- rep(NA, nsim)
+      
+      for (h in 1:nsim) {
+        select <- round(runif(1, 1, nsamp))
+        beta1 <- model$beta1[select, ]
+        beta2 <- model$beta2[select, ]
+        sigma2 <- model$sigma2[select]
+        psim[h] <- exp(sum(dnorm(Yval, mean = Vval %*% t(beta1) + Xval %*% t(beta2), sd = sqrt(sigma2), log = TRUE)))
+      }
+      
+      lfo[j] <- mean(psim)
+    }
+    ELPDlfo[i] <- sum(log(lfo))
+    modellist[[i]] <- model
+  }
+  
+  out <- list(
+    "ELPDlfo" = ELPDlfo,
+    "model" = modellist
+  )
+  
+}
+
+
 gibbsBLassomcmc <- function(Y, V, X, 
                         lambda = NULL,
                         updateLambda = TRUE,
@@ -440,7 +508,7 @@ gibbsBLassomcmc <- function(Y, V, X,
     beta <- c(beta1, beta2)
     
     
-    # sample sigma2
+    # sample sigma
     shape <- (n+m-1)/2
     rX <- drop(Y - X %*% beta2)
     residue <- drop(rX - V %*% beta1)
@@ -448,7 +516,7 @@ gibbsBLassomcmc <- function(Y, V, X,
     sigma2 <- 1/rgamma(1, shape, 1/scale)
     sigma2Samples[k] <- sigma2
     
-    # sample tau2
+    # sample tau2 ######## need to work when beta = 0
     muPrime <- sqrt(lambda^2 * sigma2 / beta^2)
     lambdaPrime <- lambda^2
     invTau2 <- rep(0, m)
