@@ -54,15 +54,15 @@ V <- V[-c(1:q), ]
 debug(gibbsBLassolfocv)
 
 aa <- gibbsBLassolfocv(YY, V, XX, 
-                                   lambdavec = c(100),
+                                   lambda = c(100),
                                    r = 1, 
                                    delta = 0.1,
                                    nsamp = 1000,
                                    burnin = 100,
                                    step = 5,
-                                   keep = 0.9,
-                                   ahead = 1,
-                                   nsim = 1000
+                                   keep = 0.95,
+                                   ahead = 2,
+                                   nsim = 10
                                    #max.steps = 100000, 
                                    #intercept = TRUE
 )
@@ -71,7 +71,7 @@ aa <- gibbsBLassolfocv(YY, V, XX,
 
 
 #######################################################
-
+#debug(gibbsBLasso)
 set.seed(12345)
 start <- Sys.time()
 test1 <- gibbsBLasso(YY, V, XX, 

@@ -255,9 +255,9 @@ gibbsBLasso <- function(Y, V, X,
   beta2 <- beta[(q + 1):m]
   residue <- drop(Y - VX %*% beta)
   sigma2 <- drop((t(residue) %*% residue) / n)
-  invTau2 <- 1 / (beta * beta)
-  invTau21 <- invTau2[1:q]
-  invTau22 <- invTau2[(q + 1):m]
+  #invTau2 <- 1 / (beta * beta)
+  #invTau21 <- invTau2[1:q]
+  #invTau22 <- invTau2[(q + 1):m]
   
   if (is.null(lambda)) {
     lambda <- m * sqrt(sigma2) / sum(abs(beta))
@@ -278,6 +278,29 @@ gibbsBLasso <- function(Y, V, X,
   k <- 0
   while (k < totSim) {
     k <- k + 1
+    
+    # sample tau2
+    
+    invTau2 <- rep(0, m)
+    for (i in seq(m)) {
+      if (beta[i] != 0) {
+        muPrime <- sqrt(lambda^2 * sigma2 / (beta[i])^2)
+        lambdaPrime <- lambda^2
+        invTau2[i] <- rinv.gaussian(1, muPrime, lambdaPrime)
+        # Park
+      } else {
+        lambdaAlt <- lambda * sqrt(sigma2)
+        invTau2[i] <- 1 / rgamma(1, shape = 1/2, rate = lambdaAlt ^ 2 / 2 / sigma2)
+          #Lasso regression: estimation and shrinkage via the limit of Gibbs sampling
+      }
+      
+    }
+    invTau21 <- invTau2[1:q]
+    invTau22 <- invTau2[(q + 1):m]
+    
+    invTau21Samples[k, ] <- invTau21
+    invTau22Samples[k, ] <- invTau22
+    
     
     #if (k %% 100 == 0) {
     #  cat('Iteration:', k, "\r")
@@ -318,18 +341,6 @@ gibbsBLasso <- function(Y, V, X,
     sigma2 <- 1/rgamma(1, shape, 1/scale)
     sigma2Samples[k] <- sigma2
     
-    # sample tau2
-    muPrime <- sqrt(lambda^2 * sigma2 / beta^2)
-    lambdaPrime <- lambda^2
-    invTau2 <- rep(0, m)
-    for (i in seq(m)) {
-      invTau2[i] <- rinv.gaussian(1, muPrime[i], lambdaPrime)
-    }
-    invTau21 <- invTau2[1:q]
-    invTau22 <- invTau2[(q + 1):m]
-    
-    invTau21Samples[k, ] <- invTau21
-    invTau22Samples[k, ] <- invTau22
     
     # update lambda
     if (updateLambda == TRUE) {
@@ -363,7 +374,7 @@ gibbsBLasso <- function(Y, V, X,
 
 
 gibbsBLassolfocv <- function(Y, V, X, 
-                        lambdavec = c(100),
+                        lambda = 100,
                         r = 1, 
                         delta = 0.1,
                         nsamp = 1000,
@@ -377,54 +388,65 @@ gibbsBLassolfocv <- function(Y, V, X,
 ) {
  
   n <- length(Y)
+  p <- dim(X)[2]
+  q <- dim(V)[2]
+  
   nmin <- ceiling(n * keep)
   nrun <- n - ahead - nmin
-  k <- length(lambdavec)
+
+  lfo <- rep(NA, nrun)
   
-  modellist <- list()
-  ELPDlfo <- rep(NA, k)
-  
-  for (i in 1:k) {
+  for (i in 1:nrun) {
+
+    Ytrain <- Y[1:(nmin + i)]
+    Vtrain <- V[1:(nmin + i), ]
+    Xtrain <- X[1:(nmin + i), ]
     
-    lfo <- rep(NA, nrun)
-    for (j in 1:nrun) {
-      lambda <- lambdavec[i]
-      Ytrain <- Y[1:(nmin + j)]
-      Vtrain <- V[1:(nmin + j), ]
-      Xtrain <- X[1:(nmin + j), ]
+    Yval <- Y[(nmin + i + 1):(nmin + i + ahead)]
+    Vval <- matrix(V[(nmin + i + 1):(nmin + i + ahead), ], nrow = ahead, ncol = q)
+    Xval <- matrix(X[(nmin + i + 1):(nmin + i + ahead), ], nrow = ahead, ncol = p)
+    
+    model <- gibbsBLasso(Ytrain, Vtrain, Xtrain, 
+              lambda = lambda,
+              updateLambda = FALSE,
+              r = r, 
+              delta = delta,
+              nsamp = nsamp,
+              burnin = burnin,
+              step = step)
+    
+    psim <- rep(NA, nsim)
+    Ypred <- rep(NA, ahead)
+    rpred <- rep(NA, ahead)
+    
+    for (j in 1:nsim) {
+      select <- round(runif(1, 1, nsamp))
+      beta1 <- model$beta1[select, ]
+      beta2 <- model$beta2[select, ]
+      sigma2 <- model$sigma2[select]
       
-      Yval <- Y[(nmin + j + 1):(nmin + j + ahead)]
-      Vval <- V[(nmin + j + 1):(nmin + j + ahead), ]
-      Xval <- X[(nmin + j + 1):(nmin + j + ahead), ]
-      
-      model <- gibbsBLasso(Ytrain, Vtrain, Xtrain, 
-                lambda = lambda,
-                updateLambda = FALSE,
-                r = r, 
-                delta = delta,
-                nsamp = nsamp,
-                burnin = burnin,
-                step = step)
-      
-      psim <- rep(NA, nsim)
-      
-      for (h in 1:nsim) {
-        select <- round(runif(1, 1, nsamp))
-        beta1 <- model$beta1[select, ]
-        beta2 <- model$beta2[select, ]
-        sigma2 <- model$sigma2[select]
-        psim[h] <- exp(sum(dnorm(Yval, mean = Vval %*% t(beta1) + Xval %*% t(beta2), sd = sqrt(sigma2), log = TRUE)))
+      for (h in 1:ahead) {
+        if (h > 1) {
+          Vtmp <- c(Ypred[h - 1], Vtmp)
+          Vtmp <- Vtmp[1:q]
+        } else if (h == 1) {
+          Vtmp <- Vval[1, ]
+        }
+        Ypred[h] <- Vtmp %*% beta1 + Xval[h, ] %*% beta2
+        rpred[h] <- Yval[h] - Ypred[h]
       }
-      
-      lfo[j] <- mean(psim)
+        
+      psim[j] <- exp(sum(dnorm(rpred, mean = 0, sd = sqrt(sigma2), log = TRUE)))
     }
-    ELPDlfo[i] <- sum(log(lfo))
-    modellist[[i]] <- model
+    
+    lfo[i] <- mean(psim)
   }
-  
+    
+  ELPDlfo <- sum(log(lfo))
+
   out <- list(
     "ELPDlfo" = ELPDlfo,
-    "model" = modellist
+    "model" = model
   )
   
 }
