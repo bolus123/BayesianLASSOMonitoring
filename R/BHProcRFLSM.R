@@ -33,5 +33,6 @@ BHProcRFLSM <- function(TauGamma, FDR0 = 0.1, tail = "2-sided", method = "raw") 
   } else {
     out <- cbind(pvalue, rr, bound, 0)
   }
+  colnames(out) <- c('pvalue', "order", "bound", "sig")
   return(out)
 }
