@@ -374,6 +374,7 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
   arma::mat invSnotgg(q - 1, q - 1);
   
   arma::mat tmpMat(1, 1); 
+  arma::mat tmpSS(q, q);
   int gg;
   
   double mj;
@@ -394,17 +395,23 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
   // update Phi
   if (MonoFlg == 0) {
     if (method == "MT") {
-      S = getInv(tVasVas / sigma2 + A);
+      tmpSS = tVasVas / sigma2 + A;
+      tmpSS = checkSym(tmpSS);
+      S = getInv(tmpSS);
       S = checkSym(S);
       M = S * ((tVasVas / sigma2) * Phihat);
     } else if (method == "regression") {
-      tmpS = getInv(tVasVas + A);
+      tmpSS = tVasVas + A;
+      tmpSS = checkSym(tmpSS);
+      tmpS = getInv(tmpSS);
       S = tmpS * sigma2;
       S = checkSym(S);
       M = tmpS * (tVasVas * Phihat);
       
     } else if ((method == "LASSO") || (method == "ALASSO")) {
-      tmpS = getInv(tVasVas + inveta2mat);
+      tmpSS = tVasVas + inveta2mat;
+      tmpSS = checkSym(tmpSS);
+      tmpS = getInv(tmpSS);
       S = tmpS * sigma2;
       S = checkSym(S);
       M = tmpS * (tVasVas * Phihat);
@@ -413,7 +420,9 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
     Phi = rmvnorm(M, S);
   } else {
     if ((method == "MonoLASSO") || (method == "MonoALASSO")) {
-      tmpS = getInv(tVasVas + inveta2mat);
+      tmpSS = tVasVas + inveta2mat;
+      tmpSS = checkSym(tmpSS);
+      tmpS = getInv(tmpSS);
       S = tmpS * sigma2;
       S = checkSym(S);
       M = tmpS * (tVasVas * Phihat);
