@@ -3,6 +3,7 @@
 #' @param Y is a vector
 #' @param Phi is the coefficient
 #' @param Mu is the mean
+#' @export
 #' @examples
 #' T <- 100
 #' q <- 5

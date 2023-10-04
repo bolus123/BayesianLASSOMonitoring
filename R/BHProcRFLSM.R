@@ -4,6 +4,7 @@
 #' @param FDR0 is a given constant for FDR.
 #' @param tail is type of the test.
 #' @param method do the procedure with or without kernel smoothing.
+#' @export
 #' @examples
 #' T <- 100
 #' q <- 5

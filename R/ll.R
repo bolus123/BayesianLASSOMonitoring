@@ -4,6 +4,7 @@
 #' @param Phi is the coefficient
 #' @param Mu is the mean
 #' @param sigma2 is the variance
+#' @export
 #' @examples
 #' T <- 100
 #' q <- 5

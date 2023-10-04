@@ -1,6 +1,7 @@
 #' obtain the posterior probablity under H0
 #' 
 #' @param Tau is the distributions of Tau
+#' @export
 #' @examples
 #' T <- 100
 #' q <- 5

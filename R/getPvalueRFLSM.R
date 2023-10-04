@@ -2,6 +2,7 @@
 #' 
 #' @param TauGamma is the distributions of shifts.
 #' @param tail is type of the test.
+#' @export
 #' @examples
 #' T <- 100
 #' q <- 5
