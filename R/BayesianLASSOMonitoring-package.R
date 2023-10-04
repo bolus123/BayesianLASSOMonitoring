@@ -1,14 +1,16 @@
 #' @keywords package
-#' @aliases BayesianLASSOMonitoring-package
+#' @aliases BayesianLassoMonitoring-package
 "_PACKAGE"
 
-#' Package BayesianLASSOMonitoring
+#' Package BayesianLassoMonitoring
 #'
 #' Package description.
 #'
-#' @name BayesianLASSOMonitoring-package
+#' @name BayesianLassoMonitoring-package
 #' @import Rcpp loo spatstat.explore
 #' @importFrom stats density
 #' @importFrom stats dnorm
-#' @useDynLib BayesianLASSOMonitoring, .registration = TRUE
+#' @importFrom Rcpp evalCpp
+#' @useDynLib BayesianLassoMonitoring, .registration = TRUE
 NULL
+
