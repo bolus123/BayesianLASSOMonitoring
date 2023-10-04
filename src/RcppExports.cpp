@@ -11,127 +11,148 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// rrinvgauss
+arma::colvec rrinvgauss(int n, double mu, double lambda);
+RcppExport SEXP _BayesianLassoMonitoring_rrinvgauss(SEXP nSEXP, SEXP muSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(rrinvgauss(n, mu, lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getV
-arma::mat getV(arma::vec V, int p);
-RcppExport SEXP _BayesianLassoMonitoring_getV(SEXP VSEXP, SEXP pSEXP) {
+arma::mat getV(arma::colvec Y, int q);
+RcppExport SEXP _BayesianLassoMonitoring_getV(SEXP YSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type V(VSEXP);
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
-    rcpp_result_gen = Rcpp::wrap(getV(V, p));
+    Rcpp::traits::input_parameter< arma::colvec >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(getV(Y, q));
     return rcpp_result_gen;
 END_RCPP
 }
-// IsolatedShift
-arma::mat IsolatedShift(int T);
-RcppExport SEXP _BayesianLassoMonitoring_IsolatedShift(SEXP TSEXP) {
+// rmvnorm
+arma::colvec rmvnorm(arma::colvec Mean, arma::mat Sigma);
+RcppExport SEXP _BayesianLassoMonitoring_rmvnorm(SEXP MeanSEXP, SEXP SigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::colvec >::type Mean(MeanSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma(SigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmvnorm(Mean, Sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rtwosegnorm
+arma::colvec rtwosegnorm(int n, double a, double b, double mean, double sd);
+RcppExport SEXP _BayesianLassoMonitoring_rtwosegnorm(SEXP nSEXP, SEXP aSEXP, SEXP bSEXP, SEXP meanSEXP, SEXP sdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type sd(sdSEXP);
+    rcpp_result_gen = Rcpp::wrap(rtwosegnorm(n, a, b, mean, sd));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getHMatMT
+arma::mat getHMatMT(int T, int q);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatMT(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type T(TSEXP);
-    rcpp_result_gen = Rcpp::wrap(IsolatedShift(T));
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(getHMatMT(T, q));
     return rcpp_result_gen;
 END_RCPP
 }
-// SustainedShift
-arma::mat SustainedShift(int T);
-RcppExport SEXP _BayesianLassoMonitoring_SustainedShift(SEXP TSEXP) {
+// getHMatSustained
+arma::mat getHMatSustained(int T, int q, int w);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatSustained(SEXP TSEXP, SEXP qSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type T(TSEXP);
-    rcpp_result_gen = Rcpp::wrap(SustainedShift(T));
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    Rcpp::traits::input_parameter< int >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(getHMatSustained(T, q, w));
     return rcpp_result_gen;
 END_RCPP
 }
-// GradualShift
-arma::mat GradualShift(int T);
-RcppExport SEXP _BayesianLassoMonitoring_GradualShift(SEXP TSEXP) {
+// getHMatIsolated
+arma::mat getHMatIsolated(int T, int q, int w);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatIsolated(SEXP TSEXP, SEXP qSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type T(TSEXP);
-    rcpp_result_gen = Rcpp::wrap(GradualShift(T));
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    Rcpp::traits::input_parameter< int >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(getHMatIsolated(T, q, w));
     return rcpp_result_gen;
 END_RCPP
 }
-// getPosterior
-Rcpp::List getPosterior(arma::vec Y, arma::mat V, arma::mat X, double lambda2, arma::vec beta0, arma::vec beta1, arma::vec beta2, int burnin, int nsim);
-RcppExport SEXP _BayesianLassoMonitoring_getPosterior(SEXP YSEXP, SEXP VSEXP, SEXP XSEXP, SEXP lambda2SEXP, SEXP beta0SEXP, SEXP beta1SEXP, SEXP beta2SEXP, SEXP burninSEXP, SEXP nsimSEXP) {
+// getHMatGradual
+arma::mat getHMatGradual(int T, int q, int w);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatGradual(SEXP TSEXP, SEXP qSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type V(VSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
-    Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type beta0(beta0SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type beta1(beta1SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type beta2(beta2SEXP);
-    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
-    rcpp_result_gen = Rcpp::wrap(getPosterior(Y, V, X, lambda2, beta0, beta1, beta2, burnin, nsim));
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    Rcpp::traits::input_parameter< int >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(getHMatGradual(T, q, w));
     return rcpp_result_gen;
 END_RCPP
 }
-// getPosteriorH0
-Rcpp::List getPosteriorH0(arma::vec Y, arma::mat V, double lambda2, arma::vec beta0, arma::vec beta1, int burnin, int nsim);
-RcppExport SEXP _BayesianLassoMonitoring_getPosteriorH0(SEXP YSEXP, SEXP VSEXP, SEXP lambda2SEXP, SEXP beta0SEXP, SEXP beta1SEXP, SEXP burninSEXP, SEXP nsimSEXP) {
+// GibbsRFLSM
+Rcpp::List GibbsRFLSM(arma::colvec& Y, int& q, arma::mat& A, double& a, double& b, double& alpha, double& beta, double& theta1, double& theta2, double& xi2, Rcpp::String& method, double& bound0, double& boundqplus1, int& nsim, int& by, int& burnin, double& tol, Rcpp::Nullable<Rcpp::NumericMatrix> H);
+RcppExport SEXP _BayesianLassoMonitoring_GibbsRFLSM(SEXP YSEXP, SEXP qSEXP, SEXP ASEXP, SEXP aSEXP, SEXP bSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP theta1SEXP, SEXP theta2SEXP, SEXP xi2SEXP, SEXP methodSEXP, SEXP bound0SEXP, SEXP boundqplus1SEXP, SEXP nsimSEXP, SEXP bySEXP, SEXP burninSEXP, SEXP tolSEXP, SEXP HSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type V(VSEXP);
-    Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type beta0(beta0SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type beta1(beta1SEXP);
-    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
-    rcpp_result_gen = Rcpp::wrap(getPosteriorH0(Y, V, lambda2, beta0, beta1, burnin, nsim));
-    return rcpp_result_gen;
-END_RCPP
-}
-// BenjaminiHochberg
-arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side, int KernelSmoothing, double bandwidth);
-RcppExport SEXP _BayesianLassoMonitoring_BenjaminiHochberg(SEXP FDRSEXP, SEXP beta2SEXP, SEXP sideSEXP, SEXP KernelSmoothingSEXP, SEXP bandwidthSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type FDR(FDRSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type beta2(beta2SEXP);
-    Rcpp::traits::input_parameter< Rcpp::String >::type side(sideSEXP);
-    Rcpp::traits::input_parameter< int >::type KernelSmoothing(KernelSmoothingSEXP);
-    Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
-    rcpp_result_gen = Rcpp::wrap(BenjaminiHochberg(FDR, beta2, side, KernelSmoothing, bandwidth));
-    return rcpp_result_gen;
-END_RCPP
-}
-// BonferroniCorrection
-arma::mat BonferroniCorrection(double FAP, arma::mat beta2, Rcpp::String side, int KernelSmoothing, double bandwidth);
-RcppExport SEXP _BayesianLassoMonitoring_BonferroniCorrection(SEXP FAPSEXP, SEXP beta2SEXP, SEXP sideSEXP, SEXP KernelSmoothingSEXP, SEXP bandwidthSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type FAP(FAPSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type beta2(beta2SEXP);
-    Rcpp::traits::input_parameter< Rcpp::String >::type side(sideSEXP);
-    Rcpp::traits::input_parameter< int >::type KernelSmoothing(KernelSmoothingSEXP);
-    Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
-    rcpp_result_gen = Rcpp::wrap(BonferroniCorrection(FAP, beta2, side, KernelSmoothing, bandwidth));
+    Rcpp::traits::input_parameter< arma::colvec& >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< int& >::type q(qSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< double& >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double& >::type b(bSEXP);
+    Rcpp::traits::input_parameter< double& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double& >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double& >::type theta1(theta1SEXP);
+    Rcpp::traits::input_parameter< double& >::type theta2(theta2SEXP);
+    Rcpp::traits::input_parameter< double& >::type xi2(xi2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::String& >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< double& >::type bound0(bound0SEXP);
+    Rcpp::traits::input_parameter< double& >::type boundqplus1(boundqplus1SEXP);
+    Rcpp::traits::input_parameter< int& >::type nsim(nsimSEXP);
+    Rcpp::traits::input_parameter< int& >::type by(bySEXP);
+    Rcpp::traits::input_parameter< int& >::type burnin(burninSEXP);
+    Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type H(HSEXP);
+    rcpp_result_gen = Rcpp::wrap(GibbsRFLSM(Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_BayesianLassoMonitoring_rrinvgauss", (DL_FUNC) &_BayesianLassoMonitoring_rrinvgauss, 3},
     {"_BayesianLassoMonitoring_getV", (DL_FUNC) &_BayesianLassoMonitoring_getV, 2},
-    {"_BayesianLassoMonitoring_IsolatedShift", (DL_FUNC) &_BayesianLassoMonitoring_IsolatedShift, 1},
-    {"_BayesianLassoMonitoring_SustainedShift", (DL_FUNC) &_BayesianLassoMonitoring_SustainedShift, 1},
-    {"_BayesianLassoMonitoring_GradualShift", (DL_FUNC) &_BayesianLassoMonitoring_GradualShift, 1},
-    {"_BayesianLassoMonitoring_getPosterior", (DL_FUNC) &_BayesianLassoMonitoring_getPosterior, 9},
-    {"_BayesianLassoMonitoring_getPosteriorH0", (DL_FUNC) &_BayesianLassoMonitoring_getPosteriorH0, 7},
-    {"_BayesianLassoMonitoring_BenjaminiHochberg", (DL_FUNC) &_BayesianLassoMonitoring_BenjaminiHochberg, 5},
-    {"_BayesianLassoMonitoring_BonferroniCorrection", (DL_FUNC) &_BayesianLassoMonitoring_BonferroniCorrection, 5},
+    {"_BayesianLassoMonitoring_rmvnorm", (DL_FUNC) &_BayesianLassoMonitoring_rmvnorm, 2},
+    {"_BayesianLassoMonitoring_rtwosegnorm", (DL_FUNC) &_BayesianLassoMonitoring_rtwosegnorm, 5},
+    {"_BayesianLassoMonitoring_getHMatMT", (DL_FUNC) &_BayesianLassoMonitoring_getHMatMT, 2},
+    {"_BayesianLassoMonitoring_getHMatSustained", (DL_FUNC) &_BayesianLassoMonitoring_getHMatSustained, 3},
+    {"_BayesianLassoMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLassoMonitoring_getHMatIsolated, 3},
+    {"_BayesianLassoMonitoring_getHMatGradual", (DL_FUNC) &_BayesianLassoMonitoring_getHMatGradual, 3},
+    {"_BayesianLassoMonitoring_GibbsRFLSM", (DL_FUNC) &_BayesianLassoMonitoring_GibbsRFLSM, 18},
     {NULL, NULL, 0}
 };
 

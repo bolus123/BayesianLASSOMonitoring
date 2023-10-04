@@ -15,1521 +15,974 @@
 // available from R
 //
 
-#include <GIGrvg.h>
-
 using namespace Rcpp;
+using namespace arma;
 
-arma::mat getInvTau2(arma::vec Tau2) {
-  
-  int q = Tau2.n_elem;
-  arma::mat out(q, q);
+//' get a sample from inv gaussian distribution
+//'
+//' @param n is sample size.
+//' @param mu is a parameter.
+//' @param lambda is a paremter.
+//' @export
+//' @examples
+//' rrinvgauss(10, 1, 1)
+// [[Rcpp::export]]
+arma::colvec rrinvgauss(int n, double mu, double lambda){
+  arma::colvec random_vector(n);
+  double z,y,x,u;
+  for(int i=0; i<n; ++i){
+    z=R::rnorm(0,1);
+    y=z*z;
+    x=mu+0.5*mu*mu*y/lambda - 0.5*(mu/lambda)*sqrt(4*mu*lambda*y+mu*mu*y*y);
+    u=R::runif(0,1);
+    if(u <= mu/(mu+x)){
+      random_vector(i)=x;
+    }else{
+      random_vector(i)=mu*mu/x;
+    };
+  }
+  return(random_vector);
+}
+
+//' get matrix V
+//'
+//' @param Y is a vector.
+//' @param q is a number of lags.
+//' @export
+//' @examples
+//' Y <- arima.sim(list(ar = 0.5), 100)
+//' getV(Y, 10)
+// [[Rcpp::export]]
+arma::mat getV(arma::colvec Y, int q) {
+  int T = Y.n_elem;
+  arma::mat out(T, q);
   out.zeros();
   
-  for (int i = 0; i < q; i++) {
-    
-    out(i, i) = 1 / Tau2(i);
-    
-  }
-  
-  return(out);
-  
-}
-
-arma::vec rmvnormCpp(arma::vec Mu, arma::mat Sigma) {
-  
-  int m = Mu.n_elem;
-  arma::mat SigmaSq(m, m);
-  arma::vec Z(m);
-  arma::vec out(m);
-  
-  arma::sqrtmat_sympd(SigmaSq, Sigma);
-  
-  //if (SigmaSq == false)  {
-  //  arma::sqrtmat(SigmaSq, Sigma);
-  //}
-  
-  for (int i = 0; i < m; i++) {
-    Z(i) = R::rnorm(0, 1);
-  }
-  
-  out = SigmaSq * Z + Mu;
-  
-  return(out);
-  
-}
-
-arma::vec getBetaNonMonotonicity(arma::vec zeta, arma::mat X,
-                                 arma::vec tau2, double sigma2) {
-  
-  int q = X.n_cols;
-  
-  //arma::vec R10(n);
-  
-  arma::mat InvTau2(q, q) ;
-  
-  arma::mat XXplusInvTau2(q, q);
-  arma::mat InvXXplusInvTau2(q, q);
-  
-  arma::vec Mean(q);
-  arma::mat Var(q, q);
-  
-  arma::vec out(q);
-  
-  //R10 = V - Beta00 - UDelta - T * Beta20;
-  
-  InvTau2 = getInvTau2(tau2); 
-  
-  XXplusInvTau2 = arma::trans(X) * X + InvTau2;
-  
-  inv_sympd(InvXXplusInvTau2, XXplusInvTau2);
-  
-  Mean = InvXXplusInvTau2 * arma::trans(X) * zeta;
-  Var = sigma2 * InvXXplusInvTau2;
-  
-  out = rmvnormCpp(Mean, Var);
-  
-  return(out);
-  
-}
-
-double rtrnormCpp(double mean, double var, double lower, double upper) {
-  double tmp = R::runif(0, 1);
-  double sd = sqrt(var);
-  double a = (lower - mean) / sd;
-  double b = (upper - mean) / sd;
-  
-  double z1 = R::pnorm5(b, 0, 1, true, false);
-  double z2 = R::pnorm5(a, 0, 1, true, false);
-  
-  double Z;
-  double out;
-  if (z1 != z2) {
-    Z = z1 - z2;
-    out = R::qnorm5(tmp * Z + z2, 0, 1, true, false) * sd + mean;
-  } else {
-    out = R::runif(lower, upper); //// Taylor series first order
-  }
-  
-  
-  return(out);
-}
-
-double dtrnormCpp(double x, double mean, double var, double lower, double upper) {
-  double sd = sqrt(var);
-  double a = (lower - mean) / sd;
-  double b = (upper - mean) / sd;
-  
-  double z1 = R::pnorm5(b, 0, 1, true, false);
-  double z2 = R::pnorm5(a, 0, 1, true, false);
-  
-  double Z;
-  double out;
-  
-  if ((lower <= x) & (x <= upper)) {
-    
-    if (z1 != z2) {
-      Z = z1 - z2;
-      out = R::dnorm4(x, mean, sd, false) / Z;
-    } else {
-      out = R::dunif(x, lower, upper, false); //// Taylor series first order
-    }
-    
-  } else {
-    out = 0;
-  }
-  
-  return(out);
-}
-
-arma::vec getBetaMonotonicity(arma::vec zeta, 
-                              arma::mat T, 
-                              arma::vec tau2, 
-                              double sigma2) {
-  
-  int p = T.n_cols;
-  
-  //arma::vec R20(n);
-  
-  arma::mat InvTau2(p, p) ;
-  
-  arma::mat TTplusInvTau2(p, p);
-  arma::mat InvTTplusInvTau2(p, p);
-  
-  arma::vec Mean(p);
-  arma::mat Var(p, p);
-  
-  double mean;
-  double var;
-  arma::vec tmpmean;
-  arma::vec tmpvar;
-  
-  arma::colvec SubVecMean;
-  arma::rowvec SubVecVar;
-  arma::mat SubMatVar;
-  arma::mat InvSubMatVar;
-  
-  arma::vec out(p);
-  arma::colvec SubOut;
-  
-  //R20 = V - Beta00 - UDelta - X * Beta10;
-  
-  InvTau2 = getInvTau2(tau2); 
-  
-  TTplusInvTau2 = arma::trans(T) * T + InvTau2;
-  
-  inv_sympd(InvTTplusInvTau2, TTplusInvTau2);
-  
-  Mean = InvTTplusInvTau2 * arma::trans(T) * zeta;
-  Var = sigma2 * InvTTplusInvTau2;
-  
-  //Rcpp::Rcout << Mean << std::endl;
-  //Rcpp::Rcout << Var << std::endl;
-  
-  for (int i = 0; i < p; i++) {
-    
-    if (i > 0) {
-      SubVecMean = Mean.subvec(0, i - 1);
-      SubVecVar = Var.submat(i, 0, i, i - 1);
-      SubMatVar = Var.submat(0, 0, i - 1, i - 1);
-      inv_sympd(InvSubMatVar, SubMatVar);
-      SubOut = out.subvec(0, i - 1);
-      
-      tmpmean = Mean(i) + SubVecVar * InvSubMatVar * (SubOut - SubVecMean);
-      tmpvar = Var(i, i) - SubVecVar * InvSubMatVar * arma::trans(SubVecVar);
-      
-      mean = tmpmean(0);
-      var = tmpvar(0);
-      
-      //Rcpp::Rcout << "i:" << i << std::endl;
-      //Rcpp::Rcout << mean << std::endl;
-      //Rcpp::Rcout << var << std::endl;
-      
-      out(i) = rtrnormCpp(mean, var, -abs(out(i - 1)), abs(out(i - 1)));
-    } else {
-      mean = Mean(i);
-      var = Var(i, i);
-      out(i) = R::rnorm(mean, sqrt(var));
-    }
-    
-  }
-  
-  //Rcpp::Rcout << "out:" << out << std::endl;
-  
-  return(out);
-  
-}
-
-arma::mat getUW(arma::mat U, arma::mat W) {
-  int n = U.n_rows;
-  int K = U.n_cols;
-  int r = W.n_cols;
-  arma::mat UW(n, K * r);
-  
-  int k = 0;
-  for (int i = 0; i < K; i++) {
-    for (int j = 0; j < r; j++) {
-      UW.col(k) = U.col(i) * W.col(j);
-      k++;
-    }
-  }
-  
-  return(UW);
-}
-
-arma::vec getTheta(arma::vec WRow, arma::vec delta0, arma::vec delta1, int K) {
-  int r = WRow.n_elem;
-  arma::vec out(K);
-  arma::vec tmp(1);
-  arma::vec tmpDelta1(r);
-  int indx = 0;
-  for (int i = 0; i < K; i++) {
-    tmpDelta1 = delta1.subvec(indx, indx + r - 1);
-    tmp = delta0(i) + WRow * tmpDelta1;
-    out(i) = tmp(0);
-    indx = indx + r;
-  }
-  return(out);
-}
-
-arma::vec getEta(double zetaElem, arma::vec theta, 
-                 arma::vec gamma, double sigma2) {
-  arma::vec eta = arma::exp(
-    - 1.0 / 2.0 / sigma2 * (theta % theta - 2.0 * theta * zetaElem) + arma::log(gamma)
-  );
-  return(eta);
-}
-
-Rcpp::List getUWithW(arma::vec zetadelta, arma::mat W, int K, 
-                     arma::vec delta0, arma::vec delta1, double sigma2, 
-                     arma::vec gamma) {
-  
-  int n = zetadelta.n_elem;
-  arma::vec theta;
-  double zetaElem;
-  arma::vec WRow;
-  arma::vec eta;
-  arma::mat prob(n, K);
-  arma::mat out(n, K);
-  out.zeros();
-  
-  arma::rowvec tmpProb;
+  int tmp;
   
   int i;
-  
-  for (i = 0; i < n; i++) {
-    WRow = W.row(i);
-    theta = getTheta(WRow, delta0, delta1, K);
-    zetaElem = zetadelta(i);
-    eta = getEta(zetaElem, theta, gamma, sigma2);
-    tmpProb = arma::trans(eta / arma::accu(eta));
-    prob.row(i) = tmpProb;
-  }
-  
-  arma::mat tmpcumsumProb;
-  tmpcumsumProb = arma::cumsum(prob, 1);
-  double randProb;
-  int cursor;
-  
-  for (i = 0; i < n; i++) {
-    randProb = R::runif(0, 1);
-    cursor = 0;
-    for (int k = 0; k < K; k++) {
-      if (randProb > tmpcumsumProb(i, k)) {
-        cursor = cursor + 1;
-      }
+  int j;
+  for (i = 1; i < T; i++) {
+    
+    if (i > q) {
+      tmp = q;
+    } else {
+      tmp = i;
     }
-    out(i, cursor) = 1;
+    
+    for (j = 0; j < tmp; j++) {
+      out(i, j) = Y(i - j - 1);
+    }
   }
-  
-  Rcpp::List outList;
-  outList = Rcpp::List::create(
-    Rcpp::_["prob"] = prob,
-    Rcpp::_["U"] = out
-  );
-  return(outList);
+  return(out);
 }
 
-Rcpp::List getUWithoutW_MC(arma::vec zetadelta, int K, 
-                           arma::vec delta0, double sigma2, 
-                           arma::mat Gamma, arma::vec gamma) {
+//' get a sample from multivariate normal distribution
+//'
+//' @param Mean is a mean vector.
+//' @param Sigma is a variance-covariance matrix.
+//' @export
+//' @examples
+//' Mean <- rep(0, 5)
+//' Sigma <- diag(nrow = 5)
+//' rmvnorm(Mean, Sigma)
+// [[Rcpp::export]]
+arma::colvec rmvnorm(arma::colvec Mean, arma::mat Sigma) {
   
-  //Rcpp::Rcout << "a" << std::endl;
+  int q = Mean.n_elem;
+  arma::colvec Z = arma::randn(q);
+  arma::colvec out = Mean + arma::chol(Sigma) * Z;
+  return(out);
   
-  int n = zetadelta.n_elem;
-  arma::vec theta;
-  double zetaElem;
-  arma::vec eta;
-  arma::mat prob(n, K);
-  arma::mat out(n, K);
-  out.zeros();
+}
+
+//' get a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @param a is the lower bound in absolute value.
+//' @param b is the upper bound in absolute value.
+//' @param mean is a mean.
+//' @param sd is a standard deviation.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec rtwosegnorm(int n, double a, double b, double mean, double sd) {
+  arma::colvec out(n);
+  arma::colvec U = arma::randu(n);
   
-  arma::vec tmpGamma; 
+  double a1 = (-a - mean) / sd;
+  double b1 = (-b - mean) / sd;
+  double a2 = (a - mean) / sd;
+  double b2 = (b - mean) / sd;
   
-  arma::rowvec tmpProb;
-  
-  arma::mat tmpcumsumProb;
-  
-  double randProb;
-  int cursor;
-  
-  arma::rowvec tmpout; 
+  double p1 = arma::normcdf(a1) - arma::normcdf(b1);
+  double p2 = arma::normcdf(b2) - arma::normcdf(a2);
+  double p = p1 + p2;
   
   int i;
-  //Rcpp::Rcout << "b" << std::endl;
-  
-  for (i = 0; i < n; i++) {
-    
-    theta = delta0;
-    zetaElem = zetadelta(i);
-    
-    if (i == 0) {
-      tmpGamma = gamma;
-    } else {
-      tmpGamma = Gamma * arma::trans(out.row(i - 1));
-    }
-    
-    eta = getEta(zetaElem, theta, tmpGamma, sigma2);
-    tmpProb = arma::trans(eta / arma::accu(eta));
-    prob.row(i) = tmpProb;
-    tmpcumsumProb = arma::cumsum(prob.row(i));
-    
-    randProb = R::runif(0, 1);
-    cursor = 0;
-    for (int k = 0; k < K; k++) {
-      if (randProb > tmpcumsumProb(k)) {
-        cursor = cursor + 1;
-      }
-    }
-    out(i, cursor) = 1;
-  }
-  
-  //Rcpp::Rcout << "e" << std::endl;
-  
-  Rcpp::List outList;
-  outList = Rcpp::List::create(
-    Rcpp::_["prob"] = prob,
-    Rcpp::_["U"] = out
-  );
-  return(outList);
-}
-
-Rcpp::List getUWithoutW(arma::vec zetadelta, int K, 
-                        arma::vec delta0, double sigma2, 
-                        arma::vec gamma) {
-  
-  //Rcpp::Rcout << "a" << std::endl;
-  
-  int n = zetadelta.n_elem;
-  arma::vec theta;
-  double zetaElem;
-  arma::vec eta;
-  arma::mat prob(n, K);
-  arma::mat out(n, K);
-  out.zeros();
-  
-  arma::rowvec tmpProb;
-  
-  int i;
-  
-  //Rcpp::Rcout << "b" << std::endl;
-  
-  for (i = 0; i < n; i++) {
-    theta = delta0;
-    zetaElem = zetadelta(i);
-    eta = getEta(zetaElem, theta, gamma, sigma2);
-    tmpProb = arma::trans(eta / arma::accu(eta));
-    prob.row(i) = tmpProb;
-  }
-  
-  //Rcpp::Rcout << prob << std::endl;
-  
-  //Rcpp::Rcout << "c" << std::endl;
-  
-  arma::mat tmpcumsumProb;
-  tmpcumsumProb = arma::cumsum(prob, 1);
-  
-  //Rcpp::Rcout << tmpcumsumProb << std::endl;
-  
-  double randProb;
-  int cursor;
-  
-  //Rcpp::Rcout << "d" << std::endl;
-  
-  for (i = 0; i < n; i++) {
-    randProb = R::runif(0, 1);
-    cursor = 0;
-    for (int k = 0; k < K; k++) {
-      if (randProb > tmpcumsumProb(i, k)) {
-        cursor = cursor + 1;
-      }
-    }
-    out(i, cursor) = 1;
-  }
-  
-  //Rcpp::Rcout << "e" << std::endl;
-  
-  Rcpp::List outList;
-  outList = Rcpp::List::create(
-    Rcpp::_["prob"] = prob,
-    Rcpp::_["U"] = out
-  );
-  return(outList);
-}
-
-//double rinvgammaCpp(double shape, double rate) {
-//  
-//  double scale = 1 / rate;
-//  double tmp = R::rgamma(shape, scale);
-//  double out = 1 / tmp;
-//  return(out);
-//  
-//}
-
-//double getSigma2(arma::vec resi,
-//                 arma::vec BetaDelta,
-//                 arma::vec Tau2,
-//                 double a1, double a2) {
-//  
-//  //Rcpp::Rcout << "sigma2" << std::endl;
-//  
-//  int n = resi.n_elem;
-//  //int q = Beta10.n_elem;
-//  //int p = Beta20.n_elem;
-//  //int K = Delta.n_elem;
-//  
-//  int m = BetaDelta.n_elem;
-//  
-//  //arma::vec resi(n);
-//  
-//  //double shape = (n + 1 + q + p + K) / 2 + a1;
-//  double shape = (n + m) / 2.0 + a1;
-//  arma::vec tmprate;
-//  double rate;
-//  double out;
-//  
-//  arma::mat InvTau2 = getInvTau2(Tau2);
-//  //arma::mat InvTau210 = getInvTau2(tau210);
-// //arma::mat InvTau220 = getInvTau2(tau220);
-//  //arma::mat InvTauDelta = getInvTau2(tauDelta);
-//  
-//  //resi = V - Beta00 - UDelta - X * Beta10 - T * Beta20;
-//  //tmprate = arma::accu(resi % resi) / 2 + (beta00 * beta00) / tau200 + 
-//  //  arma::trans(Beta10) * InvTau210 * Beta10 + arma::trans(Beta20) * InvTau220 * Beta20 +
-//  //  arma::trans(Delta) * InvTauDelta * Delta + 2 * a2;
-//  //Rcpp::Rcout << "resi:" << resi << std::endl;
-//  //Rcpp::Rcout << "BetaDelta:" << BetaDelta << std::endl;
-//  tmprate = (arma::trans(resi) * resi + arma::trans(BetaDelta) * InvTau2 * BetaDelta) / 2.0 + a2;
-//  //Rcpp::Rcout << "tmprate:" << tmprate << std::endl;
-//  rate = tmprate(0);
-//  
-//  
-//  //Rcpp::Rcout << "shape:" << shape << std::endl;
-//  //Rcpp::Rcout << "rate:" << rate << std::endl;
-//  
-//  out = rinvgammaCpp(shape, rate);
-//  return(out);
-//  
-//}
-
-//double rgammaCpp(double shape, double rate) {
-//  double scale = 1 / rate;
-//  double out = R::rgamma(shape, scale);
-//  return(out);
-//}
-
-//double getLambda2(arma::vec Tau2, double b1, double b2) {
-//  double m = Tau2.n_elem;
-//  
-//  double shape = m + b1;
-//  double rate = (arma::accu(Tau2 % Tau2)) / 2.0 + 1.0 / b2;
-//  
-//  //Rcpp::Rcout << "lambda2" << std::endl;
-//  //Rcpp::Rcout << "shape:" << shape << std::endl;
-//  //Rcpp::Rcout << "rate:" << rate << std::endl;
-//  
-//  double out = rgammaCpp(shape, rate);
-//  return(out);
-//}
-
-double getLambda2(arma::vec Tau2, double b1, double b2) {
-  int qp = Tau2.n_elem;
-  double shape = qp * 1.0 + b1;
-  double rate = (arma::accu(Tau2 % Tau2)) / 2.0 + b2;
-  double scale = 1.0 / rate;
-  double out = R::rgamma(shape, scale);
-  return(out);
-}
-
-double getLambda2EM(arma::vec ExpectedTau2) {
-  int m = ExpectedTau2.n_elem;
-  double out = sqrt(2.0 * m / arma::accu(ExpectedTau2));
-  return(out);
-}
-
-//double rgig_cpp(double chi, double psi, double lambda) {
-//  // Extract R's optim function
-//  Rcpp::Environment GIGrvg("package:GIGrvg"); 
-//  Rcpp::Function rgig = GIGrvg["rgig"];
-//  
-//  // Call the optim function from R in C++ 
-//  Rcpp::List out = rgig(Rcpp::_["n"] = 1,
-//                        Rcpp::_["lambda"]  = lambda,
-//                        Rcpp::_["chi"] = chi,
-//                        Rcpp::_["psi"] = psi);
-//  
-//  // Return estimated values
-//  return out(0);
-//}
-
-// (internal) wrapper function for do_rgig in GIGrvg package
-double rgig_cpp(double chi, double psi, double lambda) {
-  SEXP (*fun)(int, double, double, double) = NULL;
-  if (!fun) fun = (SEXP(*)(int, double, double, double)) R_GetCCallable("GIGrvg", "do_rgig");
-  return as<double>(fun(1, lambda, chi, psi));
-}
-
-double rigamma_cpp(double shape, double scale) {
-  double gammascale = 1.0 / scale;
-  double out = 1.0 / R::rgamma(shape, gammascale);
-  return(out);
-}
-
-double getSigma2(arma::vec Y, arma::mat X, arma::vec beta, arma::vec tau2) {
-  int T = Y.n_elem;
-  int qp = beta.n_elem;
-  double shape = (T - 1.0) / 2.0 + qp / 2.0;
-  arma::vec resi = Y - X * beta;
-  arma::mat InvTau2 = getInvTau2(tau2);
-  arma::vec tmpscale = resi.t() * resi / 2.0 + beta.t() * InvTau2 * beta / 2.0;
-  double scale = tmpscale(0);
-  double out = rigamma_cpp(shape, scale);
-  return(out);
-}
-
-double riGaussian(double mu, double lambda) {
-  double v = R::rnorm(0.0, 1.0);  // Sample from a normal distribution with a mean of 0 and 1 standard deviation
-  double y = v * v;
-  double x = mu + (mu * mu * y) / (2.0 * lambda) - (mu / (2.0 * lambda)) * sqrt(4.0 * mu * lambda * y + mu * mu * y * y);
-  double test = R::runif(0.0, 1.0);  // Sample from a uniform distribution between 0 and 1
-  if (test <= (mu) / (mu + x))
-    return x;
-  else
-    return (mu * mu) / x;
-}
-
-arma::vec getTau2(arma::vec beta, double sigma2, double lambda2) {
-  //rgig_cpp(double chi, double psi, double lambda)
-  int m = beta.n_elem;
-  arma::vec out(m);
-  for (int i = 0; i < m; i++) {
-    out(i) = rgig_cpp(beta(i) * beta(i) / sigma2, lambda2, 1.0 / 2.0);
-  }
-  return(out);
-}
-
-//arma::vec getTau2(arma::vec beta, double sigma2, double lambda2) {
-//  //rgig_cpp(double chi, double psi, double lambda)
-//  int m = beta.n_elem;
-//  arma::vec out(m);
-//  double mu;
-//  for (int i = 0; i < m; i++) {
-//    mu = sqrt(lambda2 * sigma2 / (beta(i) * beta(i)));
-//    out(i) = riGaussian(mu, lambda2);
-//    out(i) = 1.0 / out(i);
-//  }
-//  return(out);
-//}
-
-double modifiedBesselfunction2nd(double x, double nu) {
-  // Extract R's optim function
-  Rcpp::Environment base("package:base"); 
-  Rcpp::Function besselK = base["besselK"];
-  
-  // Call the optim function from R in C++ 
-  Rcpp::List out = besselK(Rcpp::_["x"]    = x,
-                           Rcpp::_["nu"]   = nu);
-  
-  // Return estimated values
-  return out(0);
-}
-
-arma::vec getExpectedTau2(arma::vec beta, double sigma2, double lambda2) {
-  //rgig_cpp(double chi, double psi, double lambda)
-  int m = beta.n_elem;
-  double chi;
-  double psi;
-  double lambda = 1.0 / 2.0;
-  double sqrtchipsi;
-  arma::vec out(m);
-  for (int i = 0; i < m; i++) {
-    chi = beta(i) * beta(i) / sigma2;
-    psi = lambda2;
-    sqrtchipsi = sqrt(chi * psi);
-    out(i) = sqrt(chi) * modifiedBesselfunction2nd(sqrtchipsi, lambda + 1.0) / 
-      (sqrt(psi) * modifiedBesselfunction2nd(sqrtchipsi, lambda));
-  }
-  return(out);
-}
-
-// [[Rcpp::export]]
-arma::mat getV(arma::vec V, int p) {
-  int n = V.n_elem;
-  arma::mat T(n, p);
-  
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < p; j++) {
-      if (i - j - 1 >= 0) {
-        T(i, j) = V(i - j - 1);
-      }
-    }
-  }
-  return(T);
-}
-
-double obj_fun_rcpp(arma::vec beta_hat, 
-                    arma::vec y, arma::mat x){
-  
-  arma::vec resi = y - x * beta_hat;
-  double obj = arma::accu(arma::pow(resi, 2));
-  return obj;
-}
-
-arma::vec loglikelihood(arma::vec resi, double sigma2){
-  
-  int n = resi.n_elem;
-  double pi = 3.1415926;
-  arma::vec out(n);
-  
-  for (int i = 0; i < n; i++) {
-    out(i) = log(1.0 / sqrt(2.0 * pi * sigma2) * 
-      exp(- 1.0 / 2.0 / sigma2 * resi(i) * resi(i)));
-  }
-  
-  return out;
-}
-
-
-// [[Rcpp::export]]
-arma::mat IsolatedShift(int T) {
-  arma::mat out(T, T);
-  out.eye();
-  return(out);
-} 
-
-// [[Rcpp::export]]
-arma::mat SustainedShift(int T) {
-  
-  arma::mat out(T, T - 2);
-  out.zeros();
-  
-  int i = 0;
-  int j = 0;
-  for (j = 0; j < (T - 2); j++) {
-    for (i = 0; i < T; i++) {
-      if (i > j) {
-        out(i, j) = 1.0;
-      }
-    }
-  }
-  
-  return(out);
-} 
-
-// [[Rcpp::export]]
-arma::mat GradualShift(int T) {
-  
-  arma::mat out(T, T - 2);
-  out.zeros();
-  
-  int i = 0;
-  int j = 0;
-  for (j = 0; j < (T - 2); j++) {
-    for (i = 0; i < T; i++) {
-      if (i > j) {
-        out(i, j) = (i - j) * 1.0;
-      }
-    }
-  }
-  
-  return(out);
-} 
-
-Rcpp::List getGaussianPosteriorCM(arma::vec Y, arma::mat V, arma::mat X,
-                                  arma::vec beta0, arma::vec beta1, arma::vec beta2, 
-                                  arma::vec tau02, arma::vec tau12, arma::vec tau22,
-                                  double sigma2, double lambda2, 
-                                  int q, int p) {
-  
-  // initialize all vectors;
-  
-  int n = Y.n_elem;
-  int m = 1;
-  
-  //Rcpp::Rcout << 0.1 << std::endl;
-  
-  arma::vec Y_ = Y; 
-  arma::mat V_ = V;
-  arma::mat X_ = X;
-  
-  arma::vec beta0_ = beta0;
-  arma::vec beta1_ = beta1;
-  arma::vec beta2_ = beta2;
-  
-  arma::vec tau02_ = tau02;
-  arma::vec tau12_ = tau12;
-  arma::vec tau22_ = tau22;
-  
-  //Rcpp::Rcout << 0.2 << std::endl;
-  
-  m = m + q + p;
-  
-  // initialize all vectors;
-  
-  arma::vec zeta;
-  arma::vec Onebeta0;
-  Onebeta0.zeros(n);
-  
-  arma::vec Vbeta1;
-  Vbeta1.zeros(n);
-  
-  arma::vec Xbeta2;
-  Xbeta2.zeros(n);
-  
-  arma::vec on = arma::ones(n);
-  
-  arma::vec beta;
-  arma::vec tau2;
-  
-  // update beta0;
-  
-  if (q > 0) {
-    Vbeta1 = V_ * beta1_;
-  }
-  
   if (p > 0) {
-    Xbeta2 = X_ * beta2_;
-  }
-  
-  zeta = Y_ - (Xbeta2 + Vbeta1);
-  beta0_ = getBetaNonMonotonicity(zeta, on, tau02_, sigma2);
-  Onebeta0 = on * beta0_;
-  beta = beta0_;
-  
-  // update beta1;
-  
-  if (q > 0) {
-    zeta = Y_ - (Onebeta0 + Xbeta2);
-    beta1_ = getBetaMonotonicity(zeta, V_, tau12_, sigma2);
-    Vbeta1 = V_ * beta1_;
-    beta = arma::join_cols(beta, beta1_);
-  }
-  
-  // update beta2;
-  
-  if (p > 0) {
-    zeta = Y_ - (Onebeta0 + Vbeta1);
-    beta2_ = getBetaNonMonotonicity(zeta, X_, tau22_, sigma2);
-    Xbeta2 = X_ * beta2_;
-    beta = arma::join_cols(beta, beta2_);
-  }
-  
-  tau02_ = getTau2(beta0_, sigma2, lambda2);
-  tau2 = tau02_;
-  
-  // update tau12;
-  
-  if (q > 0) {
-    tau12_ = getTau2(beta1_, sigma2, lambda2);
-    tau2 = arma::join_cols(tau2, tau12_);
-  }
-  
-  // update tau22;
-  
-  if (p > 0) {
-    tau22_ = getTau2(beta2_, sigma2, lambda2);
-    tau2 = arma::join_cols(tau2, tau22_);
-  }
-  
-  // output;
-  arma::vec fit0 = Onebeta0 + Vbeta1;
-  arma::vec fit1 = Onebeta0 + Xbeta2 + Vbeta1;
-  Rcpp::List out;
-  out = Rcpp::List::create(
-    Rcpp::_["beta"] = beta,
-    Rcpp::_["tau2"] = tau2,
-    Rcpp::_["expectedTau2"] = getExpectedTau2(beta, sigma2, lambda2),
-    Rcpp::_["fit0"] = fit0,
-    Rcpp::_["fit1"] = fit1,
-    Rcpp::_["m"] = m,
-    Rcpp::_["q"] = q,
-    Rcpp::_["p"] = p
-  );
-  return(out);
-}
-
-Rcpp::List getGaussianPosteriorCMNew(arma::vec Y, arma::mat V, arma::mat X,
-                                  arma::vec beta1, arma::vec beta2, 
-                                  arma::vec tau12, arma::vec tau22,
-                                  double sigma2, double lambda2, 
-                                  int q, int p) {
-  
-  // initialize all vectors;
-  
-  int n = Y.n_elem;
-  int m = 0;
-  
-  //Rcpp::Rcout << 0.1 << std::endl;
-  
-  arma::vec Y_ = Y; 
-  arma::mat V_ = V;
-  arma::mat X_ = X;
-  
-  arma::vec beta1_ = beta1;
-  arma::vec beta2_ = beta2;
-  
-  arma::vec tau12_ = tau12;
-  arma::vec tau22_ = tau22;
-  
-  //Rcpp::Rcout << 0.2 << std::endl;
-  
-  m = m + q + p;
-  
-  // initialize all vectors;
-  
-  arma::vec zeta;
-  
-  arma::vec Vbeta1;
-  Vbeta1.zeros(n);
-  
-  arma::vec Xbeta2;
-  Xbeta2.zeros(n);
-  
-  arma::vec beta;
-  arma::vec tau2;
-  
-  // update beta1;
-  
-  int k = 0;
-  
-  if (p > 0) {
-    Xbeta2 = X_ * beta2_;
-  }
-
-  if (q > 0) {
-    k = k + 1;
-    zeta = Y_ - (Xbeta2);
-    beta1_ = getBetaMonotonicity(zeta, V_, tau12_, sigma2);
-    Vbeta1 = V_ * beta1_;
-    if (k > 0) {
-      beta = arma::join_cols(beta, beta1_);
-    } else {
-      beta = beta1_;
-    }
-  }
-  
-  // update beta2;
-  
-  if (p > 0) {
-    k = k + 1;
-    zeta = Y_ - (Vbeta1);
-    beta2_ = getBetaNonMonotonicity(zeta, X_, tau22_, sigma2);
-    Xbeta2 = X_ * beta2_;
-    if (k > 0) {
-      beta = arma::join_cols(beta, beta2_);
-    } else {
-      beta = beta2_;
-    }
-  }
-  
-  // update tau12;
-  k = 0;
-  
-  if (q > 0) {
-    k = k + 1;
-    tau12_ = getTau2(beta1_, sigma2, lambda2);
-    if (k > 0) {
-      tau2 = arma::join_cols(tau2, tau12_);
-    } else {
-      tau2 = tau12_;
-    }
-  }
-  
-  // update tau22;
-  
-  if (p > 0) {
-    k = k + 1;
-    tau22_ = getTau2(beta2_, sigma2, lambda2);
-    if (k > 0) {
-      tau2 = arma::join_cols(tau2, tau22_);
-    } else {
-      tau2 = tau22_;
-    }
-  }
-  
-  // output;
-  arma::vec fit0 = Vbeta1;
-  arma::vec fit1 = Xbeta2 + Vbeta1;
-  Rcpp::List out;
-  out = Rcpp::List::create(
-    Rcpp::_["beta"] = beta,
-    Rcpp::_["tau2"] = tau2,
-    Rcpp::_["expectedTau2"] = getExpectedTau2(beta, sigma2, lambda2),
-    Rcpp::_["fit0"] = fit0,
-    Rcpp::_["fit1"] = fit1,
-    Rcpp::_["m"] = m,
-    Rcpp::_["q"] = q,
-    Rcpp::_["p"] = p
-  );
-  return(out);
-}
-
-
-Rcpp::List getGaussianPosteriorCMH0(arma::vec Y, arma::mat V, 
-                                    arma::vec beta0, arma::vec beta1, 
-                                    arma::vec tau02, arma::vec tau12,
-                                    double sigma2, double lambda2, 
-                                    int q) {
-  
-  // initialize all vectors;
-  
-  int n = Y.n_elem;
-  int m = 1;
-  
-  //Rcpp::Rcout << 0.1 << std::endl;
-  
-  arma::vec Y_ = Y; 
-  arma::mat V_ = V;
-  
-  arma::vec beta0_ = beta0;
-  arma::vec beta1_ = beta1;
-  
-  arma::vec tau02_ = tau02;
-  arma::vec tau12_ = tau12;
-  
-  //Rcpp::Rcout << 0.2 << std::endl;
-  
-  m = m + q;
-  
-  // initialize all vectors;
-  
-  arma::vec zeta;
-  arma::vec Onebeta0;
-  Onebeta0.zeros(n);
-  
-  arma::vec Vbeta1;
-  Vbeta1.zeros(n);
-  
-  arma::vec on = arma::ones(n);
-  
-  arma::vec beta;
-  arma::vec tau2;
-  
-  // update beta0;
-  
-  if (q > 0) {
-    Vbeta1 = V_ * beta1_;
-  }
-  
-  zeta = Y_ - (Vbeta1);
-  beta0_ = getBetaNonMonotonicity(zeta, on, tau02_, sigma2);
-  Onebeta0 = on * beta0_;
-  beta = beta0_;
-  
-  // update beta1;
-  
-  if (q > 0) {
-    zeta = Y_ - (Onebeta0);
-    beta1_ = getBetaMonotonicity(zeta, V_, tau12_, sigma2);
-    Vbeta1 = V_ * beta1_;
-    beta = arma::join_cols(beta, beta1_);
-  }
-  
-  tau02_ = getTau2(beta0_, sigma2, lambda2);
-  tau2 = tau02_;
-  
-  // update tau12;
-  
-  if (q > 0) {
-    tau12_ = getTau2(beta1_, sigma2, lambda2);
-    tau2 = arma::join_cols(tau2, tau12_);
-  }
-  
-  
-  // output;
-  arma::vec fit = Onebeta0 + Vbeta1;
-  Rcpp::List out;
-  out = Rcpp::List::create(
-    Rcpp::_["beta"] = beta,
-    Rcpp::_["tau2"] = tau2,
-    Rcpp::_["expectedTau2"] = getExpectedTau2(beta, sigma2, lambda2),
-    Rcpp::_["fit"] = fit,
-    Rcpp::_["m"] = m,
-    Rcpp::_["q"] = q
-  );
-  return(out);
-}
-
-
-// [[Rcpp::export]]
-Rcpp::List getPosterior(arma::vec Y, arma::mat V, arma::mat X, double lambda2, 
-                        arma::vec beta0, arma::vec beta1, arma::vec beta2, 
-                        int burnin, int nsim) {
-  
-  int T = Y.n_elem;
-  
-  int q = V.n_cols;
-  int p = X.n_cols;
-  
-  double lambda2_ = lambda2;
-  
-  //initialize output
-  Rcpp::List out;
-  
-  arma::mat betaout(nsim, 1 + p + q);
-  arma::vec sigma2out(nsim); 
-  arma::vec lambda2out(nsim);
-  
-  //initialize subjects
-  Rcpp::List m1;
-  arma::vec fit1;
-  
-  arma::vec beta(1 + p + q);
-  beta(0) = beta0(0);
-  beta.subvec(1, q) = beta1;
-  beta.subvec((q + 1), (q + p)) = beta2;
-  
-  arma::vec tau2(1 + p + q); 
-  arma::vec tau02(1); 
-  arma::vec tau12(q);
-  arma::vec tau22(p);
-  
-  arma::vec expectedTau2(1 + p + q); 
-  
-  double sigma2 = arma::var(Y - arma::ones(T) * beta0 - V * beta1 - X * beta2);
-  
-  //
-  
-  
-  int i = 0;
-  
-  for (i = 0; i < (nsim + burnin); i++) {
-    tau2 = getTau2(beta, sigma2, lambda2_);
-    
-    tau02 = tau2(0);
-    tau12 = tau2.subvec(1, q);
-    tau22 = tau2.subvec(q + 1, q + p);
-    
-    beta0 = beta(0);
-    beta1 = beta.subvec(1, q);
-    beta2 = beta.subvec(q + 1, q + p);
-    
-    m1 = getGaussianPosteriorCM(Y, V, X,
-                                beta0, beta1, beta2, 
-                                tau02, tau12, tau22,
-                                sigma2, lambda2_, 
-                                q, p);
-    
-    beta = Rcpp::as<arma::vec>(Rcpp::wrap(m1["beta"]));
-    tau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["tau2"]));
-    
-    expectedTau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["expectedTau2"]));
-    
-    fit1 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["fit1"]));
-    
-    sigma2 = arma::var(Y - fit1);
-    lambda2_ = getLambda2EM(expectedTau2);
-    
-    if (i >= burnin) {
-      betaout.row(i - burnin) = arma::trans(beta);
-      sigma2out(i - burnin) = sigma2;
-      lambda2out(i - burnin) = lambda2_;
-    }
-    
-  }
-  
-  out = Rcpp::List::create(
-    Rcpp::_["beta"] = betaout,
-    Rcpp::_["sigma2"] = sigma2out,
-    Rcpp::_["lambda2"] = lambda2out
-  );
-  
-  return(out);
-  
-}
-
-// [[Rcpp::export]]
-Rcpp::List getPosteriorNew(arma::vec Y, arma::mat X, double lambda2, 
-                           arma::vec beta1, arma::vec beta2, 
-                           int burnin, int nsim) {
-  
-  int T = Y.n_elem;
-  
-  int q = beta1.n_elem;
-  int p = beta2.n_elem;
-  
-  double lambda2_ = lambda2;
-  
-  double tmpmean = arma::mean(Y);
-  arma::vec Ybar(1);
-  Ybar(0) = tmpmean;
-  
-  arma::vec Z = Y - arma::ones(T) * Ybar;
-  arma::mat V = getV(Z, q);
-  
-  //Rcpp::Rcout << "0.0" << std::endl;
-  
-  //initialize output
-  Rcpp::List out;
-  
-  arma::mat betaout(nsim, p + q);
-  arma::vec sigma2out(nsim); 
-  arma::vec lambda2out(nsim);
-  
-  //initialize subjects
-  Rcpp::List m1;
-  arma::vec fit1;
-  
-  arma::vec beta(p + q);
-  //beta(0) = beta0(0);
-  beta.subvec(0, q - 1) = beta1;
-  beta.subvec((q), (q + p - 1)) = beta2;
-  
-  arma::vec tau2(p + q); 
-  //arma::vec tau02(1); 
-  arma::vec tau12(q);
-  arma::vec tau22(p);
-  
-  arma::vec expectedTau2(p + q); 
-  
-  double sigma2 = arma::var(Z - V * beta1 - X * beta2);
-  
-  //Rcpp::Rcout << "0.1" << std::endl;
-  
-  arma::mat VX = arma::join_rows(V, X);
-  //
-  
-  
-  int i = 0;
-  
-  for (i = 0; i < (nsim + burnin); i++) {
-    //Rcpp::Rcout << "1,0" << std::endl;
-    tau2 = getTau2(beta, sigma2, lambda2_);
-    
-    //Rcpp::Rcout << "1.1" << std::endl;
-    
-    //tau02 = tau2(0);
-    tau12 = tau2.subvec(0, q - 1);
-    tau22 = tau2.subvec(q, q + p - 1);
-    
-    //beta0 = beta(0);
-    beta1 = beta.subvec(0, q - 1);
-    beta2 = beta.subvec(q, q + p - 1);
-    
-    //m1 = getGaussianPosteriorCM(Y, V, X,
-    //                            beta0, beta1, beta2, 
-    //                            tau02, tau12, tau22,
-    //                            sigma2, lambda2_, 
-    //                            q, p);
-    
-    //Rcpp::Rcout << "1.2" << std::endl;
-    
-    //Rcpp::Rcout << "beta1:" << beta1 << std::endl;
-    //Rcpp::Rcout << "beta2:" << beta2 << std::endl;
-    //Rcpp::Rcout << "tau12:" << tau12 << std::endl;
-    //Rcpp::Rcout << "tau12:" << tau22 << std::endl;
-    //Rcpp::Rcout << "sigma2:" << sigma2 << std::endl;
-    //Rcpp::Rcout << "lambda2:" << lambda2_ << std::endl;
- 
-    
-    m1 = getGaussianPosteriorCMNew(Z, V, X,
-                              beta1, beta2, 
-                              tau12, tau22,
-                              sigma2, lambda2_, 
-                              q, p);
-      
-    //Rcpp::Rcout << "1" << std::endl;
-      
-    beta = Rcpp::as<arma::vec>(Rcpp::wrap(m1["beta"]));
-    tau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["tau2"]));
-    
-    //Rcpp::Rcout << "beta1:" << beta1 << std::endl;
-    //Rcpp::Rcout << "beta2:" << beta2 << std::endl;
-    //Rcpp::Rcout << "tau12:" << tau12 << std::endl;
-    //Rcpp::Rcout << "tau12:" << tau22 << std::endl;
-    //Rcpp::Rcout << "sigma2:" << sigma2 << std::endl;
-    //Rcpp::Rcout << "lambda2:" << lambda2_ << std::endl;
-    
-    expectedTau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["expectedTau2"]));
-    
-    fit1 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["fit1"]));
-    
-    //sigma2 = arma::var(Y - fit1);
-    sigma2 = getSigma2(Z, VX, beta, tau2);
-    
-    //Rcpp::Rcout << "2" << std::endl;
-    
-    //lambda2_ = getLambda2EM(expectedTau2);
-    lambda2_ = getLambda2(tau2, 1.0, 1.0);
-    
-    //Rcpp::Rcout << "3" << std::endl;
-    
-    if (i >= burnin) {
-      betaout.row(i - burnin) = arma::trans(beta);
-      sigma2out(i - burnin) = sigma2;
-      lambda2out(i - burnin) = lambda2_;
-    }
-    
-  }
-  
-  out = Rcpp::List::create(
-    Rcpp::_["beta"] = betaout,
-    Rcpp::_["sigma2"] = sigma2out,
-    Rcpp::_["lambda2"] = lambda2out
-  );
-  
-  return(out);
-  
-}
-
-// [[Rcpp::export]]
-Rcpp::List getPosteriorH0(arma::vec Y, arma::mat V, double lambda2, 
-                          arma::vec beta0, arma::vec beta1, 
-                          int burnin, int nsim) {
-  
-  int T = Y.n_elem;
-  
-  int q = V.n_cols;
-  
-  double lambda2_ = lambda2;
-  
-  //initialize output
-  Rcpp::List out;
-  
-  arma::mat betaout(nsim, 1 + q);
-  arma::vec sigma2out(nsim); 
-  arma::vec lambda2out(nsim);
-  
-  //initialize subjects
-  Rcpp::List m1;
-  arma::vec fit1;
-  
-  arma::vec beta(1 + q);
-  beta(0) = beta0(0);
-  beta.subvec(1, q) = beta1;
-  
-  arma::vec tau2(1 + q); 
-  arma::vec tau02(1); 
-  arma::vec tau12(q);
-  
-  arma::vec expectedTau2(1 + q); 
-  
-  double sigma2 = arma::var(Y - arma::ones(T) * beta0 - V * beta1);
-  
-  //
-  
-  
-  int i = 0;
-  
-  for (i = 0; i < (nsim + burnin); i++) {
-    tau2 = getTau2(beta, sigma2, lambda2_);
-    
-    tau02 = tau2(0);
-    tau12 = tau2.subvec(1, q);
-    
-    beta0 = beta(0);
-    beta1 = beta.subvec(1, q);
-    
-    arma::mat tmpX(1, 1);
-    tmpX.zeros();
-    arma::vec tmpbeta2(1);
-    tmpbeta2.zeros();
-    
-    m1 = getGaussianPosteriorCM(Y, V, tmpX,
-                                beta0, beta1, tmpbeta2, 
-                                tau02, tau12, tmpbeta2,
-                                sigma2, lambda2_, 
-                                q, 0);
-    
-    beta = Rcpp::as<arma::vec>(Rcpp::wrap(m1["beta"]));
-    tau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["tau2"]));
-    
-    expectedTau2 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["expectedTau2"]));
-    
-    fit1 = Rcpp::as<arma::vec>(Rcpp::wrap(m1["fit1"]));
-    
-    sigma2 = arma::var(Y - fit1);
-    lambda2_ = getLambda2EM(expectedTau2);
-    
-    if (i >= burnin) {
-      betaout.row(i - burnin) = arma::trans(beta);
-      sigma2out(i - burnin) = sigma2;
-      lambda2out(i - burnin) = lambda2_;
-    }
-    
-  }
-  
-  out = Rcpp::List::create(
-    Rcpp::_["beta"] = betaout,
-    Rcpp::_["sigma2"] = sigma2out,
-    Rcpp::_["lambda2"] = lambda2out
-  );
-  
-  return(out);
-  
-}
-
-arma::vec getPvalue(arma::mat beta2, Rcpp::String side)  {
-  
-  int nbeta = beta2.n_rows;
-  int p = beta2.n_cols;
-  arma::vec pvalue(p);
-  double tmp1 = 0;
-  double tmp2 = 0;
-  
-  int i = 0;
-  int j = 0;
-  
-  if (side == "two-sided") {
-    for (i = 0; i < p; i++) {
-      tmp1 = 0;
-      tmp2 = 0;
-      for (j = 0; j < nbeta; j++) {
-        if (beta2(j, i) >= 0) {
-          tmp1 = tmp1 + 1;
-        }
-        if (beta2(j, i) <= 0) {
-          tmp2 = tmp2 + 1;
-        }
-      }
-      tmp1 = tmp1 / nbeta;
-      tmp2 = tmp2 / nbeta;
-      if (tmp1 > tmp2) {
-        pvalue(i) = 2 * (1 - tmp1);
+    for (i = 0; i < n; i++) {
+      if (U(i) <= p1 / p) {
+        out(i) = R::qnorm5(U(i) * p + arma::normcdf(b1), 0.0, 1.0, 1, 0) * sd + mean;
       } else {
-        pvalue(i) = 2 * (1 - tmp2);
+        out(i) = R::qnorm5(U(i) * p + arma::normcdf(a2) - p1, 0.0, 1.0, 1, 0) * sd + mean;
       }
     }
-  } else if (side == "upper-sided") {
-    for (i = 0; i < p; i++) {
-      tmp1 = 0;
-      for (j = 0; j < nbeta; j++) {
-        if (beta2(j, i) <= 0) {
-          tmp1 = tmp1 + 1;
-        }
-      }
-      tmp1 = tmp1 / nbeta;
-      pvalue(i) = 1 - tmp1;
-    }
-  } else if (side == "lower-sided") {
-    for (i = 0; i < p; i++) {
-      tmp1 = 0;
-      for (j = 0; j < nbeta; j++) {
-        if (beta2(j, i) >= 0) {
-          tmp1 = tmp1 + 1;
-        }
-      }
-      tmp1 = tmp1 / nbeta;
-      pvalue(i) = 1 - tmp1;
-    }
+    
   }
-  
-  
-  return(pvalue);
-}
-
-
-
-double cdfKernelEstimationGaussian(double x, arma::vec beta, double bandwidth)  {
-  int n = beta.n_elem;
-  double p = 0; 
-  int i;
-  
-  for (i = 0; i < n; i++) {
-    p = p + R::pnorm5(x, beta(i), bandwidth, 1, 0);
-  }
-  
-  return(p / n);
-}
-
-arma::vec getPvalueKernelEstimationGaussian(arma::mat beta2, 
-                                            Rcpp::String side, double bandwidth)  {
-  
-  int nbeta = beta2.n_rows;
-  int p = beta2.n_cols;
-  arma::vec pvalue(p);
-  double tmp1 = 0;
-  double tmp2 = 0;
-  
-  int i = 0;
-  int j = 0;
-  
-  if (side == "two-sided") {
-    for (i = 0; i < p; i++) {
-      
-      tmp2 = cdfKernelEstimationGaussian(0.0, beta2.col(i), bandwidth);
-      tmp1 = 1.0 - tmp2;
-      
-      if (tmp1 > tmp2) {
-        pvalue(i) = 2 * (1 - tmp1);
-      } else {
-        pvalue(i) = 2 * (1 - tmp2);
-      }
-    }
-  } else if (side == "upper-sided") {
-    for (i = 0; i < p; i++) {
-      tmp1 = cdfKernelEstimationGaussian(0.0, beta2.col(i), bandwidth);
-      pvalue(i) = 1 - tmp1;
-    }
-  } else if (side == "lower-sided") {
-    for (i = 0; i < p; i++) {
-      tmp2 = cdfKernelEstimationGaussian(0.0, beta2.col(i), bandwidth);
-      //tmp1 = 1.0 - tmp2;
-      pvalue(i) = tmp2;
-    }
-  }
-  
-  
-  return(pvalue);
-}
-
-
-// [[Rcpp::export]]
-arma::mat BenjaminiHochberg(double FDR, arma::mat beta2, Rcpp::String side, 
-                            int KernelSmoothing, double bandwidth)  {
-  
-  int n = beta2.n_cols;
-  arma::vec pvalue(n);
-  if (KernelSmoothing == 0) {
-    pvalue = getPvalue(beta2, side);
-  } else {
-    pvalue = getPvalueKernelEstimationGaussian(
-                              beta2, side, bandwidth);
-  }
-  
-  arma::uvec idx = arma::sort_index(pvalue);
-  
-  int i;
-  arma::vec rank(n);
-  arma::vec lim(n); 
-  arma::vec sig(n);
-  
-  for (i = 0; i < n; i++) {
-    rank(idx(i)) = i + 1.0;
-  }
-  
-  lim = rank / n * FDR;
-  
-  for (i = 0; i < n; i++) {
-    if (pvalue(i) < lim(i)) {
-      sig(i) = 1;
-    } else {
-      sig(i) = 0; 
-    }
-  }
-  
-  arma::mat out(n, 4);
-  
-  out.col(0) = pvalue;
-  out.col(1) = rank;
-  out.col(2) = lim;
-  out.col(3) = sig;
-  
   return(out);
   
 }
 
-// [[Rcpp::export]]
-arma::mat BonferroniCorrection(double FAP, arma::mat beta2, Rcpp::String side, 
-                               int KernelSmoothing, double bandwidth)  {
+arma::mat getGMat(int T, int q) {
+  arma::mat tmp(T, T);
+  tmp.eye();
   
-  int n = beta2.n_cols;
-  arma::vec pvalue(n);
-  if (KernelSmoothing == 0) {
-    pvalue = getPvalue(beta2, side);
-  } else {
-    pvalue = getPvalueKernelEstimationGaussian(
-      beta2, side, bandwidth);
-  }
+  arma::mat out(T - q, T);
+  out = tmp.submat(q, 0, T - 1, T - 1);
+  return(out);
+}
+
+arma::mat getPhiMat(arma::colvec Phi, int T) {
+  int q = Phi.n_elem;
+  arma::mat tmp(T, T);
+  tmp.zeros();
   
   int i;
-  arma::vec lim(n); 
-  lim.fill(FAP / n);
-  arma::vec sig(n);
+  for (i = 0; i < q; i++) {
+    tmp.diag(-i - 1).fill(Phi(i));
+  }
   
-  for (i = 0; i < n; i++) {
-    if (pvalue(i) < lim(i)) {
-      sig(i) = 1;
-    } else {
-      sig(i) = 0; 
+  arma::mat out(T - q, T);
+  out = tmp.submat(q, 0, T - 1, T - 1);
+  return(out);
+}
+
+//' get a design matrix as that in MT
+//'
+//' @param T is length of a process.
+//' @param q is the number of lags.
+//' @export
+//' @examples
+//' getHMatMT(100, 5)
+// [[Rcpp::export]]
+arma::mat getHMatMT(int T, int q) {
+  arma::mat tmp(T, T);
+  tmp.ones();
+  arma::mat L = arma::trimatl(tmp);
+  
+  arma::mat out(T, T - q);
+  out = L.submat(0, q, T - 1, T - 1);
+  return(out);
+  
+}
+
+//' get a design matrix for sustained shift
+//'
+//' @param T is length of a process.
+//' @param q is the number of lags.
+//' @param w is the subgroup size.
+//' @export
+//' @examples
+//' getHMatSustained(100, 5, 1)
+// [[Rcpp::export]]
+arma::mat getHMatSustained(int T, int q, int w) {
+  arma::mat tmp(T, T);
+  tmp.ones();
+  arma::mat L = arma::trimatl(tmp);
+  arma::mat out = L.cols(q, T - 2);
+  int nn = T - 2 - q + 1;
+  arma::mat out1(T, nn);
+  int rr = 0;
+  int kk = 0;
+  int i;
+  for (i = 0; i < nn; i++) {
+    
+    if (rr == 0) {
+      out1.col(kk) = out.col(i);
+      kk = kk + 1;
+      rr = rr - w;
+    }
+    rr = rr + 1;
+  }
+  int tmpn = floor(nn / w);
+  return(out1.cols(0, tmpn - 1));
+}
+
+//' get a design matrix for isolated shift
+//'
+//' @param T is length of a process.
+//' @param q is the number of lags.
+//' @param w is the subgroup size.
+//' @export
+//' @examples
+//' getHMatIsolated(100, 5, 1)
+// [[Rcpp::export]]
+arma::mat getHMatIsolated(int T, int q, int w) {
+  arma::mat tmp(T, T);
+  
+  int i;
+  for (i = 0; i < w; i++) {
+    tmp.diag(-i).ones();
+  }
+  
+  arma::mat out = tmp.cols(q, T - 1);
+  int nn = T - 1 - q + 1;
+  arma::mat out1(T, nn);
+  int rr = 0;
+  int kk = 0;
+  
+  for (i = 0; i < nn; i++) {
+    
+    if (rr == 0) {
+      out1.col(kk) = out.col(i);
+      kk = kk + 1;
+      rr = rr - w;
+    }
+    rr = rr + 1;
+  }
+  int tmpn = floor(nn / w);
+  return(out1.cols(0, tmpn - 1));
+}
+
+//' get a design matrix for gradual shift
+//'
+//' @param T is length of a process.
+//' @param q is the number of lags.
+//' @param w is the subgroup size.
+//' @export
+//' @examples
+//' getHMatGradual(100, 5, 1)
+// [[Rcpp::export]]
+arma::mat getHMatGradual(int T, int q, int w) {
+  arma::mat tmp(T, T);
+  
+  int i;
+  for (i = 0; i < T; i++) {
+    tmp.diag(-i).fill(i);
+  }
+  
+  arma::mat out = tmp.cols(q, T - 2);
+  int nn = T - 2 - q + 1;
+  arma::mat out1(T, nn);
+  int rr = 0;
+  int kk = 0;
+  
+  for (i = 0; i < nn; i++) {
+    
+    if (rr == 0) {
+      out1.col(kk) = out.col(i);
+      kk = kk + 1;
+      rr = rr - w;
+    }
+    rr = rr + 1;
+  }
+  int tmpn = floor(nn / w);
+  return(out1.cols(0, tmpn - 1));
+  
+}
+
+arma::mat getInv(arma::mat A) {
+  int nn = A.n_cols;
+  arma::mat out(nn, nn);
+  bool success = true;
+  
+  success = arma::inv_sympd(out, A);
+  if (success == false) {
+    success = arma::inv(out, A);
+    if (success == false) {
+      success = arma::pinv(out, A);
+    }
+  } 
+  
+  return(out);
+}
+
+/////////////////////////////
+
+arma::mat removeRow(arma::mat A, int a) {
+  
+  arma::mat out(A.n_rows - 1, A.n_cols);
+  int n = A.n_rows;
+  int j = 0;
+  for (int i = 0; i < n; i++) {
+    if (i != a) {
+      out.row(j) = A.row(i);
+      j = j + 1;
+    }
+  }
+  return(out);
+} 
+
+
+arma::mat removeCol(arma::mat A, int a) {
+  
+  arma::mat out(A.n_rows, A.n_cols - 1);
+  int n = A.n_cols;
+  int j = 0;
+  for (int i = 0; i < n; i++) {
+    if (i != a) {
+      out.col(j) = A.col(i);
+      j = j + 1;
+    }
+  }
+  return(out);
+} 
+
+
+Rcpp::List arimacpp(arma::colvec Y, int q){
+  Rcpp::Environment pkg = Rcpp::Environment::namespace_env("stats");
+  
+  // Picking up Matrix() function from Matrix package
+  Rcpp::Function arima = pkg["arima"];
+  
+  Rcpp::NumericVector ord = Rcpp::NumericVector::create(q, 0, 0);
+  
+  return arima(Y, Rcpp::Named("order") = ord, Rcpp::Named("method") = "CSS");
+}
+
+arma::mat checkSym(arma::mat S) {
+  arma::mat out;
+  if (S.is_symmetric() == false) {
+    S = (S.t() + S) / 2;
+  }
+  out = S;
+  return(out);
+}
+
+arma::colvec updatePhi(arma::mat V, arma::mat Vas, 
+                       arma::mat A, double sigma2, arma::mat inveta2mat, 
+                       double bound0, double boundqplus1,
+                       int MonoFlg, Rcpp::String method) {
+  
+  //int n = V.n_rows;
+  int q = Vas.n_cols;
+  
+  // Initialize 
+  arma::mat tVasVas(q, q);
+  arma::mat invtVasVas(q, q);
+  arma::mat Phihat(q, 1);
+  arma::mat Phi(q, 1);
+  arma::mat S(q, q);
+  arma::mat tmpS(q, q);
+  arma::colvec M(q);
+  
+  arma::mat Sgg(1, q);
+  arma::mat Snotgg(q - 1, q);
+  arma::mat Snotnot(q - 1, q - 1);
+  arma::mat invSnotgg(q - 1, q - 1);
+  
+  arma::mat tmpMat(1, 1); 
+  int gg;
+  
+  double mj;
+  double sj;
+  
+  double bound1;
+  double bound2;
+  
+  arma::colvec tmp; 
+  
+  // Get tV V
+  tVasVas = Vas.t() * Vas;
+  
+  // Get Phi hat
+  invtVasVas = getInv(tVasVas);
+  Phihat = invtVasVas* Vas.t() * V;
+  
+  // update Phi
+  if (MonoFlg == 0) {
+    if (method == "MT") {
+      S = getInv(tVasVas / sigma2 + A);
+      S = checkSym(S);
+      M = S * ((tVasVas / sigma2) * Phihat);
+    } else if (method == "regression") {
+      tmpS = getInv(tVasVas + A);
+      S = tmpS * sigma2;
+      S = checkSym(S);
+      M = tmpS * (tVasVas * Phihat);
+      
+    } else if ((method == "LASSO") || (method == "ALASSO")) {
+      tmpS = getInv(tVasVas + inveta2mat);
+      S = tmpS * sigma2;
+      S = checkSym(S);
+      M = tmpS * (tVasVas * Phihat);
+    }
+    
+    Phi = rmvnorm(M, S);
+  } else {
+    if ((method == "MonoLASSO") || (method == "MonoALASSO")) {
+      tmpS = getInv(tVasVas + inveta2mat);
+      S = tmpS * sigma2;
+      S = checkSym(S);
+      M = tmpS * (tVasVas * Phihat);
+      for (gg = 0; gg < q; gg++) {
+        Sgg = S.row(gg);
+        Snotgg = removeRow(S, gg);
+        Snotnot = removeCol(Snotgg, gg);
+        invSnotgg = getInv(Snotnot);
+        
+        tmpMat = M(gg) + removeCol(Sgg, gg) * invSnotgg * (removeRow(Phi, gg) - removeRow(M, gg));
+        mj = tmpMat(0);
+        
+        tmpMat = Sgg(gg) - removeCol(Sgg, gg) * invSnotgg * Snotgg.col(gg);
+        sj = tmpMat(0);
+        
+        if (gg == 0) {
+          bound1 = abs(bound0);
+          bound2 = abs(Phi(1));
+        } else if (gg == q - 1) {
+          bound1 = abs(Phi(q - 2));
+          bound2 = abs(boundqplus1);
+        } else {
+          bound1 = abs(Phi(gg - 1));
+          bound2 = abs(Phi(gg + 1));
+        }
+        tmp = rtwosegnorm(1, bound2, bound1, mj, sqrt(sj));
+        Phi(gg) = tmp(0);
+      }
+    }
+  }
+  return(Phi);
+}
+
+double updateSigma2(arma::mat resi, arma::colvec Phi, arma::mat inveta2mat, int T, int q, 
+                    arma::mat A, double a, double b, Rcpp::String method) {
+  double sigma2 = 0.0;
+  
+  arma::mat tResiResi = resi.t() * resi;
+  double tmptResiResi = tResiResi(0);
+  
+  arma::mat tPhiVarPhi; 
+  double tmptPhiVarPhi;
+  // update sigma2
+  if (method == "MT") {
+    sigma2 = 1.0 / R::rgamma((T - q) / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + b));
+  } else if (method == "regression") {
+    tPhiVarPhi = Phi.t() * getInv(A) * Phi;
+    tmptPhiVarPhi = tPhiVarPhi(0);
+    sigma2 = 1.0 / R::rgamma(T / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + tmptPhiVarPhi / 2.0 + b));
+  } else if ((method == "LASSO") || (method == "ALASSO") || (method == "MonoLASSO") || (method == "MonoALASSO")) {
+    tPhiVarPhi = Phi.t() * inveta2mat * Phi;
+    tmptPhiVarPhi = tPhiVarPhi(0);
+    sigma2 = 1.0 / R::rgamma(T / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + tmptPhiVarPhi / 2.0 + b));
+  }
+  
+  return(sigma2);
+}
+
+arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, int q) {
+  arma::mat Phim = arma::conv_to<arma::mat>::from(Phi); 
+  arma::mat inveta2(q, 1);
+  arma::mat muPrime = arma::sqrt(lambda2 * sigma2 / arma::pow(Phim, 2));
+  arma::colvec tmp; 
+  int gg;
+  
+  double tmpmuPrime;
+  double tmplambda2;
+  
+  for (gg = 0; gg < q; gg++) {
+    tmpmuPrime = muPrime(gg, 0);
+    tmplambda2 = lambda2(gg, 0);
+    tmp = rrinvgauss(1, tmpmuPrime, tmplambda2);
+    inveta2(gg, 0) = tmp(0);
+  }
+  return(inveta2);
+}
+
+arma::mat updatelambda2(arma::mat eta2, int q, double alpha, double beta, Rcpp::String method){
+  arma::mat lambda2(q, 1); 
+  double shape;
+  double scale;
+  arma::vec tmpsum; 
+  int gg;
+  // update lambda2
+  if ((method == "LASSO") || (method == "MonoLASSO")) {
+    shape = alpha + q;
+    tmpsum = arma::sum(eta2);
+    scale = beta + tmpsum(0)/2.0;
+    lambda2.fill(R::rgamma(shape, scale));
+  } else if ((method == "ALASSO") || (method == "MonoALASSO")) {
+    shape = alpha + 1;
+    for (gg = 0; gg < q; gg++) {
+      scale = beta + eta2(gg)/2.0;
+      lambda2(gg) = R::rgamma(shape, scale);
+    }
+  }
+  return(lambda2);
+}
+
+Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma::mat Gamma, 
+                          double muq, double sigma2, double pho, double xi2,
+                          int T, int q, arma::mat D, arma::mat H_, int Hflg, int m){
+  
+  arma::mat Ht(T, 1); 
+  arma::mat DHt(T, m);
+  arma::mat tHtDHt(m, 1); 
+  arma::mat Hnot(T, m - 1);
+  arma::mat tmpDHt;
+  arma::mat tmptHtDHt; 
+  
+  arma::mat Taunot(m - 1, 1);
+  arma::mat Taut(1, 1);
+  arma::mat Gammanot(m - 1, 1);
+  arma::mat Gammat(1, 1);
+  
+  arma::mat zetanot(T, 1);
+  arma::mat zetat(T, 1);
+  
+  double tmpzetanot;
+  double tmpzetat;
+  arma::mat tmp;
+  double p;
+  
+  arma::mat Gammathat(m, 1);
+  double st;
+  double mt; 
+  
+  int jj;
+  
+  if (Hflg == 1) {
+    
+    // get DHt and tHtDHt
+    
+    for (jj = 0; jj < m; jj++){
+      Ht = H_.col(jj);
+      DHt.col(jj) = D * Ht;
+      tmp = Ht.t() * DHt.col(jj);
+      tHtDHt(jj) = tmp(0);
+    }
+    
+    // update Tau and Gamma
+    for (jj = 0; jj < m; jj++) {
+      Hnot = removeCol(H_, jj);
+      Ht = H_.col(jj);
+      
+      tmpDHt = DHt.col(jj);
+      tmptHtDHt = tHtDHt(jj);
+      
+      //############
+      Taunot = removeRow(Tau, jj);
+      Taut = Tau.row(jj);
+      
+      Gammanot = removeRow(Gamma, jj);
+      Gammat = Gamma.row(jj);
+      
+      //update Tau
+      zetanot = Y - muq - Hnot * (Taunot % Gammanot);
+      zetat = zetanot - Ht * Gammat;
+      
+      tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetanot.t() * D * zetanot);
+      tmpzetanot = tmp(0);
+      
+      tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetat.t() * D * zetat);
+      tmpzetat = tmp(0);
+      
+      p = pho * tmpzetat / (pho * tmpzetat + (1 - pho) * tmpzetanot);
+      
+      Tau(jj) = R::rbinom(1, p);
+      
+      //############
+      if (Tau(jj) == 1) {
+        //#update Gamma
+        tmp = tmpDHt.t() * zetanot / tmptHtDHt;
+        Gammathat = tmp(0);
+        tmp = 1.0 / (tmptHtDHt / sigma2 + 1 / xi2);
+        st = tmp(0);
+        tmp = st * (tmptHtDHt * Gammathat) / sigma2;
+        mt = tmp(0);
+      } else {
+        mt = 0;
+        st = xi2;
+      }
+      
+      Gamma(jj) = R::rnorm(mt, sqrt(st));
+    }
+    
+  }
+  
+  Rcpp::List out = Rcpp::List::create(
+    Rcpp::_["Tau"] = Tau,
+    Rcpp::_["Gamma"] = Gamma
+  );
+  return(out);
+}
+
+Rcpp::List updateMuqMu(arma::colvec Y, arma::mat Tau, arma::mat Gamma, double sigma2,
+                       arma::mat One, arma::mat D, arma::mat H_, int Hflg, int T, double tol){
+  
+  arma::colvec zeta;
+  arma::mat HTauGamma;
+  arma::mat tOneD = One.t() * D;
+  arma::mat tmp = tOneD * One;
+  double tOneDOne = tmp(0);
+  double muqhat;
+  double sq;
+  double muq;
+  arma::mat Mu(T, 1);
+  
+  if (tOneDOne < tol) {
+    tOneDOne = tol;
+  }
+  
+  if (Hflg == 0) {
+    zeta = Y;
+  } else {
+    HTauGamma = H_ * (Tau % Gamma);
+    zeta = Y - HTauGamma;
+  }
+  
+  //#cat("tOneDOne:", tOneDOne, "\n")
+  tmp = tOneD * zeta / tOneDOne;
+  muqhat = tmp(0);
+  sq = sigma2 / tOneDOne;
+  muq = R::rnorm(muqhat, sqrt(sq));
+  
+  if (Hflg == 0) {
+    Mu.fill(muq);
+  } else {
+    Mu = muq + HTauGamma;
+  }
+  
+  Rcpp::List out = Rcpp::List::create(
+    Rcpp::_["muq"] = muq,
+    Rcpp::_["Mu"] = Mu
+  ); 
+  
+  return(out);
+}
+
+//' get a posterior sample using gibbs sampling for Random Flexible Level Shift Model
+//'
+//' @param Y is a vector.
+//' @param q is the number of lags.
+//' @param A is a given variance-covariance matrix in MT and regression for the coefficients for autoregressors.
+//' @param a is a given shape of the prior gamma distribution for sigma2.
+//' @param b is a given scale of the prior gamma distribution for sigma2.
+//' @param alpha is a given shape of the prior gamma distribution for lambda2.
+//' @param beta is a given scale of the prior gamma distribution for lambda22.
+//' @param theta1 is a given shape1 of the prior beta distribution for the probability of Tau.
+//' @param theta2 is a given shape2 of the prior beta distribution for the probability of Tau.
+//' @param xi2 is a given variance of the prior normal distribution for shifts.
+//' @param method is a choice of methods including MT(McCulloch-Tsay), regression, LASSO, ALASSO(Adaptive LASSO), MonoLASSO(LASSO with Monotonicity constrains), MonoALASSO(Adaptive LASSO with Monotonicity constrains).
+//' @param bound0 is a lower bound of the methods with Monotonicity constrains.
+//' @param boundqplus1 is  a upper bound of the methods with Monotonicity constrains.
+//' @param nsim is the number of samples draw from MCMC.
+//' @param by is the interval of systematic sampling for the draws from MCMC.
+//' @param burnin is the length of burn-in period.
+//' @param tol is the tolerance.
+//' @param H is the design matrix for shifts.
+//' @export
+//' @examples
+//' T <- 100
+//' q <- 5
+//' H <- getHMatMT(T, q)
+//' Y <- arima.sim(list(ar = 0.5), n = T)
+//' 
+//' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 1, 1, 0.1, "MonoALASSO", 0, Inf, 1000, 1, 100, 1e-10, H)
+//' 
+// [[Rcpp::export]]
+Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q, 
+                      arma::mat& A, double& a, double& b, double& alpha, double& beta, 
+                      double& theta1, double& theta2, double& xi2,
+                      Rcpp::String& method, double& bound0, double& boundqplus1,
+                      int& nsim, int& by, int& burnin,
+                      double& tol, Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
+  
+  auto start = std::chrono::system_clock::now();
+  std::time_t start_time = std::chrono::system_clock::to_time_t(start);
+  
+  Rcpp::Rcout << "Start training using " << method.get_cstring() << " at " << std::ctime(&start_time) <<  std::endl;
+  
+  /////////////////////////////////
+  arma::mat H_;
+  
+  // Calculate H
+  int Hflg = 1;
+  int m = 1;
+  if (H.isNotNull()) {
+    H_ = Rcpp::as<arma::mat>(H);
+    m = H_.n_cols;
+  } else {
+    Hflg = 0;
+  }
+  
+  int T = Y.n_elem;
+  
+  // Calculate G
+  arma::mat G = getGMat(T, q);
+  
+  // Initialize ones
+  arma::mat One(T, 1);
+  One.ones();
+  
+  // Initialize the output
+  arma::mat Phiout(q, nsim);
+  Phiout.zeros();
+  
+  arma::mat sigma2out(1, nsim);
+  sigma2out.zeros();
+  
+  arma::mat Tauout(m, nsim);
+  Tauout.zeros();
+  
+  arma::mat Gammaout(m, nsim);
+  Gammaout.zeros();
+  
+  arma::mat muqout(1, nsim);
+  muqout.zeros();
+  
+  arma::mat Muout(T, nsim);
+  Muout.zeros();
+  
+  arma::mat phoout(1, nsim);
+  phoout.zeros();
+  
+  arma::mat eta2out(q, nsim);
+  eta2out.zeros();
+  
+  arma::mat lambda2out(q, nsim);
+  lambda2out.zeros();
+  
+  // Is it mono?
+  int MonoFlg = 0;
+  if ((method == "MonoLASSO") || (method == "MonoALASSO")) {
+    MonoFlg = 1;
+  }
+  
+  // Initialize the learning
+  Rcpp::List model0 = arimacpp(Y, q);
+  
+  Rcpp::NumericVector coef = model0["coef"];
+  
+  double muq = coef[q];
+  
+  arma::mat Phihat(q, 1);
+  Rcpp::NumericMatrix varcoef = model0["var.coef"];
+  double tmpphi;
+  int ii;
+  for (ii = 0; ii < q; ii++) {
+    tmpphi = coef[ii];
+    Phihat(ii) = tmpphi;
+  }
+  
+  arma::mat Phi = Phihat;
+  
+  double bound1;
+  double bound2;
+  
+  double tmpPhi;
+  double tmpPhiVar;
+  
+  arma::colvec tmp;
+  
+  int gg;
+  if (MonoFlg == 1) {
+    for (gg = 0; gg < q; gg++) {
+      if (gg == 0) {
+        bound1 = abs(bound0);
+        bound2 = abs(Phi(1));
+      } else if (gg == q - 1) {
+        bound1 = abs(Phi(q - 2));
+        bound2 = abs(boundqplus1);
+      } else {
+        bound1 = abs(Phi(gg - 1));
+        bound2 = abs(Phi(gg + 1));
+      }
+      tmpPhi = Phi(gg);
+      tmpPhiVar = varcoef(gg, gg);
+      if (!((bound2 <= abs(tmpPhi)) && 
+          (abs(tmpPhi) <= bound1))) {
+        tmp = rtwosegnorm(1, boundqplus1, bound1, 
+                          tmpPhi, sqrt(tmpPhiVar));
+        Phi(gg) = tmp(0);
+      }
     }
   }
   
-  arma::mat out(n, 4);
-  out.zeros();
+  arma::mat Mu(T, 1);
+  Mu.fill(muq);
+  double sigma2 = model0["sigma2"];
   
-  out.col(0) = pvalue;
-  out.col(2) = lim;
-  out.col(3) = sig;
+  arma::mat Tau(m, 1);
+  Tau.zeros();
+  
+  arma::mat Gamma(m, 1);
+  Gamma.zeros();
+  
+  double pho = R::rbeta(theta1, theta2);
+  
+  arma::mat eta2(q, 1);
+  eta2.zeros();
+  
+  arma::mat lambda2(q, 1);
+  lambda2.zeros();
+  
+  arma::mat inveta2(q, 1);
+  
+  eta2 = arma::pow(Phi, 2);
+  inveta2 = arma::pow(eta2, -1);
+  
+  arma::mat inveta2mat(q, q);
+  inveta2mat.diag() = inveta2;
+  
+  if ((method == "LASSO") || (method == "MonoLASSO")) {
+    lambda2.fill(pow(q * sqrt(sigma2) / arma::accu(arma::abs(Phi)), 2));
+  } else if ((method == "ALASSO") || (method == "MonoALASSO")) {
+    for (gg = 0; gg < q; gg++) {
+      lambda2(gg) = pow((sqrt(sigma2) / abs(Phi(gg))), 2);
+    }
+  }
+  
+  arma::mat DHt(T, T);
+  DHt.zeros();
+  arma::mat tHtDHt(T, 1);
+  tHtDHt.zeros();
+  
+  int rr = 0;
+  
+  int TotalSim = nsim * by + burnin;
+  
+  //outputseq <- seq(burnin + 1, TotalSim, step)
+  
+  arma::mat V_(T, 1);
+  V_.zeros();
+  
+  arma::mat V(T - q, 1);
+  V.zeros();
+  
+  arma::mat Vas_(T, q);
+  Vas_.zeros();
+  arma::mat Vas(T - q, q);
+  Vas.zeros();
+  
+  
+  arma::mat VasPhi(T - q, 1);
+  arma::mat resi(T - q, 1);
+  
+  
+  arma::mat PhiMat(T - q, T);
+  arma::mat C;
+  arma::mat D;
+  
+  Rcpp::List TauGamma; 
+  Rcpp::List MuqMu; 
+  
+  arma::mat tmpSumTau; 
+  
+  for (ii = 0; ii < TotalSim; ii++) {
+    
+    if (ii % 100 == 0) {
+      Rcpp::Rcout <<"Training: " << ((ii + 0.0) / (TotalSim + 0.0) * 100.0) << '%' << std::endl;
+    }
+    
+    //update V
+    V_ = Y - Mu;
+    V = V_.rows(q, T - 1);
+    Vas_ = getV(V_, q);
+    Vas = Vas_.rows(q, T - 1);
+    
+    // update Phi
+    Phi = updatePhi(V, Vas, 
+                    A, sigma2, inveta2mat, 
+                    bound0, boundqplus1,
+                    MonoFlg, method);
+    
+    // Get residuals
+    VasPhi = Vas * Phi;
+    resi = V - VasPhi;
+    
+    // update sigma2
+    sigma2 = updateSigma2(resi, Phi, inveta2mat, T, q, 
+                          A, a, b, method);
+    
+    // update eta2
+    inveta2 = updateinveta2(Phi, sigma2, lambda2, q);
+    eta2 = arma::pow(inveta2, -1);
+    inveta2mat.diag() = inveta2;
+    
+    // update lambda2
+    lambda2 = updatelambda2(eta2, q, alpha, beta, method);
+    
+    ///////////////////////////////////////////////////
+    //update the random level shift model
+    ///////////////////////////////////////////////////
+    
+    //Calculate Phi Matrix 
+    PhiMat = getPhiMat(Phi, T);
+    
+    //Calculate C Matrix
+    C = G - PhiMat;
+    
+    //Calculate D Matrix
+    D = C.t() * C;
+    
+    //#update Tau and Gamma
+    
+    TauGamma = updateTauGamma(Y, Phi, Tau, Gamma, 
+                              muq, sigma2, pho, xi2,
+                              T, q, D, H_, Hflg, m);
+    
+    Tau = Rcpp::as<arma::mat>(TauGamma["Tau"]);
+    Gamma = Rcpp::as<arma::mat>(TauGamma["Gamma"]);
+    
+    //#update muq and Mu
+    
+    MuqMu = updateMuqMu(Y, Tau, Gamma, sigma2,
+                        One, D, H_, Hflg, T, tol);
+    
+    muq = MuqMu["muq"];
+    Mu = Rcpp::as<arma::mat>(MuqMu["Mu"]);
+    
+    //#update pho
+    if (Hflg == 1) {
+      tmpSumTau = arma::sum(Tau);
+      pho = R::rbeta(theta1 + tmpSumTau(0), theta2 + m - tmpSumTau(0));
+    }
+    
+    if (ii >= burnin) {
+      if (ii % by == 0) {
+        Phiout.col(rr) = Phi;
+        sigma2out.col(rr) = sigma2;
+        Tauout.col(rr) = Tau;
+        Gammaout.col(rr) = Gamma;
+        muqout.col(rr) = muq;
+        Muout.col(rr) = Mu;
+        phoout.col(rr) = pho;
+        eta2out.col(rr) = eta2;
+        lambda2out.col(rr) = lambda2;
+        rr = rr + 1;
+      }
+    }
+    
+  }
+  
+  /////////////////////////////////
+  
+  Rcpp::Rcout <<"Training: 100%" << std::endl;
+  
+  auto end = std::chrono::system_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+  
+  Rcpp::Rcout << "Finished training at " << std::ctime(&end_time)
+              << "Elapsed time: " << elapsed_seconds.count() << "s"
+              << std::endl;
+  
+  /////////////////////////////////
+  
+  Rcpp::List out = Rcpp::List::create(
+    _["Phi"] = Phiout,
+    _["sigma2"] = sigma2out,
+    _["Tau"] = Tauout,
+    _["Gamma"] = Gammaout,
+    _["muq"] = muqout,
+    _["Mu"] = Muout,
+    _["pho"] = phoout,
+    //_["eta2"] = eta2out,
+    _["lambda2"] = lambda2out
+  );
   
   return(out);
   
