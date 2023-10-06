@@ -8,9 +8,9 @@
 #' @param lambda is a paremter.
 #' @export
 #' @examples
-#' rrinvgauss(10, 1, 1)
-rrinvgauss <- function(n, mu, lambda) {
-    .Call(`_BayesianLassoMonitoring_rrinvgauss`, n, mu, lambda)
+#' rinvgaussiancpp(10, 1, 1)
+rinvgaussiancpp <- function(n, mu, lambda) {
+    .Call(`_BayesianLassoMonitoring_rinvgaussiancpp`, n, mu, lambda)
 }
 
 #' get matrix V

@@ -1,6 +1,7 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
 // we only include RcppArmadillo.h which pulls Rcpp.h in for us
+#define ARMA_WARN_LEVEL 0
 #include "RcppArmadillo.h"
 
 // via the depends attribute we tell Rcpp to create hooks for
@@ -25,24 +26,35 @@ using namespace arma;
 //' @param lambda is a paremter.
 //' @export
 //' @examples
-//' rrinvgauss(10, 1, 1)
-// [[Rcpp::export]]
-arma::colvec rrinvgauss(int n, double mu, double lambda){
-  arma::colvec random_vector(n);
-  double z,y,x,u;
-  for(int i=0; i<n; ++i){
-    z=R::rnorm(0,1);
-    y=z*z;
-    x=mu+0.5*mu*mu*y/lambda - 0.5*(mu/lambda)*sqrt(4*mu*lambda*y+mu*mu*y*y);
-    u=R::runif(0,1);
-    if(u <= mu/(mu+x)){
-      random_vector(i)=x;
-    }else{
-      random_vector(i)=mu*mu/x;
-    };
-  }
-  return(random_vector);
-}
+//' rinvgaussiancpp(10, 1, 1)
+ // [[Rcpp::export]]
+arma::colvec rinvgaussiancpp(int n, double mu, double lambda){
+   Rcpp::Environment pkg = Rcpp::Environment::namespace_env("VGAM");
+   
+   // Picking up Matrix() function from Matrix package
+   Rcpp::Function rinvgaussian = pkg["rinv.gaussian"];
+   
+   Rcpp::NumericVector  tmp = rinvgaussian(n, mu, lambda);
+   arma::colvec out = Rcpp::as<arma::colvec>(tmp); 
+   return out;
+ }
+ 
+//arma::colvec rrinvgauss(int n, double mu, double lambda){
+//  arma::colvec random_vector(n);
+//  double z,y,x,u;
+//  for(int i=0; i<n; ++i){
+//    z=R::rnorm(0,1);
+//    y=z*z;
+//    x=mu+0.5*mu*mu*y/lambda - 0.5*(mu/lambda)*sqrt(4*mu*lambda*y+mu*mu*y*y);
+//    u=R::runif(0,1);
+//    if(u <= mu/(mu+x)){
+//      random_vector(i)=x;
+//    }else{
+//      random_vector(i)=mu*mu/x;
+//    };
+//  }
+//  return(random_vector);
+//}
 
 //' get matrix V
 //'
@@ -385,8 +397,11 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
   
   arma::colvec tmp; 
   
+  //Rcpp::Rcout << Vas << std::endl;
+  
   // Get tV V
   tVasVas = Vas.t() * Vas;
+  //Rcpp::Rcout << tVasVas << std::endl;
   
   // Get Phi hat
   invtVasVas = getInv(tVasVas);
@@ -494,7 +509,8 @@ arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, int 
   for (gg = 0; gg < q; gg++) {
     tmpmuPrime = muPrime(gg, 0);
     tmplambda2 = lambda2(gg, 0);
-    tmp = rrinvgauss(1, tmpmuPrime, tmplambda2);
+    //tmp = rrinvgauss(1, tmpmuPrime, tmplambda2);
+    tmp = rinvgaussiancpp(1, tmpmuPrime, tmplambda2);
     inveta2(gg, 0) = tmp(0);
   }
   return(inveta2);
@@ -893,6 +909,9 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
     Vas_ = getV(V_, q);
     Vas = Vas_.rows(q, T - 1);
     
+    //Rcpp::Rcout << Mu << std::endl;
+    //Rcpp::Rcout << V << std::endl;
+    
     // update Phi
     Phi = updatePhi(V, Vas, 
                     A, sigma2, inveta2mat, 
@@ -943,6 +962,8 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
                         One, D, H_, Hflg, T, tol);
     
     muq = MuqMu["muq"];
+    //Rcpp::Rcout << muq << std::endl;
+    
     Mu = Rcpp::as<arma::mat>(MuqMu["Mu"]);
     
     //#update pho
@@ -990,7 +1011,7 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
     _["muq"] = muqout,
     _["Mu"] = Muout,
     _["pho"] = phoout,
-    //_["eta2"] = eta2out,
+    _["eta2"] = eta2out,
     _["lambda2"] = lambda2out
   );
   

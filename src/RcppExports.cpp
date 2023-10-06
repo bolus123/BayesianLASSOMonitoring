@@ -11,16 +11,16 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// rrinvgauss
-arma::colvec rrinvgauss(int n, double mu, double lambda);
-RcppExport SEXP _BayesianLassoMonitoring_rrinvgauss(SEXP nSEXP, SEXP muSEXP, SEXP lambdaSEXP) {
+// rinvgaussiancpp
+arma::colvec rinvgaussiancpp(int n, double mu, double lambda);
+RcppExport SEXP _BayesianLassoMonitoring_rinvgaussiancpp(SEXP nSEXP, SEXP muSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< double >::type mu(muSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(rrinvgauss(n, mu, lambda));
+    rcpp_result_gen = Rcpp::wrap(rinvgaussiancpp(n, mu, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -144,7 +144,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BayesianLassoMonitoring_rrinvgauss", (DL_FUNC) &_BayesianLassoMonitoring_rrinvgauss, 3},
+    {"_BayesianLassoMonitoring_rinvgaussiancpp", (DL_FUNC) &_BayesianLassoMonitoring_rinvgaussiancpp, 3},
     {"_BayesianLassoMonitoring_getV", (DL_FUNC) &_BayesianLassoMonitoring_getV, 2},
     {"_BayesianLassoMonitoring_rmvnorm", (DL_FUNC) &_BayesianLassoMonitoring_rmvnorm, 2},
     {"_BayesianLassoMonitoring_rtwosegnorm", (DL_FUNC) &_BayesianLassoMonitoring_rtwosegnorm, 5},

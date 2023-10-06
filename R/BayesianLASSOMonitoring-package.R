@@ -7,9 +7,10 @@
 #' Package description.
 #'
 #' @name BayesianLassoMonitoring-package
-#' @import Rcpp loo spatstat.explore
+#' @import Rcpp VGAM
 #' @importFrom stats density
 #' @importFrom stats dnorm
+#' @importFrom stats arima
 #' @importFrom Rcpp evalCpp
 #' @useDynLib BayesianLassoMonitoring, .registration = TRUE
 NULL
