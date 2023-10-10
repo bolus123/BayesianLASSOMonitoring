@@ -496,10 +496,10 @@ double updateSigma2(arma::mat resi, arma::colvec Phi, arma::mat inveta2mat, int 
   return(sigma2);
 }
 
-arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, int q) {
+arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, int q, double tol) {
   arma::mat Phim = arma::conv_to<arma::mat>::from(Phi); 
   arma::mat inveta2(q, 1);
-  arma::mat muPrime = arma::sqrt(lambda2 * sigma2 / arma::pow(Phim, 2));
+  arma::mat muPrime = arma::sqrt(sigma2 * (lambda2 % arma::pow(Phim, -2)));
   arma::colvec tmp; 
   int gg;
   
@@ -510,8 +510,13 @@ arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, int 
     tmpmuPrime = muPrime(gg, 0);
     tmplambda2 = lambda2(gg, 0);
     //tmp = rrinvgauss(1, tmpmuPrime, tmplambda2);
-    tmp = rinvgaussiancpp(1, tmpmuPrime, tmplambda2);
-    inveta2(gg, 0) = tmp(0);
+    if ((-tol < Phim(gg, 0)) && (Phim(gg, 0) < tol)) {
+      inveta2(gg, 0) = 1 / R::rgamma(1.0 / 2.0, 2.0 / tmplambda2);
+    } else {
+      tmp = rinvgaussiancpp(1, tmpmuPrime, tmplambda2);
+      inveta2(gg, 0) = tmp(0);
+    }
+    
   }
   return(inveta2);
 }
@@ -927,7 +932,7 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
                           A, a, b, method);
     
     // update eta2
-    inveta2 = updateinveta2(Phi, sigma2, lambda2, q);
+    inveta2 = updateinveta2(Phi, sigma2, lambda2, q, tol);
     eta2 = arma::pow(inveta2, -1);
     inveta2mat.diag() = inveta2;
     
