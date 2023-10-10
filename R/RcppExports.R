@@ -127,7 +127,7 @@ getHMatGradual <- function(T, q, w) {
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
 #' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", 0, Inf, 1000, 1, 100, 1e-10, H)
+#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
 #' 
 GibbsRFLSM <- function(Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H = NULL) {
     .Call(`_BayesianLassoMonitoring_GibbsRFLSM`, Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H)
