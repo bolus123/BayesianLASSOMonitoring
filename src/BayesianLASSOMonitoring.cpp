@@ -1016,8 +1016,8 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
     _["Gamma"] = Gammaout,
     _["muq"] = muqout,
     _["Mu"] = Muout,
-    _["pho"] = phoout,
-    _["eta2"] = eta2out,
+    //_["pho"] = phoout,
+    //_["eta2"] = eta2out,
     _["lambda2"] = lambda2out
   );
   
