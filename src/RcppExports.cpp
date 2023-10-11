@@ -142,35 +142,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// GibbsRFLSM1
-Rcpp::List GibbsRFLSM1(arma::colvec& Y, int& q, arma::mat& A, double& a, double& b, double& alpha, double& beta, double& theta1, double& theta2, int& tau0flg, double& xi2, Rcpp::String& method, double& bound0, double& boundqplus1, int& nsim, int& by, int& burnin, double& tol, Rcpp::Nullable<Rcpp::NumericMatrix> H);
-RcppExport SEXP _BayesianLassoMonitoring_GibbsRFLSM1(SEXP YSEXP, SEXP qSEXP, SEXP ASEXP, SEXP aSEXP, SEXP bSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP theta1SEXP, SEXP theta2SEXP, SEXP tau0flgSEXP, SEXP xi2SEXP, SEXP methodSEXP, SEXP bound0SEXP, SEXP boundqplus1SEXP, SEXP nsimSEXP, SEXP bySEXP, SEXP burninSEXP, SEXP tolSEXP, SEXP HSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::colvec& >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< int& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type A(ASEXP);
-    Rcpp::traits::input_parameter< double& >::type a(aSEXP);
-    Rcpp::traits::input_parameter< double& >::type b(bSEXP);
-    Rcpp::traits::input_parameter< double& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< double& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< double& >::type theta1(theta1SEXP);
-    Rcpp::traits::input_parameter< double& >::type theta2(theta2SEXP);
-    Rcpp::traits::input_parameter< int& >::type tau0flg(tau0flgSEXP);
-    Rcpp::traits::input_parameter< double& >::type xi2(xi2SEXP);
-    Rcpp::traits::input_parameter< Rcpp::String& >::type method(methodSEXP);
-    Rcpp::traits::input_parameter< double& >::type bound0(bound0SEXP);
-    Rcpp::traits::input_parameter< double& >::type boundqplus1(boundqplus1SEXP);
-    Rcpp::traits::input_parameter< int& >::type nsim(nsimSEXP);
-    Rcpp::traits::input_parameter< int& >::type by(bySEXP);
-    Rcpp::traits::input_parameter< int& >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type H(HSEXP);
-    rcpp_result_gen = Rcpp::wrap(GibbsRFLSM1(Y, q, A, a, b, alpha, beta, theta1, theta2, tau0flg, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLassoMonitoring_rinvgaussiancpp", (DL_FUNC) &_BayesianLassoMonitoring_rinvgaussiancpp, 3},
@@ -182,7 +153,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLassoMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLassoMonitoring_getHMatIsolated, 3},
     {"_BayesianLassoMonitoring_getHMatGradual", (DL_FUNC) &_BayesianLassoMonitoring_getHMatGradual, 3},
     {"_BayesianLassoMonitoring_GibbsRFLSM", (DL_FUNC) &_BayesianLassoMonitoring_GibbsRFLSM, 18},
-    {"_BayesianLassoMonitoring_GibbsRFLSM1", (DL_FUNC) &_BayesianLassoMonitoring_GibbsRFLSM1, 19},
     {NULL, NULL, 0}
 };
 
