@@ -2,6 +2,7 @@
 
 export(BHProcRFLSM)
 export(GibbsRFLSM)
+export(GibbsRFLSM1)
 export(ProdH0)
 export(RMSE)
 export(getHMatGradual)
