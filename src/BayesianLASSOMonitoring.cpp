@@ -577,20 +577,20 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
     
     // get DHt and tHtDHt
     
-    for (jj = 0; jj < m; jj++){
-      Ht = H_.col(jj);
-      DHt.col(jj) = D * Ht;
-      tmp = Ht.t() * DHt.col(jj);
-      tHtDHt(jj) = tmp(0);
-    }
+    //for (jj = 0; jj < m; jj++){
+    //  Ht = H_.col(jj);
+    //  DHt.col(jj) = D * Ht;
+    //  tmp = Ht.t() * DHt.col(jj);
+    //  tHtDHt(jj) = tmp(0);
+    //}
     
     // update Tau and Gamma
     for (jj = 0; jj < m; jj++) {
       Hnot = removeCol(H_, jj);
       Ht = H_.col(jj);
       
-      tmpDHt = DHt.col(jj);
-      tmptHtDHt = tHtDHt(jj);
+      //tmpDHt = DHt.col(jj);
+      //tmptHtDHt = tHtDHt(jj);
       
       //############
       Taunot = removeRow(Tau, jj);
@@ -615,6 +615,14 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
       
       //############
       if (Tau(jj) == 1) {
+        
+        DHt.col(jj) = D * Ht;
+        tmp = Ht.t() * DHt.col(jj);
+        tHtDHt(jj) = tmp(0);
+        
+        tmpDHt = DHt.col(jj);
+        tmptHtDHt = tHtDHt(jj);
+        
         //#update Gamma
         tmp = tmpDHt.t() * zetanot / tmptHtDHt;
         Gammathat = tmp(0);
