@@ -6,7 +6,7 @@ Date: 2023-10-04
 Author: Yuhui Yao
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
-Imports: Rcpp, spatstat.explore, loo, VGAM
+Imports: Rcpp, spatstat.explore, loo, VGAM, FDRestimation
 LinkingTo: Rcpp, RcppArmadillo
 Encoding: UTF-8
 License: GPL-3

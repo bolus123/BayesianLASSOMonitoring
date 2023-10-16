@@ -7,7 +7,7 @@
 #' Package description.
 #'
 #' @name BayesianLassoMonitoring-package
-#' @import Rcpp VGAM
+#' @import Rcpp VGAM FDRestimation
 #' @importFrom stats density
 #' @importFrom stats dnorm
 #' @importFrom stats arima
