@@ -40,11 +40,11 @@ getPvalueRFLSM <- function(TauGamma, tail = "2-sided") {
   for (i in 1:nn) {
     
     if (tail == "2-sided") {
-      pvalue[i] <- 2 * min(1 - mean(tmp[i, ] <= 0), mean(tmp[i, ] <= 0))
+      pvalue[i] <- mean(tmp[i, ] != 0)
     } else if (tail == "left-sided") {
-      pvalue[i] <- mean(tmp[i, ] <= 0)
+      pvalue[i] <- mean(tmp[i, ] < 0)
     } else if (tail == "right-sided") {
-      pvalue[i] <- 1 - mean(tmp[i, ] <= 0)
+      pvalue[i] <- mean(tmp[i, ] > 0)
     }
     
   }
