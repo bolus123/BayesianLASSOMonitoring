@@ -3,6 +3,7 @@
 export(GibbsRFLSM)
 export(ProdH0)
 export(RMSE)
+export(RSS)
 export(getH0)
 export(getHMatGradual)
 export(getHMatIsolated)
