@@ -562,6 +562,8 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
   arma::mat zetanot(T, 1);
   arma::mat zetat(T, 1);
   
+  arma::mat pvec(m, 1); 
+  
   double tmpzetanot;
   double tmpzetat;
   arma::mat tmp;
@@ -612,7 +614,7 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
       p = pho * tmpzetat / (pho * tmpzetat + (1 - pho) * tmpzetanot);
       
       Tau(jj) = R::rbinom(1, p);
-      
+      pvec(jj) = p;
       //############
       if (Tau(jj) == 1) {
         
@@ -642,7 +644,8 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
   
   Rcpp::List out = Rcpp::List::create(
     Rcpp::_["Tau"] = Tau,
-    Rcpp::_["Gamma"] = Gamma
+    Rcpp::_["Gamma"] = Gamma,
+    Rcpp::_["p"] = pvec
   );
   return(out);
 }
@@ -769,6 +772,9 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
   arma::mat Gammaout(m, nsim);
   Gammaout.zeros();
   
+  arma::mat pout(m, nsim);
+  pout.zeros();
+  
   arma::mat muqout(1, nsim);
   muqout.zeros();
   
@@ -850,6 +856,9 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
   
   arma::mat Gamma(m, 1);
   Gamma.zeros();
+  
+  arma::mat pvec(m, 1);
+  pvec.zeros();
   
   double pho = R::rbeta(theta1, theta2);
   
@@ -969,6 +978,7 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
     
     Tau = Rcpp::as<arma::mat>(TauGamma["Tau"]);
     Gamma = Rcpp::as<arma::mat>(TauGamma["Gamma"]);
+    pvec = Rcpp::as<arma::mat>(TauGamma["p"]);
     
     //#update muq and Mu
     
@@ -992,6 +1002,7 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
         sigma2out.col(rr) = sigma2;
         Tauout.col(rr) = Tau;
         Gammaout.col(rr) = Gamma;
+        pout.col(rr) = pvec;
         muqout.col(rr) = muq;
         Muout.col(rr) = Mu;
         phoout.col(rr) = pho;
@@ -1022,6 +1033,7 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
     _["sigma2"] = sigma2out,
     _["Tau"] = Tauout,
     _["Gamma"] = Gammaout,
+    _["p"] = pout,
     _["muq"] = muqout,
     _["Mu"] = Muout,
     //_["pho"] = phoout,
