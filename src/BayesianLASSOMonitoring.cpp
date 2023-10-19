@@ -203,8 +203,8 @@ arma::mat getHMatSustained(int T, int q, int w) {
   arma::mat tmp(T, T);
   tmp.ones();
   arma::mat L = arma::trimatl(tmp);
-  arma::mat out = L.cols(q, T - 2);
-  int nn = T - 2 - q + 1;
+  arma::mat out = L.cols(q + w, T - 2 + 1);
+  int nn = T - 2 - w + 1 - q;
   arma::mat out1(T, nn);
   int rr = 0;
   int kk = 0;
