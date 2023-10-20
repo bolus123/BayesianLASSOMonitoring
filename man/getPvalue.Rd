@@ -4,14 +4,12 @@
 \alias{getPvalue}
 \title{get a vector of p values}
 \usage{
-getPvalue(TauGamma, tail = "2-sided", method = "raw")
+getPvalue(TauGamma, tail = "2-sided")
 }
 \arguments{
 \item{TauGamma}{is the distributions of shifts.}
 
 \item{tail}{is type of the test.}
-
-\item{method}{get p values with or without kernel smoothing.}
 }
 \description{
 get a vector of p values
