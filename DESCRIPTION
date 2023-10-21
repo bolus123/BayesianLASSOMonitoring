@@ -1,8 +1,8 @@
 Package: BayesianLassoMonitoring
 Type: Package
 Title: What the package does (short line)
-Version: 0.9.2
-Date: 2023-10-04
+Version: 0.9.3
+Date: 2023-10-20
 Author: Yuhui Yao
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
