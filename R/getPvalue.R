@@ -148,7 +148,7 @@ PPP <- function(Y, Phi, Mu, H, TauGamma, sigma2, muq, method = "median", nsim = 
     
     for (j in (q + 1):T) {
       YSim[j, i] <- Mu[j, tmpsel] + 
-        (YSim[(j - 1):(j - 3), i] - Mu[(j - 1):(j - 3), tmpsel]) %*% Phi[, tmpsel] + 
+        (YSim[(j - 1):(j - q), i] - Mu[(j - 1):(j - q), tmpsel]) %*% Phi[, tmpsel] + 
         rnorm(1, sd = sqrt(sigma2[tmpsel]))
     }
     
