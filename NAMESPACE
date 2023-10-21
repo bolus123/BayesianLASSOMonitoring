@@ -2,6 +2,7 @@
 
 export(Fit)
 export(GibbsRFLSM)
+export(PPP)
 export(ProdH0)
 export(RMSE)
 export(RSS)

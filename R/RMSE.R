@@ -55,7 +55,6 @@ Residual <- function(Y, Phi, Mu) {
   q <- dim(Phi)[1]
   nsim <- dim(Phi)[2]
   ee <- matrix(NA, nrow = T - q, ncol = nsim)
-  rss <- rep(0, nsim)
   
   for (ii in seq(nsim)) {
     V <- matrix(Y, ncol = 1) - Mu[, ii]
@@ -89,7 +88,6 @@ Fit <- function(Y, Phi, Mu) {
   q <- dim(Phi)[1]
   nsim <- dim(Phi)[2]
   ff <- matrix(NA, nrow = T - q, ncol = nsim)
-  rss <- rep(0, nsim)
   
   for (ii in seq(nsim)) {
     V <- matrix(Y, ncol = 1) - Mu[, ii]
