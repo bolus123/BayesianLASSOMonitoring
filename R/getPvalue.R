@@ -187,8 +187,8 @@ PPP <- function(Y, Phi, Mu, H, TauGamma, sigma2, muq, method = "median", nsim = 
 #' 
 MultiComp <- function(P, FAP0 = 0.2, methodP = "median",  methodComp = 'Sidak') {
   
-  nnsim <- dim(Phi)[2]
-  m <- dim(Phi)[1]
+  nnsim <- dim(P)[2]
+  m <- dim(P)[1]
   
   out <- matrix(NA, nrow = m, ncol = 2)
   
@@ -199,7 +199,7 @@ MultiComp <- function(P, FAP0 = 0.2, methodP = "median",  methodComp = 'Sidak') 
     
   for (i in seq(m)) {
     if (methodP == "median") {
-      out[i, 1] <- median(P[i, ])
+      out[i, 1] <- median(1 - P[i, ])
     }
     out[i, 2] <- (out[i, 1] <= tmpAlpha)
   }
