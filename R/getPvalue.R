@@ -232,7 +232,7 @@ MultiComp <- function(P, FAP0 = 0.2, methodP = "median",  methodComp = 'Sidak') 
 #'
 #' MultiComp(result$p)
 #' 
-CompResamp <- function(Y, Phi, muq, FAP0 = 0.2, 
+CompResamp <- function(Y, Phi, muq, sigma2, FAP0 = 0.2, 
                        interval = c(0.51, 1), nsim = 100000, tol = 1e-6) {
   
   findAdjustAlpha <- function(sim0, FAP0 = 0.2, interval = c(0.51, 1), tol = 1e-6) {
@@ -252,7 +252,7 @@ CompResamp <- function(Y, Phi, muq, FAP0 = 0.2,
       tmp <- colSums(quant[, 1] <= sim0 & sim0 <= quant[, 2]) != m
       tmp <- mean(tmp)
       out <- FAP0 - tmp
-      cat("c:", cc, "out:", out, "FAP:", tmp, "\n")
+      #cat("c:", cc, "out:", out, "FAP:", tmp, "\n")
       out
     }
     
@@ -264,6 +264,7 @@ CompResamp <- function(Y, Phi, muq, FAP0 = 0.2,
   
   TT <- length(Y)
   nn <- length(muq)
+  q <- dim(Phi)[1]
   
   F0 <- Fit(Y, Phi, 
             matrix(rep(muq, each = TT), nrow = TT, ncol = nn))
@@ -272,23 +273,24 @@ CompResamp <- function(Y, Phi, muq, FAP0 = 0.2,
   
   for (i in seq(nsim)) {
     k1 <- sample(seq(nn), 1)
-    sim0[, i] <- rnorm(TT, F0[, k1], sqrt(mo01$sigma2[k1]))
+    sim0[, i] <- rnorm(TT, F0[, k1], sqrt(sigma2[k1]))
   }
   
-  adjalpha <- findAdjustAlpha(sim0, FAP0, interval, tol)
+  adjalpha <- findAdjustAlpha(sim0[-c(1:q), ], FAP0, interval, tol)
   
-  f0bound <- matrix(NA, nrow = TT, ncol = 2)
-  for (i in seq(TT)) {
-    
-    f0bound[i, ] <- quantile(sim0[i, ], c(1 - adjalpha, adjalpha))
+  f0bound <- matrix(NA, nrow = TT - q, ncol = 2)
+  k <- 0
+  for (i in (q + 1):TT) {
+    k <- k + 1
+    f0bound[k, ] <- quantile(sim0[i, ], c(1 - adjalpha, adjalpha))
     
   }
   
   list(
     "lowerbound" = f0bound[, 1],
     "upperbound" = f0bound[, 2],
-    "IndSig" = (Y < f0bound[, 1]) | (f0bound[, 2] < Y),
-    "Sig" = any((Y < f0bound[, 1]) | (f0bound[, 2] < Y))
+    "IndSig" = (Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)]),
+    "Sig" = any((Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)]))
   )
   
 }

@@ -8,6 +8,7 @@ CompResamp(
   Y,
   Phi,
   muq,
+  sigma2,
   FAP0 = 0.2,
   interval = c(0.51, 1),
   nsim = 1e+05,
