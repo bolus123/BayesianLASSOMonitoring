@@ -167,6 +167,10 @@ PPP <- function(Y, Phi, Mu, H, TauGamma, sigma2, muq, method = "median", nsim = 
 }
 
 
+
+
+
+
 #' check significance using Sidak Correction
 #' 
 #' @param P is P
