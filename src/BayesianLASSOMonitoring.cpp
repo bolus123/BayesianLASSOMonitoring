@@ -373,7 +373,7 @@ using namespace arma;
    return(out);
  } 
  
- // [[Rcpp::export]]
+ 
  arma::mat removeRows(arma::mat A, arma::uvec a) {
    
    int mm = a.n_elem;

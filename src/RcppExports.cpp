@@ -63,6 +63,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getGMat
+arma::mat getGMat(int T, int q);
+RcppExport SEXP _BayesianLassoMonitoring_getGMat(SEXP TSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(getGMat(T, q));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getPhiMat
+arma::mat getPhiMat(arma::colvec Phi, int T);
+RcppExport SEXP _BayesianLassoMonitoring_getPhiMat(SEXP PhiSEXP, SEXP TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::colvec >::type Phi(PhiSEXP);
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    rcpp_result_gen = Rcpp::wrap(getPhiMat(Phi, T));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getHMatMT
 arma::mat getHMatMT(int T, int q);
 RcppExport SEXP _BayesianLassoMonitoring_getHMatMT(SEXP TSEXP, SEXP qSEXP) {
@@ -148,6 +172,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLassoMonitoring_getV", (DL_FUNC) &_BayesianLassoMonitoring_getV, 2},
     {"_BayesianLassoMonitoring_rmvnorm", (DL_FUNC) &_BayesianLassoMonitoring_rmvnorm, 2},
     {"_BayesianLassoMonitoring_rtwosegnorm", (DL_FUNC) &_BayesianLassoMonitoring_rtwosegnorm, 5},
+    {"_BayesianLassoMonitoring_getGMat", (DL_FUNC) &_BayesianLassoMonitoring_getGMat, 2},
+    {"_BayesianLassoMonitoring_getPhiMat", (DL_FUNC) &_BayesianLassoMonitoring_getPhiMat, 2},
     {"_BayesianLassoMonitoring_getHMatMT", (DL_FUNC) &_BayesianLassoMonitoring_getHMatMT, 2},
     {"_BayesianLassoMonitoring_getHMatSustained", (DL_FUNC) &_BayesianLassoMonitoring_getHMatSustained, 3},
     {"_BayesianLassoMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLassoMonitoring_getHMatIsolated, 3},

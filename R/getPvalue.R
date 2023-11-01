@@ -165,3 +165,45 @@ PPP <- function(Y, Phi, Mu, H, TauGamma, sigma2, muq, method = "median", nsim = 
   mean(out)
   
 }
+
+
+#' check significance using Sidak Correction
+#' 
+#' @param P is P
+#' @param FAP0 is FAP0.
+#' @param methodP is methodP
+#' @param methodComp is methodComp.
+#' @export
+#' @examples
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
+#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#'
+#' MultiComp(result$p)
+#' 
+MultiComp <- function(P, FAP0 = 0.2, methodP = "median",  methodComp = 'Sidak') {
+  
+  nnsim <- dim(Phi)[2]
+  m <- dim(Phi)[1]
+  
+  out <- matrix(NA, nrow = m, ncol = 2)
+  
+  if (methodComp == "Sidak") {
+    tmpAlpha <- 1 - (1 - FAP0) ^ (1 / m)
+  }
+  
+    
+  for (i in seq(m)) {
+    if (methodP == "median") {
+      out[i, 1] <- median(P[i, ])
+    }
+    out[i, 2] <- (out[i, 1] <= tmpAlpha)
+  }
+  
+  out
+  
+}
