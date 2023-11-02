@@ -291,7 +291,7 @@ CompResamp <- function(Y, Phi, muq, sigma2, FAP0 = 0.2,
     "upperbound" = f0bound[, 2],
     "IndSig" = (Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)]),
     "Sig" = any((Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)])),
-    "Sim0" = Sim0,
+    "Sim0" = sim0,
     "adjalpha" = adjalpha
   )
   
