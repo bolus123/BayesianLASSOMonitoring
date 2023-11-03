@@ -296,3 +296,87 @@ CompResamp <- function(Y, Phi, muq, sigma2, FAP0 = 0.2,
   )
   
 }
+
+
+#' comparison using resampling
+#' 
+#' @param P is P
+#' @param FAP0 is FAP0.
+#' @param methodP is methodP
+#' @param methodComp is methodComp.
+#' @export
+#' @examples
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
+#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#'
+#' MultiComp(result$p)
+#' 
+CompResamp1 <- function(Y, Phi, muq, sigma2, FAP0 = 0.2, 
+                       interval = c(0.51, 1), nsim = 100000, tol = 1e-6) {
+  
+  findAdjustAlpha <- function(sim0, FAP0 = 0.2, interval = c(0.51, 1), tol = 1e-6) {
+    
+    findroot <- function(cc, sim0, m, FAP0 = 0.2) {
+      
+      c1 <- cc
+      c2 <- 1 - cc
+      
+      quant <- matrix(NA, nrow = m, ncol = 2)
+      
+      for (i in seq(m)) {
+        tmp <- quantile(sim0[i, ], c(c2, c1))
+        quant[i, ] <- tmp
+      }
+      
+      tmp <- colSums(quant[, 1] <= sim0 & sim0 <= quant[, 2]) != m
+      tmp <- mean(tmp)
+      out <- FAP0 - tmp
+      #cat("c:", cc, "out:", out, "FAP:", tmp, "\n")
+      out
+    }
+    
+    m <- dim(sim0)[1]
+    
+    uniroot(findroot, interval = interval, sim0 = sim0, m = m, FAP0 = FAP0, tol = tol)$root
+    
+  }
+  
+  TT <- length(Y)
+  nn <- length(muq)
+  q <- dim(Phi)[1]
+  
+  F0 <- Fit(Y, Phi, 
+            matrix(rep(muq, each = TT), nrow = TT, ncol = nn))
+  
+  sim0 <- matrix(NA, nrow = TT, ncol = nsim)
+  
+  for (i in seq(nsim)) {
+    k1 <- sample(seq(nn), 1)
+    sim0[, i] <- rnorm(TT, F0[, k1], sqrt(sigma2[k1]))
+  }
+  
+  adjalpha <- findAdjustAlpha(sim0[-c(1:q), ], FAP0, interval, tol)
+  
+  f0bound <- matrix(NA, nrow = TT - q, ncol = 2)
+  k <- 0
+  for (i in (q + 1):TT) {
+    k <- k + 1
+    f0bound[k, ] <- quantile(sim0[i, ], c(1 - adjalpha, adjalpha))
+    
+  }
+  
+  list(
+    "lowerbound" = f0bound[, 1],
+    "upperbound" = f0bound[, 2],
+    "IndSig" = (Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)]),
+    "Sig" = any((Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)])),
+    "Sim0" = sim0,
+    "adjalpha" = adjalpha
+  )
+  
+}
