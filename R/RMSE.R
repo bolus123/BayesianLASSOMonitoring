@@ -118,14 +118,14 @@ Fit <- function(Y, Phi, Mu) {
 #' Fit(Y, result$Phi, result$Mu)
 GibbsRFLSM.sim <- function(Y, Phi, Mu, sigma2) {
   
-  T <- length(Y)
+  TT <- length(Y)
   q <- length(Phi)
   
-  sim <- length(NA, T)
+  sim <- length(NA, TT)
   
   sim[1:q] <- Y[1:q]
   
-  for (ii in (q + 1):T) {
+  for (ii in (q + 1):TT) {
     sim[ii] <- Mu[ii] + (sim[(jj - 1):(jj - q)] - Mu[(jj - 1):(jj - q)]) %*% 
       Phi + rnorm(1, 0, sqrt(sigma2))
   }
@@ -159,7 +159,7 @@ GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2,
   std <- sd(Y[-c(1:q)])
   
   for (i in seq(nsim)) {
-    tmp <- GibbsRFLSM.sim(Y, Phi, Mu, sigma2)
+    tmp <- c(Y, Phi, Mu, sigma2)
     out[i] <- max(((tmp - xbar) / std) ^ 2)
   }
   
