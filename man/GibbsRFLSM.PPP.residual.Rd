@@ -7,10 +7,10 @@
 GibbsRFLSM.PPP.residual(
   Y,
   Phi,
-  Mu,
+  muq,
   sigma2,
   Phihat,
-  Muhat,
+  muqhat,
   sigma2hat,
   nsim = 1000
 )
