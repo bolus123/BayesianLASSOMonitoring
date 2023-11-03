@@ -159,6 +159,7 @@ GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2,
   std <- sd(Y[-c(1:q)])
   m <- dim(Phi)[2]
   
+  
   for (i in seq(nsim)) {
     
     k <- sample(1:m, 1)
@@ -166,8 +167,9 @@ GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2,
     tmpMu <- Mu[, k]
     tmpsigma2 <- sigma2[k]
     
-    tmp <- c(Y, tmpPhi, tmpMu, tmpsigma2)
-    out[i] <- max(((tmp - xbar) / std) ^ 2)
+    tmp <- GibbsRFLSM.sim(Y, tmpPhi, tmpMu, tmpsigma2)
+    tmp <- ((tmp[-c(1:q)] - xbar) / std) ^ 2
+    out[i] <- max(tmp)
   }
   
   out
