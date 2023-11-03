@@ -154,6 +154,7 @@ GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2,
                               nsim = 1000) {
   
   q <- dim(Phi)[1]
+  n <- length(Y) - q
   out <- rep(NA, nsim)
   xbar <- mean(Y[-c(1:q)])
   std <- sd(Y[-c(1:q)])
@@ -170,10 +171,10 @@ GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2,
     tmp <- GibbsRFLSM.sim(Y, tmpPhi, tmpMu, tmpsigma2)
     tmp <- ((tmp[-c(1:q)] - xbar) / std) ^ 2
     out[i] <- max(tmp)
+    
   }
   
   out
-  
 }
 
 #' obtain the root squared error
@@ -197,6 +198,7 @@ GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2,
                                   nsim = 1000) {
   
   q <- dim(Phi)[1]
+  n <- length(Y) - q
   out <- rep(NA, nsim)
   m <- dim(Phi)[2]
   
@@ -212,7 +214,8 @@ GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2,
     tmpVas <- getV(tmpV, q)
     tmpV <- tmpV[-c(1:q)]
     tmpVas <- tmpVas[-c(1:q), ]
-    out[i] <- max((tmpV - tmpVas %*% Phihat) ^ 2 / sigma2hat)
+    tmp <- (tmpV - tmpVas %*% Phihat) ^ 2 / sigma2hat
+    out[i] <- max(tmp)
   }
   
   out
