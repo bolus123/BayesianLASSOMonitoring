@@ -193,13 +193,16 @@ GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2,
 #' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
 #'
 #' Fit(Y, result$Phi, result$Mu)
-GibbsRFLSM.PPP.Yao <- function(Y, Phi, Mu, sigma2, FAP0 = 0.2,
+GibbsRFLSM.PPP.Yao <- function(Y, Phi, muq, sigma2, FAP0 = 0.2,
                                   nsim = 1000) {
   
   q <- dim(Phi)[1]
   n <- length(Y)
+  m <- dim(Phi)[2]
   
-  ccrep <- GibbsRFLSM.simmax.Yao(Y, Phi, Mu, sigma2, 
+  Muq <- matrix(muq, nrow = n, ncol = m, byrow = T)
+  
+  ccrep <- GibbsRFLSM.simmax.Yao(Y, Phi, Muq, sigma2, 
                                  nsim)
   
   tmpYao <- (Y[-c(1:q)] - mean(Y[-c(1:q)])) ^ 2 / var(Y[-c(1:q)])
