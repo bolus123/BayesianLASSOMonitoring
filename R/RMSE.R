@@ -121,12 +121,12 @@ GibbsRFLSM.sim <- function(Y, Phi, Mu, sigma2) {
   TT <- length(Y)
   q <- length(Phi)
   
-  sim <- length(NA, TT)
+  sim <- rep(NA, TT)
   
   sim[1:q] <- Y[1:q]
   
   for (ii in (q + 1):TT) {
-    sim[ii] <- Mu[ii] + (sim[(jj - 1):(jj - q)] - Mu[(jj - 1):(jj - q)]) %*% 
+    sim[ii] <- Mu[ii] + (sim[(ii - 1):(ii - q)] - Mu[(ii - 1):(ii - q)]) %*% 
       Phi + rnorm(1, 0, sqrt(sigma2))
   }
   
@@ -153,13 +153,20 @@ GibbsRFLSM.sim <- function(Y, Phi, Mu, sigma2) {
 GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2, 
                               nsim = 1000) {
   
-  q <- length(Phi)
+  q <- dim(Phi)[1]
   out <- rep(NA, nsim)
   xbar <- mean(Y[-c(1:q)])
   std <- sd(Y[-c(1:q)])
+  m <- dim(Phi)[2]
   
   for (i in seq(nsim)) {
-    tmp <- c(Y, Phi, Mu, sigma2)
+    
+    k <- sample(1:m, 1)
+    tmpPhi <- Phi[, k]
+    tmpMu <- Mu[, k]
+    tmpsigma2 <- sigma2[k]
+    
+    tmp <- c(Y, tmpPhi, tmpMu, tmpsigma2)
     out[i] <- max(((tmp - xbar) / std) ^ 2)
   }
   
@@ -187,16 +194,23 @@ GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2,
                                   Phihat, Muhat, sigma2hat, 
                                   nsim = 1000) {
   
-  q <- length(Phi)
+  q <- dim(Phi)[1]
   out <- rep(NA, nsim)
+  m <- dim(Phi)[2]
   
   for (i in seq(nsim)) {
-    tmp <- GibbsRFLSM.sim(Y, Phi, Mu, sigma2)
+    
+    k <- sample(1:m, 1)
+    tmpPhi <- Phi[, k]
+    tmpMu <- Mu[, k]
+    tmpsigma2 <- sigma2[k]
+    
+    tmp <- GibbsRFLSM.sim(Y, tmpPhi, tmpMu, tmpsigma2)
     tmpV <- tmp - Muhat
     tmpVas <- getV(tmpV, q)
     tmpV <- tmpV[-c(1:q)]
     tmpVas <- tmpVas[-c(1:q), ]
-    out[i] <- max((tmpV - tmpVas %*% Phihat) ^ 2)
+    out[i] <- max((tmpV - tmpVas %*% Phihat) ^ 2 / sigma2hat)
   }
   
   out
