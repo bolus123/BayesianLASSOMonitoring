@@ -1,12 +1,12 @@
 Package: BayesianLassoMonitoring
 Type: Package
 Title: What the package does (short line)
-Version: 0.9.3
+Version: 0.9.4
 Date: 2023-10-20
 Author: Yuhui Yao
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
-Imports: Rcpp, spatstat.explore, loo, VGAM, FDRestimation
+Imports: Rcpp, loo, VGAM
 LinkingTo: Rcpp, RcppArmadillo
 Encoding: UTF-8
 License: GPL-3

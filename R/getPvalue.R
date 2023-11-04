@@ -1,62 +1,9 @@
-#' get the P value for RFLSM with kernel smoothing
+
+#' obtain the root squared error
 #' 
-#' @param TauGamma is the distributions of shifts.
-#' @param tail is type of the test.
-getPvalueKSRFLSM <- function(TauGamma, tail = "2-sided") {
-  tmp <- TauGamma
-  
-  nn <- dim(tmp)[1]
-  pvalue <- rep(0, nn)
-  
-  for (i in 1:nn) {
-    
-    tmpkde <- density(tmp[i, ])
-    rtmpdens <- spatstat.explore::CDF(tmpkde)
-    tmpp <- rtmpdens(0)
-    
-    if (tail == "2-sided") {
-      pvalue[i] <- 2 * min(1 - tmpp, tmpp)
-    } else if (tail == "left-sided") {
-      pvalue[i] <- tmpp
-    } else if (tail == "right-sided") {
-      pvalue[i] <- 1 - tmpp
-    }
-    
-  }
-  return(pvalue)
-}
-
-
-#' get the P value for RFLSM
-#' 
-#' @param TauGamma is the distributions of shifts.
-#' @param tail is type of the test.
-getPvalueRFLSM <- function(TauGamma, tail = "2-sided") {
-  tmp <- TauGamma
-  
-  nn <- dim(tmp)[1]
-  pvalue <- rep(0, nn)
-  
-  for (i in 1:nn) {
-    
-    if (tail == "2-sided") {
-      pvalue[i] <- 2 * min(mean(tmp[i, ] < 0), mean(tmp[i, ] > 0))
-    } else if (tail == "left-sided") {
-      pvalue[i] <- mean(tmp[i, ] < 0)
-    } else if (tail == "right-sided") {
-      pvalue[i] <- mean(tmp[i, ] > 0)
-    }
-    
-  }
-  return(pvalue)
-}
-
-
-#' get a vector of p values
-#' 
-#' @param TauGamma is the distributions of shifts.
-#' @param tail is type of the test.
-#' @param method get p values with or without kernel smoothing.
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param Mu is the mean
 #' @export
 #' @examples
 #' T <- 100
@@ -67,30 +14,30 @@ getPvalueRFLSM <- function(TauGamma, tail = "2-sided") {
 #' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
 #' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
 #'
-#' getPvalue(result$Tau * result$Gamma)
-getPvalue <- function(TauGamma, tail = "2-sided", method = "raw") {
+#' Fit(Y, result$Phi, result$Mu)
+GibbsRFLSM.sim <- function(Y, Phi, Mu, sigma2) {
   
-  if (method == "raw") {
-    pvalue <- getPvalueRFLSM(TauGamma, tail)
-  } else if (method == "ks") {
-    pvalue <- getPvalueKSRFLSM(TauGamma, tail) 
+  TT <- length(Y)
+  q <- length(Phi)
+  
+  sim <- rep(NA, TT)
+  
+  sim[1:q] <- Y[1:q]
+  
+  for (ii in (q + 1):TT) {
+    sim[ii] <- Mu[ii] + (sim[(ii - 1):(ii - q)] - Mu[(ii - 1):(ii - q)]) %*% 
+      Phi + rnorm(1, 0, sqrt(sigma2))
   }
   
-  pvalue
-  
+  sim 
 }
 
 
-#' caculate posterior predictve pvalue
+#' obtain the root squared error
 #' 
-#' @param Y is Y
-#' @param Phi is the lagged coefficients.
-#' @param Mu is the individual means
-#' @param TauGamma is the distributions of shifts.
-#' @param sigma2 is the variance of errors.
-#' @param muq is the intercept.
-#' @param method is the method to estimate the parameters.
-#' @param nsim is the number of simulation for the simulation
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param Mu is the mean
 #' @export
 #' @examples
 #' T <- 100
@@ -101,82 +48,39 @@ getPvalue <- function(TauGamma, tail = "2-sided", method = "raw") {
 #' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
 #' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
 #'
-#' PPP(Y0, result$Phi, result$Mu, H, result$Tau * result$Gamma, result$sigma2, result$muq)
-#' 
-PPP <- function(Y, Phi, Mu, H, TauGamma, sigma2, muq, method = "median", nsim = 3000) {
+#' Fit(Y, result$Phi, result$Mu)
+GibbsRFLSM.simmax.Yao <- function(Y, Phi, Mu, sigma2, 
+                                  nsim = 1000) {
   
-  nnsim <- dim(Phi)[2]
   q <- dim(Phi)[1]
-  T <- length(Y)
-  m <- T - q
-  
-  YSim <- matrix(NA, nrow = T, ncol = nsim)
-  RSS0 <- rep(NA, nsim)
-  RSS1 <- rep(NA, nsim)
-  RSS0Sim <- rep(NA, nsim)
-  RSS1Sim <- rep(NA, nsim)
+  n <- length(Y) - q
   out <- rep(NA, nsim)
-
-  tmpPhi <- matrix(NA, nrow = q)
-  tmpGamma <- matrix(NA, nrow = m)
-  tmpMu <- matrix(NA, nrow = T)
-  
-  if (method == "median") {
-    tmpmuq <- median(muq)
-    tmpsigma2 <- median(sigma2)
-    for (i in 1:q) {
-      tmpPhi[i, 1] <- median(Phi[i, ]) 
-    }
-    
-    for (i in 1:m) {
-      tmpGamma[i, 1] <- median(TauGamma[i, ])
-    }
-  }
-  
-  tmpMu <- tmpmuq + H %*% tmpGamma
-  
-  RSS0 <- RSS(Y, matrix(tmpPhi, ncol = 1), 
-              matrix(tmpmuq, ncol = 1))
-  RSS1 <- RSS(Y, matrix(tmpPhi, ncol = 1), 
-              matrix(tmpMu, ncol = 1))
+  xbar <- mean(Y[-c(1:q)])
+  std <- sd(Y[-c(1:q)])
+  m <- dim(Phi)[2]
   
   
-  for (i in 1:nsim) {
+  for (i in seq(nsim)) {
     
-    tmpsel <- sample(1:nnsim, 1)
-    YSim[1:q, i] <- Y[1:q]
+    k <- sample(1:m, 1)
+    tmpPhi <- Phi[, k]
+    tmpMu <- Mu[, k]
+    tmpsigma2 <- sigma2[k]
     
-    for (j in (q + 1):T) {
-      YSim[j, i] <- Mu[j, tmpsel] + 
-        (YSim[(j - 1):(j - q), i] - Mu[(j - 1):(j - q), tmpsel]) %*% Phi[, tmpsel] + 
-        rnorm(1, sd = sqrt(sigma2[tmpsel]))
-    }
-    
-    
-    RSS0Sim[i] <- RSS(YSim[, i], matrix(tmpPhi, ncol = 1), 
-                      matrix(tmpmuq, ncol = 1))
-    RSS1Sim[i] <- RSS(YSim[, i], matrix(tmpPhi, ncol = 1), 
-                      matrix(tmpMu, ncol = 1))
+    tmp <- GibbsRFLSM.sim(Y, tmpPhi, tmpMu, tmpsigma2)
+    tmp <- ((tmp[-c(1:q)] - xbar) / std) ^ 2
+    out[i] <- max(tmp)
     
   }
   
-  out <- ((RSS0Sim - RSS1Sim) / tmpsigma2) >= 
-    ((RSS0 - RSS1) / tmpsigma2)
-  mean(out)
-  
+  out
 }
 
-
-
-
-
-
-#' check significance using Sidak Correction
+#' obtain the root squared error
 #' 
-#' @param P is P
-#' @param FAP0 is FAP0.
-#' @param methodP is methodP
-#' @param methodComp is methodComp.
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param Mu is the mean
 #' @export
 #' @examples
 #' T <- 100
@@ -187,39 +91,79 @@ PPP <- function(Y, Phi, Mu, H, TauGamma, sigma2, muq, method = "median", nsim = 
 #' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
 #' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
 #'
-#' MultiComp(result$p)
-#' 
-MultiComp <- function(P, FAP0 = 0.2, methodP = "median",  methodComp = 'Sidak') {
+#' Fit(Y, result$Phi, result$Mu)
+GibbsRFLSM.PPP.Yao <- function(Y, Phi, muq, sigma2, FAP0 = 0.2,
+                               nsim = 1000) {
   
-  nnsim <- dim(P)[2]
-  m <- dim(P)[1]
+  q <- dim(Phi)[1]
+  n <- length(Y)
+  m <- dim(Phi)[2]
   
-  out <- matrix(NA, nrow = m, ncol = 2)
+  Muq <- matrix(muq, nrow = n, ncol = m, byrow = T)
   
-  if (methodComp == "Sidak") {
-    tmpAlpha <- 1 - (1 - FAP0) ^ (1 / m)
+  ccrep <- GibbsRFLSM.simmax.Yao(Y, Phi, Muq, sigma2, 
+                                 nsim)
+  
+  tmpYao <- (Y[-c(1:q)] - mean(Y[-c(1:q)])) ^ 2 / var(Y[-c(1:q)])
+  
+  tmpOmni <- mean(ccrep > max(tmpYao))
+  tmpInd <- rep(NA, (n - q))
+  for (i in 1:(n - q)) {
+    tmpInd[i] <- mean(ccrep > tmpYao[i])
   }
+  list("Omni" = tmpOmni, "Ind" = tmpInd) 
+}
+
+#' obtain the root squared error
+#' 
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param Mu is the mean
+#' @export
+#' @examples
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
+#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#'
+#' Fit(Y, result$Phi, result$Mu)
+GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2, 
+                                       Phihat, Muhat, sigma2hat, 
+                                       nsim = 1000) {
   
+  q <- dim(Phi)[1]
+  n <- length(Y) - q
+  out <- rep(NA, nsim)
+  m <- dim(Phi)[2]
+  
+  for (i in seq(nsim)) {
     
-  for (i in seq(m)) {
-    if (methodP == "median") {
-      out[i, 1] <- median(1 - P[i, ])
-    }
-    out[i, 2] <- (out[i, 1] <= tmpAlpha)
+    k <- sample(1:m, 1)
+    tmpPhi <- Phi[, k]
+    tmpMu <- Mu[, k]
+    tmpsigma2 <- sigma2[k]
+    
+    tmp <- GibbsRFLSM.sim(Y, tmpPhi, tmpMu, tmpsigma2)
+    tmpV <- tmp - Muhat
+    tmpVas <- getV(tmpV, q)
+    tmpV <- tmpV[-c(1:q)]
+    tmpVas <- tmpVas[-c(1:q), ]
+    tmp <- (tmpV - tmpVas %*% Phihat) ^ 2 / sigma2hat
+    out[i] <- max(tmp)
   }
   
   out
   
 }
 
-
-
-#' comparison using resampling
+#' obtain the root squared error
 #' 
-#' @param P is P
-#' @param FAP0 is FAP0.
-#' @param methodP is methodP
-#' @param methodComp is methodComp.
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param Mu is the mean
 #' @export
 #' @examples
 #' T <- 100
@@ -230,153 +174,33 @@ MultiComp <- function(P, FAP0 = 0.2, methodP = "median",  methodComp = 'Sidak') 
 #' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
 #' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
 #'
-#' MultiComp(result$p)
-#' 
-CompResamp <- function(Y, Phi, muq, sigma2, FAP0 = 0.2, 
-                       interval = c(0.51, 1), nsim = 100000, tol = 1e-6) {
+#' Fit(Y, result$Phi, result$Mu)
+GibbsRFLSM.PPP.residual <- function(Y, Phi, muq, sigma2, 
+                                    Phihat, muqhat, sigma2hat, 
+                                    nsim = 1000) {
   
-  findAdjustAlpha <- function(sim0, FAP0 = 0.2, interval = c(0.51, 1), tol = 1e-6) {
-    
-    findroot <- function(cc, sim0, m, FAP0 = 0.2) {
-      
-      c1 <- cc
-      c2 <- 1 - cc
-      
-      quant <- matrix(NA, nrow = m, ncol = 2)
-      
-      for (i in seq(m)) {
-        tmp <- quantile(sim0[i, ], c(c2, c1))
-        quant[i, ] <- tmp
-      }
-      
-      tmp <- colSums(quant[, 1] <= sim0 & sim0 <= quant[, 2]) != m
-      tmp <- mean(tmp)
-      out <- FAP0 - tmp
-      #cat("c:", cc, "out:", out, "FAP:", tmp, "\n")
-      out
-    }
-    
-    m <- dim(sim0)[1]
-    
-    uniroot(findroot, interval = interval, sim0 = sim0, m = m, FAP0 = FAP0, tol = tol)$root
-    
-  }
-  
-  TT <- length(Y)
-  nn <- length(muq)
   q <- dim(Phi)[1]
+  n <- length(Y)
+  m <- dim(Phi)[2]
   
-  F0 <- Fit(Y, Phi, 
-            matrix(rep(muq, each = TT), nrow = TT, ncol = nn))
+  Muq <- matrix(muq, nrow = n, ncol = m, byrow = T)
+  Muqhat <- rep(muqhat, n)
   
-  sim0 <- matrix(NA, nrow = TT, ncol = nsim)
+  ccrep <- GibbsRFLSM.simmax.residual(Y, Phi, Muq, sigma2, 
+                                      Phihat, Muqhat, sigma2hat, 
+                                      nsim)
   
-  for (i in seq(nsim)) {
-    k1 <- sample(seq(nn), 1)
-    sim0[, i] <- rnorm(TT, F0[, k1], sqrt(sigma2[k1]))
+  tmp <- Y - muqhat
+  tmpV <- getV(tmp, q)
+  tmp <- tmp[-c(1:q)]
+  tmpV <- tmpV[-c(1:q), ]
+  
+  tmpresi <- (tmp - tmpV %*% Phihat) ^ 2 / sigma2hat
+  
+  tmpOmni <- mean(ccrep > max(tmpresi))
+  tmpInd <- rep(NA, n - q)
+  for (i in 1:(n - q)) {
+    tmpInd[i] <- mean(ccrep > tmpresi[i])
   }
-  
-  adjalpha <- findAdjustAlpha(sim0[-c(1:q), ], FAP0, interval, tol)
-  
-  f0bound <- matrix(NA, nrow = TT - q, ncol = 2)
-  k <- 0
-  for (i in (q + 1):TT) {
-    k <- k + 1
-    f0bound[k, ] <- quantile(sim0[i, ], c(1 - adjalpha, adjalpha))
-    
-  }
-  
-  list(
-    "lowerbound" = f0bound[, 1],
-    "upperbound" = f0bound[, 2],
-    "IndSig" = (Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)]),
-    "Sig" = any((Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)])),
-    "Sim0" = sim0,
-    "adjalpha" = adjalpha
-  )
-  
-}
-
-
-#' comparison using resampling
-#' 
-#' @param P is P
-#' @param FAP0 is FAP0.
-#' @param methodP is methodP
-#' @param methodComp is methodComp.
-#' @export
-#' @examples
-#' T <- 100
-#' q <- 5
-#' H <- getHMatMT(T, q)
-#' Y <- arima.sim(list(ar = 0.5), n = T)
-#' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
-#'
-#' MultiComp(result$p)
-#' 
-CompResamp1 <- function(Y, Phi, muq, sigma2, FAP0 = 0.2, 
-                       interval = c(0.51, 1), nsim = 100000, tol = 1e-6) {
-  
-  findAdjustAlpha <- function(sim0, FAP0 = 0.2, interval = c(0.51, 1), tol = 1e-6) {
-    
-    findroot <- function(cc, sim0, m, FAP0 = 0.2) {
-      
-      c1 <- cc
-      c2 <- 1 - cc
-      
-      quant <- matrix(NA, nrow = m, ncol = 2)
-      
-      for (i in seq(m)) {
-        tmp <- quantile(sim0[i, ], c(c2, c1))
-        quant[i, ] <- tmp
-      }
-      
-      tmp <- colSums(quant[, 1] <= sim0 & sim0 <= quant[, 2]) != m
-      tmp <- mean(tmp)
-      out <- FAP0 - tmp
-      #cat("c:", cc, "out:", out, "FAP:", tmp, "\n")
-      out
-    }
-    
-    m <- dim(sim0)[1]
-    
-    uniroot(findroot, interval = interval, sim0 = sim0, m = m, FAP0 = FAP0, tol = tol)$root
-    
-  }
-  
-  TT <- length(Y)
-  nn <- length(muq)
-  q <- dim(Phi)[1]
-  
-  F0 <- Fit(Y, Phi, 
-            matrix(rep(muq, each = TT), nrow = TT, ncol = nn))
-  
-  sim0 <- matrix(NA, nrow = TT, ncol = nsim)
-  
-  for (i in seq(nsim)) {
-    k1 <- sample(seq(nn), 1)
-    sim0[, i] <- rnorm(TT, F0[, k1], sqrt(sigma2[k1]))
-  }
-  
-  adjalpha <- findAdjustAlpha(sim0[-c(1:q), ], FAP0, interval, tol)
-  
-  f0bound <- matrix(NA, nrow = TT - q, ncol = 2)
-  k <- 0
-  for (i in (q + 1):TT) {
-    k <- k + 1
-    f0bound[k, ] <- quantile(sim0[i, ], c(1 - adjalpha, adjalpha))
-    
-  }
-  
-  list(
-    "lowerbound" = f0bound[, 1],
-    "upperbound" = f0bound[, 2],
-    "IndSig" = (Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)]),
-    "Sig" = any((Y[-c(1:q)] < f0bound[, 1]) | (f0bound[, 2] < Y[-c(1:q)])),
-    "Sim0" = sim0,
-    "adjalpha" = adjalpha
-  )
-  
+  list("Omni" = tmpOmni, "Ind" = tmpInd) 
 }

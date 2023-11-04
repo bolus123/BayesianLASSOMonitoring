@@ -29,6 +29,8 @@ arma::colvec rinvgaussiancpp(int n, double mu, double lambda){
  arma::colvec out = Rcpp::as<arma::colvec>(tmp); 
  return out;
 }
+
+
  
 //' get matrix V
 //'
@@ -110,6 +112,8 @@ arma::colvec rtwosegnorm(int n, double a, double b, double mean, double sd) {
   return(out);
   
 }
+
+
 
 // [[Rcpp::export]]
 arma::mat getGMat(int T, int q) {
@@ -386,7 +390,8 @@ arma::mat checkSym(arma::mat S) {
 }
 
 arma::colvec updatePhi(arma::mat V, arma::mat Vas, 
-                       arma::mat A, double sigma2, arma::mat inveta2mat, 
+                       arma::mat A, arma::colvec oldPhi, 
+                       double sigma2, arma::mat inveta2mat, 
                        double bound0, double boundqplus1,
                        int MonoFlg, Rcpp::String method) {
   
@@ -397,7 +402,7 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
   arma::mat tVasVas(q, q);
   arma::mat invtVasVas(q, q);
   arma::mat Phihat(q, 1);
-  arma::mat Phi(q, 1);
+  arma::mat Phi = oldPhi;
   arma::mat S(q, q);
   arma::mat tmpS(q, q);
   arma::colvec M(q);
@@ -493,6 +498,7 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
   return(Phi);
 }
 
+
 double updateSigma2(arma::mat resi, arma::colvec Phi, arma::mat inveta2mat, int T, int q, 
                     arma::mat A, double a, double b, Rcpp::String method) {
   double sigma2 = 0.0;
@@ -537,6 +543,10 @@ arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, int 
     } else {
       tmp = rinvgaussiancpp(1, tmpmuPrime, tmplambda2);
       inveta2(gg, 0) = tmp(0);
+    }
+    
+    if (inveta2(gg, 0) < tol) {
+      inveta2(gg, 0) = tol;
     }
     
   }
@@ -958,8 +968,8 @@ Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q,
     //Rcpp::Rcout << V << std::endl;
     
     // update Phi
-    Phi = updatePhi(V, Vas, 
-                    A, sigma2, inveta2mat, 
+    Phi = updatePhi(V, Vas, A, 
+                    Phi, sigma2, inveta2mat, 
                     bound0, boundqplus1,
                     MonoFlg, method);
     
