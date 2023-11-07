@@ -173,3 +173,5 @@ ll <- function(Y, Phi, Mu, sigma2) {
   ll
   
 }
+
+
