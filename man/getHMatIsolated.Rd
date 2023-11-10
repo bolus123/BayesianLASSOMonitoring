@@ -4,14 +4,12 @@
 \alias{getHMatIsolated}
 \title{get a design matrix for isolated shift}
 \usage{
-getHMatIsolated(T, q, w)
+getHMatIsolated(T, q)
 }
 \arguments{
 \item{T}{is length of a process.}
 
 \item{q}{is the number of lags.}
-
-\item{w}{is the subgroup size.}
 }
 \description{
 get a design matrix for isolated shift

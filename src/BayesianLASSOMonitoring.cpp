@@ -145,6 +145,37 @@ arma::mat getPhiMat(arma::colvec Phi, int T) {
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
+//' @param wt is the waiting time.
+//' @export
+//' @examples
+//' getHMatMT(100, 5)
+// [[Rcpp::export]]
+arma::mat getHMatCycle(int T, int q, int wt) {
+  arma::mat tmp(T, T);
+  tmp.zeros();
+
+  int i = 0;
+  int k = 0;
+  
+  for (i = 0; i < T; i++) {
+  
+    if ((k % wt) == 0) {
+      tmp = tmp + arma::diagmat(arma::ones(T - i), -i);
+      
+    }
+    k = k + 1;
+
+  }
+  
+  tmp = tmp.cols(q, T - 1 - wt);
+  return(tmp);
+  
+}
+
+//' get a design matrix as that in MT
+//'
+//' @param T is length of a process.
+//' @param q is the number of lags.
 //' @export
 //' @examples
 //' getHMatMT(100, 5)
@@ -164,12 +195,12 @@ arma::mat getHMatMT(int T, int q) {
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
-//' @param w is the subgroup size.
 //' @export
 //' @examples
-//' getHMatSustained(100, 5, 1)
+//' getHMatSustained(100, 5)
 // [[Rcpp::export]]
-arma::mat getHMatSustained(int T, int q, int w) {
+arma::mat getHMatSustained(int T, int q) {
+  int w = 1;
   arma::mat tmp(T, T);
   tmp.ones();
   arma::mat L = arma::trimatl(tmp);
@@ -196,12 +227,12 @@ arma::mat getHMatSustained(int T, int q, int w) {
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
-//' @param w is the subgroup size.
 //' @export
 //' @examples
 //' getHMatIsolated(100, 5, 1)
 // [[Rcpp::export]]
-arma::mat getHMatIsolated(int T, int q, int w) {
+arma::mat getHMatIsolated(int T, int q) {
+  int w = 1;
   arma::mat tmp(T, T);
   
   int i;
@@ -232,14 +263,13 @@ arma::mat getHMatIsolated(int T, int q, int w) {
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
-//' @param w is the subgroup size.
 //' @export
 //' @examples
 //' getHMatGradual(100, 5, 1)
 // [[Rcpp::export]]
-arma::mat getHMatGradual(int T, int q, int w) {
+arma::mat getHMatGradual(int T, int q) {
   arma::mat tmp(T, T);
-  
+  int w = 1;
   int i;
   for (i = 0; i < T; i++) {
     tmp.diag(-i).fill(i);

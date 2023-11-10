@@ -4,14 +4,12 @@
 \alias{getHMatGradual}
 \title{get a design matrix for gradual shift}
 \usage{
-getHMatGradual(T, q, w)
+getHMatGradual(T, q)
 }
 \arguments{
 \item{T}{is length of a process.}
 
 \item{q}{is the number of lags.}
-
-\item{w}{is the subgroup size.}
 }
 \description{
 get a design matrix for gradual shift

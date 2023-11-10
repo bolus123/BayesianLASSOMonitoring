@@ -39,6 +39,18 @@ getPhiMat <- function(Phi, T) {
 #'
 #' @param T is length of a process.
 #' @param q is the number of lags.
+#' @param wt is the waiting time.
+#' @export
+#' @examples
+#' getHMatMT(100, 5)
+getHMatCycle <- function(T, q, wt) {
+    .Call(`_BayesianLassoMonitoring_getHMatCycle`, T, q, wt)
+}
+
+#' get a design matrix as that in MT
+#'
+#' @param T is length of a process.
+#' @param q is the number of lags.
 #' @export
 #' @examples
 #' getHMatMT(100, 5)
@@ -50,36 +62,33 @@ getHMatMT <- function(T, q) {
 #'
 #' @param T is length of a process.
 #' @param q is the number of lags.
-#' @param w is the subgroup size.
 #' @export
 #' @examples
-#' getHMatSustained(100, 5, 1)
-getHMatSustained <- function(T, q, w) {
-    .Call(`_BayesianLassoMonitoring_getHMatSustained`, T, q, w)
+#' getHMatSustained(100, 5)
+getHMatSustained <- function(T, q) {
+    .Call(`_BayesianLassoMonitoring_getHMatSustained`, T, q)
 }
 
 #' get a design matrix for isolated shift
 #'
 #' @param T is length of a process.
 #' @param q is the number of lags.
-#' @param w is the subgroup size.
 #' @export
 #' @examples
 #' getHMatIsolated(100, 5, 1)
-getHMatIsolated <- function(T, q, w) {
-    .Call(`_BayesianLassoMonitoring_getHMatIsolated`, T, q, w)
+getHMatIsolated <- function(T, q) {
+    .Call(`_BayesianLassoMonitoring_getHMatIsolated`, T, q)
 }
 
 #' get a design matrix for gradual shift
 #'
 #' @param T is length of a process.
 #' @param q is the number of lags.
-#' @param w is the subgroup size.
 #' @export
 #' @examples
 #' getHMatGradual(100, 5, 1)
-getHMatGradual <- function(T, q, w) {
-    .Call(`_BayesianLassoMonitoring_getHMatGradual`, T, q, w)
+getHMatGradual <- function(T, q) {
+    .Call(`_BayesianLassoMonitoring_getHMatGradual`, T, q)
 }
 
 #' get a posterior sample using gibbs sampling for Random Flexible Level Shift Model

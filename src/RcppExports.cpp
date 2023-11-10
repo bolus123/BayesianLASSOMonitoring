@@ -62,6 +62,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getHMatCycle
+arma::mat getHMatCycle(int T, int q, int wt);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatCycle(SEXP TSEXP, SEXP qSEXP, SEXP wtSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    Rcpp::traits::input_parameter< int >::type wt(wtSEXP);
+    rcpp_result_gen = Rcpp::wrap(getHMatCycle(T, q, wt));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getHMatMT
 arma::mat getHMatMT(int T, int q);
 RcppExport SEXP _BayesianLassoMonitoring_getHMatMT(SEXP TSEXP, SEXP qSEXP) {
@@ -75,41 +88,38 @@ BEGIN_RCPP
 END_RCPP
 }
 // getHMatSustained
-arma::mat getHMatSustained(int T, int q, int w);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatSustained(SEXP TSEXP, SEXP qSEXP, SEXP wSEXP) {
+arma::mat getHMatSustained(int T, int q);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatSustained(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type T(TSEXP);
     Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    Rcpp::traits::input_parameter< int >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(getHMatSustained(T, q, w));
+    rcpp_result_gen = Rcpp::wrap(getHMatSustained(T, q));
     return rcpp_result_gen;
 END_RCPP
 }
 // getHMatIsolated
-arma::mat getHMatIsolated(int T, int q, int w);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatIsolated(SEXP TSEXP, SEXP qSEXP, SEXP wSEXP) {
+arma::mat getHMatIsolated(int T, int q);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatIsolated(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type T(TSEXP);
     Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    Rcpp::traits::input_parameter< int >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(getHMatIsolated(T, q, w));
+    rcpp_result_gen = Rcpp::wrap(getHMatIsolated(T, q));
     return rcpp_result_gen;
 END_RCPP
 }
 // getHMatGradual
-arma::mat getHMatGradual(int T, int q, int w);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatGradual(SEXP TSEXP, SEXP qSEXP, SEXP wSEXP) {
+arma::mat getHMatGradual(int T, int q);
+RcppExport SEXP _BayesianLassoMonitoring_getHMatGradual(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type T(TSEXP);
     Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    Rcpp::traits::input_parameter< int >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(getHMatGradual(T, q, w));
+    rcpp_result_gen = Rcpp::wrap(getHMatGradual(T, q));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -147,10 +157,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLassoMonitoring_rtwosegnorm", (DL_FUNC) &_BayesianLassoMonitoring_rtwosegnorm, 5},
     {"_BayesianLassoMonitoring_getGMat", (DL_FUNC) &_BayesianLassoMonitoring_getGMat, 2},
     {"_BayesianLassoMonitoring_getPhiMat", (DL_FUNC) &_BayesianLassoMonitoring_getPhiMat, 2},
+    {"_BayesianLassoMonitoring_getHMatCycle", (DL_FUNC) &_BayesianLassoMonitoring_getHMatCycle, 3},
     {"_BayesianLassoMonitoring_getHMatMT", (DL_FUNC) &_BayesianLassoMonitoring_getHMatMT, 2},
-    {"_BayesianLassoMonitoring_getHMatSustained", (DL_FUNC) &_BayesianLassoMonitoring_getHMatSustained, 3},
-    {"_BayesianLassoMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLassoMonitoring_getHMatIsolated, 3},
-    {"_BayesianLassoMonitoring_getHMatGradual", (DL_FUNC) &_BayesianLassoMonitoring_getHMatGradual, 3},
+    {"_BayesianLassoMonitoring_getHMatSustained", (DL_FUNC) &_BayesianLassoMonitoring_getHMatSustained, 2},
+    {"_BayesianLassoMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLassoMonitoring_getHMatIsolated, 2},
+    {"_BayesianLassoMonitoring_getHMatGradual", (DL_FUNC) &_BayesianLassoMonitoring_getHMatGradual, 2},
     {"_BayesianLassoMonitoring_GibbsRFLSM", (DL_FUNC) &_BayesianLassoMonitoring_GibbsRFLSM, 18},
     {NULL, NULL, 0}
 };
