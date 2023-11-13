@@ -80,14 +80,5 @@ result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 
 }
 \references{
-@article{mcculloch1993bayesian,
- title={Bayesian inference and prediction for mean and variance shifts in autoregressive time series},
- author={McCulloch, Robert E and Tsay, Ruey S},
- journal={Journal of the american Statistical association},
- volume={88},
- number={423},
- pages={968--978},
- year={1993},
- publisher={Taylor \& Francis}
-}
+McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
 }

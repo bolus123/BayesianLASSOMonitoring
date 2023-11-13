@@ -20,16 +20,7 @@
 #' @param by is the interval of systematic sampling for the draws from MCMC.
 #' @param burnin is the length of burn-in period.
 #' @param tol is the tolerance.
-#' @references @article{mcculloch1993bayesian,
-#'  title={Bayesian inference and prediction for mean and variance shifts in autoregressive time series},
-#'  author={McCulloch, Robert E and Tsay, Ruey S},
-#'  journal={Journal of the american Statistical association},
-#'  volume={88},
-#'  number={423},
-#'  pages={968--978},
-#'  year={1993},
-#'  publisher={Taylor \& Francis}
-#' }
+#' @references McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
 #' 
 #' 
 #' @export
