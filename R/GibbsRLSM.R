@@ -41,13 +41,13 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5, A = diag(nrow = q),
                        nsim, by, burnin,
                        tol)
   } else {
-    H <- cbind(H, X)
+    H1 <- cbind(H, X)
     model <- GibbsRFLSMcpp(Y, q, 
                         A, a, b, alpha, beta, 
                         theta1, theta2, xi2,
                         method, bound0, boundqplus1,
                         nsim, by, burnin,
-                        tol, H)
+                        tol, H1)
     if (is.null(H)) {
       m <- 0
       Gamma <- NA
