@@ -91,3 +91,7 @@ getHMatGradual <- function(T, q) {
     .Call(`_BayesianLassoMonitoring_getHMatGradual`, T, q)
 }
 
+GibbsRFLSMcpp <- function(Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H = NULL) {
+    .Call(`_BayesianLassoMonitoring_GibbsRFLSMcpp`, Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H)
+}
+

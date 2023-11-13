@@ -756,6 +756,7 @@ Rcpp::List updateMuqMu(arma::colvec Y, arma::mat Tau, arma::mat Gamma, double si
   return(out);
 }
 
+// [[Rcpp::export]]
 Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q, 
                       arma::mat& A, double& a, double& b, double& alpha, double& beta, 
                       double& theta1, double& theta2, double& xi2,
