@@ -6,7 +6,7 @@ Date: 2023-11-13
 Author: Yuhui Yao
 Maintainer: Yuhui Yao<yyao17@ua.edu>
 Description: This package provides a Phase I Control Chart which is built using Random Flexible Level Shift Model.  The model is trained using a Bayesian Technique.
-Imports: Rcpp, loo, VGAM
+Imports: Rcpp, VGAM
 LinkingTo: Rcpp, RcppArmadillo
 Encoding: UTF-8
 License: GPL-3

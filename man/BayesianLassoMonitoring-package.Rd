@@ -10,4 +10,7 @@ This package provides a Phase I Control Chart which is built using Random Flexib
 
 Package description.
 }
+\references{
+McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
+}
 \keyword{package}
