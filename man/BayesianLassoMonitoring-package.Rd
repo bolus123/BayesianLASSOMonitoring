@@ -13,4 +13,12 @@ Package description.
 \references{
 McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/bolus123/BayesianLASSOMonitoring}
+  \item Report bugs at \url{https://github.com/bolus123/BayesianLASSOMonitoring/issues}
+}
+
+}
 \keyword{package}

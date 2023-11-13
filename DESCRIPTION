@@ -8,6 +8,8 @@ Maintainer: Yuhui Yao<yyao17@ua.edu>
 Description: This package provides a Phase I Control Chart which is built using Random Flexible Level Shift Model.  The model is trained using a Bayesian Technique.
 Imports: Rcpp, VGAM
 LinkingTo: Rcpp, RcppArmadillo
+URL: https://github.com/bolus123/BayesianLASSOMonitoring
+BugReports: https://github.com/bolus123/BayesianLASSOMonitoring/issues
 Encoding: UTF-8
 License: GPL-3
 LazyData: true
