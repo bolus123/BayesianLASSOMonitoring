@@ -1,7 +1,6 @@
 #' Random Flexible Level Shift Model
 #' 
 #' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
-#'
 #' @param Y is a vector.
 #' @param H is the design matrix for shifts.
 #' @param X is the input matrix
@@ -21,6 +20,18 @@
 #' @param by is the interval of systematic sampling for the draws from MCMC.
 #' @param burnin is the length of burn-in period.
 #' @param tol is the tolerance.
+#' @references @article{mcculloch1993bayesian,
+#'  title={Bayesian inference and prediction for mean and variance shifts in autoregressive time series},
+#'  author={McCulloch, Robert E and Tsay, Ruey S},
+#'  journal={Journal of the american Statistical association},
+#'  volume={88},
+#'  number={423},
+#'  pages={968--978},
+#'  year={1993},
+#'  publisher={Taylor \& Francis}
+#' }
+#' 
+#' 
 #' @export
 #' @examples
 #' nsim <- 100
