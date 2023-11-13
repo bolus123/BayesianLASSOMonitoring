@@ -1,20 +1,22 @@
-
-#' obtain the root squared error
+#' simulates the time series using Draws from MCMC
 #' 
 #' @param Y is a vector
 #' @param Phi is the coefficient
 #' @param Mu is the mean
+#' @param sigma2 is the variance of errors
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
-#' Fit(Y, result$Phi, result$Mu)
+#' GibbsRFLSM.sim(Y, result$Phi, result$Mu, result$sigma2) 
+#' 
 GibbsRFLSM.sim <- function(Y, Phi, Mu, sigma2) {
   
   TT <- length(Y)
@@ -32,22 +34,42 @@ GibbsRFLSM.sim <- function(Y, Phi, Mu, sigma2) {
   sim 
 }
 
-#' obtain the root squared error
+#' simulates the maximums of residuals
 #' 
 #' @param Y is a vector
 #' @param Phi is the coefficient
 #' @param Mu is the mean
+#' @param sigma2 is the variance of errors
+#' @param Phihat is the coefficient
+#' @param Muhat is the mean
+#' @param sigma2hat is the variance of errors
+#' @param nsim is the number of simulations
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
-#' Fit(Y, result$Phi, result$Mu)
+#' Phihat <- rep(NA, q)
+#' for (i in 1:q) {
+#'   Phihat[i] <- median(result$Phi[i, ])
+#' }
+#' 
+#' Muhat <- rep(NA, T)
+#' for (i in 1:T) {
+#'   Muhat[i] <- median(result$Mu[i, ])
+#' }
+#' 
+#' sigma2hat <- median(result$sigma2)
+#' 
+#' GibbsRFLSM.simmax.residual(Y, result$Phi, result$Mu, result$sigma2, 
+#' Phihat, Muhat, sigma2hat)
+#' 
 GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2, 
                                        Phihat, Muhat, sigma2hat, 
                                        nsim = 1000) {
@@ -77,35 +99,57 @@ GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2,
   
 }
 
-#' obtain the root squared error
+#' simulates posterior predictive p values using for the Phase I chart
 #' 
 #' @param Y is a vector
 #' @param Phi is the coefficient
-#' @param Mu is the mean
+#' @param Mu0 is the mean
+#' @param sigma2 is the variance of errors
+#' @param Phihat is the coefficient
+#' @param Mu0hat is the mean
+#' @param sigma2hat is the variance of errors
+#' @param nsim is the number of simulations
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#' 
+#' Mu0 <- matrix(NA, nrow = T, ncol = nsim)
+#' for (j in 1:nsim) {
+#'   Mu0[, j] <- result$muq[j]
+#' }
+#' 
+#' Mu0hat <- rep(NA, T)
+#' for (i in 1:T) {
+#'   Mu0hat[j] <- median(Mu0[i, ])
+#' }
+#' 
+#' Phihat <- rep(NA, q)
+#' for (i in 1:q) {
+#'   Phihat[i] <- median(result$Phi[i, ])
+#' }
+#' 
+#' sigma2hat <- median(result$sigma2)
 #'
-#' Fit(Y, result$Phi, result$Mu)
-GibbsRFLSM.PPP.residual <- function(Y, Phi, muq, sigma2, 
-                                    Phihat, muqhat, sigma2hat, 
+#' GibbsRFLSM.PPP.residual(Y, result$Phi, Mu0, result$sigma2, 
+#' Phihat, Mu0hat, sigma2hat)
+#' 
+GibbsRFLSM.PPP.residual <- function(Y, Phi, Mu0, sigma2, 
+                                    Phihat, Mu0hat, sigma2hat, 
                                     nsim = 1000) {
   
   q <- dim(Phi)[1]
   n <- length(Y)
   m <- dim(Phi)[2]
   
-  Muq <- matrix(muq, nrow = n, ncol = m, byrow = T)
-  Muqhat <- rep(muqhat, n)
-  
-  ccrep <- GibbsRFLSM.simmax.residual(Y, Phi, Muq, sigma2, 
-                                      Phihat, Muqhat, sigma2hat, 
+  ccrep <- GibbsRFLSM.simmax.residual(Y, Phi, Mu0, sigma2, 
+                                      Phihat, Mu0hat, sigma2hat, 
                                       nsim)
   
   tmp <- Y - muqhat

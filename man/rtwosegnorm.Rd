@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{rtwosegnorm}
 \alias{rtwosegnorm}
-\title{get a sample from a normal distribution whose absolute observations are constrained.}
+\title{Absolute-value-constrained normal distribution}
 \usage{
 rtwosegnorm(n, a, b, mean, sd)
 }
@@ -18,7 +18,7 @@ rtwosegnorm(n, a, b, mean, sd)
 \item{sd}{is a standard deviation.}
 }
 \description{
-get a sample from a normal distribution whose absolute observations are constrained.
+gets a sample from a normal distribution whose absolute observations are constrained.
 }
 \examples{
 rtwosegnorm(10, 1, 2, 0, 1)

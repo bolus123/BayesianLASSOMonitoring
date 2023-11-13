@@ -19,13 +19,15 @@ ll(Y, Phi, Mu, sigma2)
 obtain the log likelihood
 }
 \examples{
+nsim <- 100
+burnin <- 100
 T <- 100
 q <- 5
 H <- getHMatMT(T, q)
 Y <- arima.sim(list(ar = 0.5), n = T)
 
-result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 
 ll(Y, result$Phi, result$Mu, result$sigma2)
+
 }

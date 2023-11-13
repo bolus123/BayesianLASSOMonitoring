@@ -66,13 +66,16 @@ GibbsRFLSM(
 \item{tol}{is the tolerance.}
 }
 \description{
-`GibbsRFLSM` gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
 }
 \examples{
+nsim <- 100
+burnin <- 100
 T <- 100
 q <- 5
 H <- getHMatMT(T, q)
 Y <- arima.sim(list(ar = 0.5), n = T)
 
-result <- GibbsRFLSM(Y, H = H)
+result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getHMatMT}
 \alias{getHMatMT}
-\title{get a design matrix as that in MT}
+\title{Design Matrix (MT)}
 \usage{
 getHMatMT(T, q)
 }
@@ -12,7 +12,7 @@ getHMatMT(T, q)
 \item{q}{is the number of lags.}
 }
 \description{
-get a design matrix as that in MT
+gets a design matrix as that in MT
 }
 \examples{
 getHMatMT(100, 5)

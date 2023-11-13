@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getHMatIsolated}
 \alias{getHMatIsolated}
-\title{get a design matrix for isolated shift}
+\title{Design Matrix for Isolated Shift (CM)}
 \usage{
 getHMatIsolated(T, q)
 }
@@ -12,8 +12,8 @@ getHMatIsolated(T, q)
 \item{q}{is the number of lags.}
 }
 \description{
-get a design matrix for isolated shift
+gets a design matrix for isolated shift as that in CM
 }
 \examples{
-getHMatIsolated(100, 5, 1)
+getHMatIsolated(100, 5)
 }

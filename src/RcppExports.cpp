@@ -62,19 +62,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// getHMatCycle
-arma::mat getHMatCycle(int T, int q, int wt);
-RcppExport SEXP _BayesianLASSOMonitoring_getHMatCycle(SEXP TSEXP, SEXP qSEXP, SEXP wtSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type T(TSEXP);
-    Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    Rcpp::traits::input_parameter< int >::type wt(wtSEXP);
-    rcpp_result_gen = Rcpp::wrap(getHMatCycle(T, q, wt));
-    return rcpp_result_gen;
-END_RCPP
-}
 // getHMatMT
 arma::mat getHMatMT(int T, int q);
 RcppExport SEXP _BayesianLASSOMonitoring_getHMatMT(SEXP TSEXP, SEXP qSEXP) {
@@ -123,6 +110,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getXSeasonalityFS
+arma::mat getXSeasonalityFS(int T, double s, int n);
+RcppExport SEXP _BayesianLASSOMonitoring_getXSeasonalityFS(SEXP TSEXP, SEXP sSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< double >::type s(sSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(getXSeasonalityFS(T, s, n));
+    return rcpp_result_gen;
+END_RCPP
+}
 // GibbsRFLSMcpp
 Rcpp::List GibbsRFLSMcpp(arma::colvec& Y, int& q, arma::mat& A, double& a, double& b, double& alpha, double& beta, double& theta1, double& theta2, double& xi2, Rcpp::String& method, double& bound0, double& boundqplus1, int& nsim, int& by, int& burnin, double& tol, Rcpp::Nullable<Rcpp::NumericMatrix> H);
 RcppExport SEXP _BayesianLASSOMonitoring_GibbsRFLSMcpp(SEXP YSEXP, SEXP qSEXP, SEXP ASEXP, SEXP aSEXP, SEXP bSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP theta1SEXP, SEXP theta2SEXP, SEXP xi2SEXP, SEXP methodSEXP, SEXP bound0SEXP, SEXP boundqplus1SEXP, SEXP nsimSEXP, SEXP bySEXP, SEXP burninSEXP, SEXP tolSEXP, SEXP HSEXP) {
@@ -157,11 +157,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLASSOMonitoring_rtwosegnorm", (DL_FUNC) &_BayesianLASSOMonitoring_rtwosegnorm, 5},
     {"_BayesianLASSOMonitoring_getGMat", (DL_FUNC) &_BayesianLASSOMonitoring_getGMat, 2},
     {"_BayesianLASSOMonitoring_getPhiMat", (DL_FUNC) &_BayesianLASSOMonitoring_getPhiMat, 2},
-    {"_BayesianLASSOMonitoring_getHMatCycle", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatCycle, 3},
     {"_BayesianLASSOMonitoring_getHMatMT", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatMT, 2},
     {"_BayesianLASSOMonitoring_getHMatSustained", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatSustained, 2},
     {"_BayesianLASSOMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatIsolated, 2},
     {"_BayesianLASSOMonitoring_getHMatGradual", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatGradual, 2},
+    {"_BayesianLASSOMonitoring_getXSeasonalityFS", (DL_FUNC) &_BayesianLASSOMonitoring_getXSeasonalityFS, 3},
     {"_BayesianLASSOMonitoring_GibbsRFLSMcpp", (DL_FUNC) &_BayesianLASSOMonitoring_GibbsRFLSMcpp, 18},
     {NULL, NULL, 0}
 };

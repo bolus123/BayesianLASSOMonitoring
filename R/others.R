@@ -1,19 +1,21 @@
-#' obtain the root squared error
+#' obtain the root mean squared error
 #' 
 #' @param Y is a vector
 #' @param Phi is the coefficient
 #' @param Mu is the mean
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
 #' RMSE(Y, result$Phi, result$Mu)
+#' 
 RMSE <- function(Y, Phi, Mu) {
   
   T <- length(Y)
@@ -33,22 +35,24 @@ RMSE <- function(Y, Phi, Mu) {
   rmse
 }
 
-#' obtain the root squared error
+#' obtain the residuals
 #' 
 #' @param Y is a vector
 #' @param Phi is the coefficient
 #' @param Mu is the mean
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
 #' Residual(Y, result$Phi, result$Mu)
+#' 
 Residual <- function(Y, Phi, Mu) {
   
   T <- length(Y)
@@ -66,22 +70,24 @@ Residual <- function(Y, Phi, Mu) {
   ee
 }
 
-#' obtain the root squared error
+#' obtain the fits
 #' 
 #' @param Y is a vector
 #' @param Phi is the coefficient
 #' @param Mu is the mean
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
 #' Fit(Y, result$Phi, result$Mu)
+#' 
 Fit <- function(Y, Phi, Mu) {
   
   T <- length(Y)
@@ -102,22 +108,24 @@ Fit <- function(Y, Phi, Mu) {
 
 
 
-#' obtain the root squared error
+#' obtain resiudal sum squares
 #' 
 #' @param Y is a vector
 #' @param Phi is the coefficient
 #' @param Mu is the mean
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
 #' RSS(Y, result$Phi, result$Mu)
+#' 
 RSS <- function(Y, Phi, Mu) {
   
   T <- length(Y)
@@ -145,15 +153,17 @@ RSS <- function(Y, Phi, Mu) {
 #' @param sigma2 is the variance
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-#' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
 #' ll(Y, result$Phi, result$Mu, result$sigma2)
+#' 
 ll <- function(Y, Phi, Mu, sigma2) {
   
   T <- length(Y)

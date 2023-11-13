@@ -2,7 +2,7 @@
 % Please edit documentation in R/getPvalue.R
 \name{GibbsRFLSM.simmax.residual}
 \alias{GibbsRFLSM.simmax.residual}
-\title{obtain the root squared error}
+\title{simulates the maximums of residuals}
 \usage{
 GibbsRFLSM.simmax.residual(
   Y,
@@ -21,18 +21,43 @@ GibbsRFLSM.simmax.residual(
 \item{Phi}{is the coefficient}
 
 \item{Mu}{is the mean}
+
+\item{sigma2}{is the variance of errors}
+
+\item{Phihat}{is the coefficient}
+
+\item{Muhat}{is the mean}
+
+\item{sigma2hat}{is the variance of errors}
+
+\item{nsim}{is the number of simulations}
 }
 \description{
-obtain the root squared error
+simulates the maximums of residuals
 }
 \examples{
+nsim <- 100
+burnin <- 100
 T <- 100
 q <- 5
 H <- getHMatMT(T, q)
 Y <- arima.sim(list(ar = 0.5), n = T)
 
-result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 
-Fit(Y, result$Phi, result$Mu)
+Phihat <- rep(NA, q)
+for (i in 1:q) {
+  Phihat[i] <- median(result$Phi[i, ])
+}
+
+Muhat <- rep(NA, T)
+for (i in 1:T) {
+  Muhat[i] <- median(result$Mu[i, ])
+}
+
+sigma2hat <- median(result$sigma2)
+
+GibbsRFLSM.simmax.residual(Y, result$Phi, result$Mu, result$sigma2, 
+Phihat, Muhat, sigma2hat)
+
 }

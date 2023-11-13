@@ -2,7 +2,7 @@
 % Please edit documentation in R/getPvalue.R
 \name{GibbsRFLSM.sim}
 \alias{GibbsRFLSM.sim}
-\title{obtain the root squared error}
+\title{simulates the time series using Draws from MCMC}
 \usage{
 GibbsRFLSM.sim(Y, Phi, Mu, sigma2)
 }
@@ -12,18 +12,22 @@ GibbsRFLSM.sim(Y, Phi, Mu, sigma2)
 \item{Phi}{is the coefficient}
 
 \item{Mu}{is the mean}
+
+\item{sigma2}{is the variance of errors}
 }
 \description{
-obtain the root squared error
+simulates the time series using Draws from MCMC
 }
 \examples{
+nsim <- 100
+burnin <- 100
 T <- 100
 q <- 5
 H <- getHMatMT(T, q)
 Y <- arima.sim(list(ar = 0.5), n = T)
 
-result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 
-Fit(Y, result$Phi, result$Mu)
+GibbsRFLSM.sim(Y, result$Phi, result$Mu, result$sigma2) 
+
 }

@@ -30,16 +30,6 @@ arma::colvec rinvgaussiancpp(int n, double mu, double lambda){
  return out;
 }
 
-
- 
-//' get matrix V
-//'
-//' @param Y is a vector.
-//' @param q is a number of lags.
-//' @export
-//' @examples
-//' Y <- arima.sim(list(ar = 0.5), 100)
-//' getV(Y, 10)
 // [[Rcpp::export]]
 arma::mat getV(arma::colvec Y, int q) {
   int T = Y.n_elem;
@@ -74,7 +64,9 @@ arma::colvec rmvnorm(arma::colvec Mean, arma::mat Sigma) {
   
 }
 
-//' get a sample from a normal distribution whose absolute observations are constrained.
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
 //'
 //' @param n is sample size.
 //' @param a is the lower bound in absolute value.
@@ -141,38 +133,9 @@ arma::mat getPhiMat(arma::colvec Phi, int T) {
   return(out);
 }
 
-//' get a design matrix as that in MT
-//'
-//' @param T is length of a process.
-//' @param q is the number of lags.
-//' @param wt is the waiting time.
-//' @export
-//' @examples
-//' getHMatMT(100, 5)
-// [[Rcpp::export]]
-arma::mat getHMatCycle(int T, int q, int wt) {
-  arma::mat tmp(T, T);
-  tmp.zeros();
-
-  int i = 0;
-  int k = 0;
-  
-  for (i = 0; i < T; i++) {
-  
-    if ((k % wt) == 0) {
-      tmp = tmp + arma::diagmat(arma::ones(T - i), -i);
-      
-    }
-    k = k + 1;
-
-  }
-  
-  tmp = tmp.cols(q, T - 1 - wt);
-  return(tmp);
-  
-}
-
-//' get a design matrix as that in MT
+//' Design Matrix (MT)
+//' 
+//' gets a design matrix as that in MT
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
@@ -191,7 +154,9 @@ arma::mat getHMatMT(int T, int q) {
   
 }
 
-//' get a design matrix for sustained shift
+//' Design Matrix for Sustained Shift (CM)
+//' 
+//' gets a design matrix for sustained shift as that in CM
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
@@ -223,13 +188,15 @@ arma::mat getHMatSustained(int T, int q) {
   return(out1.cols(0, tmpn - 1));
 }
 
-//' get a design matrix for isolated shift
+//' Design Matrix for Isolated Shift (CM)
+//' 
+//' gets a design matrix for isolated shift as that in CM
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
 //' @export
 //' @examples
-//' getHMatIsolated(100, 5, 1)
+//' getHMatIsolated(100, 5)
 // [[Rcpp::export]]
 arma::mat getHMatIsolated(int T, int q) {
   int w = 1;
@@ -259,13 +226,13 @@ arma::mat getHMatIsolated(int T, int q) {
   return(out1.cols(0, tmpn - 1));
 }
 
-//' get a design matrix for gradual shift
+//' gets a design matrix for gradual shift
 //'
 //' @param T is length of a process.
 //' @param q is the number of lags.
 //' @export
 //' @examples
-//' getHMatGradual(100, 5, 1)
+//' getHMatGradual(100, 5)
 // [[Rcpp::export]]
 arma::mat getHMatGradual(int T, int q) {
   arma::mat tmp(T, T);
@@ -293,6 +260,38 @@ arma::mat getHMatGradual(int T, int q) {
   int tmpn = floor(nn / w);
   return(out1.cols(0, tmpn - 1));
   
+}
+
+//' gets a design matrix for Fourier series
+//'
+//' @param T is length of a process.
+//' @param s is the number of period
+//' @param n is the number of Fourier series
+//' @export
+//' @examples
+//' getXSeasonalityFS(100, 15, 10)
+// [[Rcpp::export]]
+arma::mat getXSeasonalityFS(int T, double s, int n) {
+  double pi = 3.141592653589793238462643383280;
+  
+  arma::mat X(T, 1);
+  arma::mat out(T, 2 * n);
+  
+  int i;
+  for (i = 0; i < T; i++) {
+    X(i, 0) = i + 1.0;
+  }
+  
+  int k = 0;
+  int j;
+  for (j = 0; j < n; j++) {
+    out.col(k) = arma::cos(2.0 * pi * (j + 1.0) * X / s);
+    k = k + 1;
+    
+    out.col(k) = arma::sin(2.0 * pi * (j + 1.0) * X / s);
+    k = k + 1;
+  }
+  return(out);
 }
 
 arma::mat getInv(arma::mat A) {

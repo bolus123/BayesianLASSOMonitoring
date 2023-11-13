@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getHMatSustained}
 \alias{getHMatSustained}
-\title{get a design matrix for sustained shift}
+\title{Design Matrix for Sustained Shift (CM)}
 \usage{
 getHMatSustained(T, q)
 }
@@ -12,7 +12,7 @@ getHMatSustained(T, q)
 \item{q}{is the number of lags.}
 }
 \description{
-get a design matrix for sustained shift
+gets a design matrix for sustained shift as that in CM
 }
 \examples{
 getHMatSustained(100, 5)

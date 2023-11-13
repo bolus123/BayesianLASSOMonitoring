@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getHMatGradual}
 \alias{getHMatGradual}
-\title{get a design matrix for gradual shift}
+\title{gets a design matrix for gradual shift}
 \usage{
 getHMatGradual(T, q)
 }
@@ -12,8 +12,8 @@ getHMatGradual(T, q)
 \item{q}{is the number of lags.}
 }
 \description{
-get a design matrix for gradual shift
+gets a design matrix for gradual shift
 }
 \examples{
-getHMatGradual(100, 5, 1)
+getHMatGradual(100, 5)
 }

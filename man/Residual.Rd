@@ -2,7 +2,7 @@
 % Please edit documentation in R/others.R
 \name{Residual}
 \alias{Residual}
-\title{obtain the root squared error}
+\title{obtain the residuals}
 \usage{
 Residual(Y, Phi, Mu)
 }
@@ -14,16 +14,18 @@ Residual(Y, Phi, Mu)
 \item{Mu}{is the mean}
 }
 \description{
-obtain the root squared error
+obtain the residuals
 }
 \examples{
+nsim <- 100
+burnin <- 100
 T <- 100
 q <- 5
 H <- getHMatMT(T, q)
 Y <- arima.sim(list(ar = 0.5), n = T)
 
-result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 
 Residual(Y, result$Phi, result$Mu)
+
 }

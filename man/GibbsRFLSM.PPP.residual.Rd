@@ -2,15 +2,15 @@
 % Please edit documentation in R/getPvalue.R
 \name{GibbsRFLSM.PPP.residual}
 \alias{GibbsRFLSM.PPP.residual}
-\title{obtain the root squared error}
+\title{simulates posterior predictive p values using for the Phase I chart}
 \usage{
 GibbsRFLSM.PPP.residual(
   Y,
   Phi,
-  muq,
+  Mu0,
   sigma2,
   Phihat,
-  muqhat,
+  Mu0hat,
   sigma2hat,
   nsim = 1000
 )
@@ -20,19 +20,49 @@ GibbsRFLSM.PPP.residual(
 
 \item{Phi}{is the coefficient}
 
-\item{Mu}{is the mean}
+\item{Mu0}{is the mean}
+
+\item{sigma2}{is the variance of errors}
+
+\item{Phihat}{is the coefficient}
+
+\item{Mu0hat}{is the mean}
+
+\item{sigma2hat}{is the variance of errors}
+
+\item{nsim}{is the number of simulations}
 }
 \description{
-obtain the root squared error
+simulates posterior predictive p values using for the Phase I chart
 }
 \examples{
+nsim <- 100
+burnin <- 100
 T <- 100
 q <- 5
 H <- getHMatMT(T, q)
 Y <- arima.sim(list(ar = 0.5), n = T)
 
-result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
+result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 
-Fit(Y, result$Phi, result$Mu)
+Mu0 <- matrix(NA, nrow = T, ncol = nsim)
+for (j in 1:nsim) {
+  Mu0[, j] <- result$muq[j]
+}
+
+Mu0hat <- rep(NA, T)
+for (i in 1:T) {
+  Mu0hat[j] <- median(Mu0[i, ])
+}
+
+Phihat <- rep(NA, q)
+for (i in 1:q) {
+  Phihat[i] <- median(result$Phi[i, ])
+}
+
+sigma2hat <- median(result$sigma2)
+
+GibbsRFLSM.PPP.residual(Y, result$Phi, Mu0, result$sigma2, 
+Phihat, Mu0hat, sigma2hat)
+
 }

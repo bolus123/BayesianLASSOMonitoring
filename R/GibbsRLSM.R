@@ -1,6 +1,6 @@
 #' Random Flexible Level Shift Model
 #' 
-#' `GibbsRFLSM` gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
 #'
 #' @param Y is a vector.
 #' @param H is the design matrix for shifts.
@@ -23,12 +23,15 @@
 #' @param tol is the tolerance.
 #' @export
 #' @examples
+#' nsim <- 100
+#' burnin <- 100
 #' T <- 100
 #' q <- 5
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, H = H)
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#' 
 GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5, A = diag(nrow = q), 
                        a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                        theta1 = 1, theta2 = 1, xi2 = 0.1,
