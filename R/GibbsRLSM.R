@@ -34,7 +34,8 @@
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5, A = diag(nrow = q), 
+GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5, 
+                       A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
                        a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                        theta1 = 1, theta2 = 1, xi2 = 0.1,
                        method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
