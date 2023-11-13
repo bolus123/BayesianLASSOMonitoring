@@ -756,38 +756,7 @@ Rcpp::List updateMuqMu(arma::colvec Y, arma::mat Tau, arma::mat Gamma, double si
   return(out);
 }
 
-//' get a posterior sample using gibbs sampling for Random Flexible Level Shift Model
-//'
-//' @param Y is a vector.
-//' @param q is the number of lags.
-//' @param A is a given variance-covariance matrix in MT and regression for the coefficients for autoregressors.
-//' @param a is a given shape of the prior gamma distribution for sigma2.
-//' @param b is a given scale of the prior gamma distribution for sigma2.
-//' @param alpha is a given shape of the prior gamma distribution for lambda2.
-//' @param beta is a given scale of the prior gamma distribution for lambda22.
-//' @param theta1 is a given shape1 of the prior beta distribution for the probability of Tau.
-//' @param theta2 is a given shape2 of the prior beta distribution for the probability of Tau.
-//' @param xi2 is a given variance of the prior normal distribution for shifts.
-//' @param method is a choice of methods including MT(McCulloch-Tsay), regression, LASSO, ALASSO(Adaptive LASSO), MonoLASSO(LASSO with Monotonicity constrains), MonoALASSO(Adaptive LASSO with Monotonicity constrains).
-//' @param bound0 is a lower bound of the methods with Monotonicity constrains.
-//' @param boundqplus1 is  a upper bound of the methods with Monotonicity constrains.
-//' @param nsim is the number of samples draw from MCMC.
-//' @param by is the interval of systematic sampling for the draws from MCMC.
-//' @param burnin is the length of burn-in period.
-//' @param tol is the tolerance.
-//' @param H is the design matrix for shifts.
-//' @export
-//' @examples
-//' T <- 100
-//' q <- 5
-//' H <- getHMatMT(T, q)
-//' Y <- arima.sim(list(ar = 0.5), n = T)
-//' 
-//' result <- GibbsRFLSM(Y, q, diag(nrow = q), 0.1, 0.1, 0.1, 0.1, 
-//' 1, 1, 0.1, "MonoALASSO", Inf, 0, 1000, 1, 100, 1e-10, H)
-//' 
-// [[Rcpp::export]]
-Rcpp::List GibbsRFLSM(arma::colvec& Y,int& q, 
+Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q, 
                       arma::mat& A, double& a, double& b, double& alpha, double& beta, 
                       double& theta1, double& theta2, double& xi2,
                       Rcpp::String& method, double& bound0, double& boundqplus1,
