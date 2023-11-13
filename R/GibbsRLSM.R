@@ -1,4 +1,6 @@
-#' get a posterior sample using gibbs sampling for Random Flexible Level Shift Model
+#' Random Flexible Level Shift Model
+#' 
+#' `GibbsRFLSM` gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
 #'
 #' @param Y is a vector.
 #' @param H is the design matrix for shifts.
