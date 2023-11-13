@@ -3,7 +3,9 @@ Type: Package
 Title: Random Flexible Level Shift Model based Phase I Control Chart with Bayesian LASSO Estimators
 Version: 0.9.6
 Date: 2023-11-13
-Author: Yuhui Yao
+Author: (
+				person("Yuhui", "Yao", role = c("aut", "cre"), email = "yyao17@ua.edu")
+			)
 Maintainer: Yuhui Yao<yyao17@ua.edu>
 Description: This package provides a Phase I Control Chart which is built using Random Flexible Level Shift Model.  The model is trained using a Bayesian Technique.
 Imports: Rcpp, VGAM
