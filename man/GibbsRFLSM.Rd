@@ -2,7 +2,7 @@
 % Please edit documentation in R/GibbsRLSM.R
 \name{GibbsRFLSM}
 \alias{GibbsRFLSM}
-\title{get a posterior sample using gibbs sampling for Random Flexible Level Shift Model}
+\title{Random Flexible Level Shift Model}
 \usage{
 GibbsRFLSM(
   Y,
@@ -66,7 +66,7 @@ GibbsRFLSM(
 \item{tol}{is the tolerance.}
 }
 \description{
-get a posterior sample using gibbs sampling for Random Flexible Level Shift Model
+`GibbsRFLSM` gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
 }
 \examples{
 T <- 100

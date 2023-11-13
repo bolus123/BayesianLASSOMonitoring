@@ -1,16 +1,16 @@
 #' @keywords package
-#' @aliases BayesianLassoMonitoring-package
+#' @aliases BayesianLASSOMonitoring-package
 "_PACKAGE"
 
-#' Package BayesianLassoMonitoring
+#' Package BayesianLASSOMonitoring
 #'
 #' Package description.
 #'
-#' @name BayesianLassoMonitoring-package
+#' @name BayesianLASSOMonitoring-package
 #' @import Rcpp VGAM
 #' @importFrom stats dnorm
 #' @importFrom stats arima
 #' @importFrom Rcpp evalCpp
-#' @useDynLib BayesianLassoMonitoring, .registration = TRUE
+#' @useDynLib BayesianLASSOMonitoring, .registration = TRUE
 NULL
 

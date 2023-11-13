@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // getV
 arma::mat getV(arma::colvec Y, int q);
-RcppExport SEXP _BayesianLassoMonitoring_getV(SEXP YSEXP, SEXP qSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getV(SEXP YSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -25,7 +25,7 @@ END_RCPP
 }
 // rtwosegnorm
 arma::colvec rtwosegnorm(int n, double a, double b, double mean, double sd);
-RcppExport SEXP _BayesianLassoMonitoring_rtwosegnorm(SEXP nSEXP, SEXP aSEXP, SEXP bSEXP, SEXP meanSEXP, SEXP sdSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_rtwosegnorm(SEXP nSEXP, SEXP aSEXP, SEXP bSEXP, SEXP meanSEXP, SEXP sdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -40,7 +40,7 @@ END_RCPP
 }
 // getGMat
 arma::mat getGMat(int T, int q);
-RcppExport SEXP _BayesianLassoMonitoring_getGMat(SEXP TSEXP, SEXP qSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getGMat(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -52,7 +52,7 @@ END_RCPP
 }
 // getPhiMat
 arma::mat getPhiMat(arma::colvec Phi, int T);
-RcppExport SEXP _BayesianLassoMonitoring_getPhiMat(SEXP PhiSEXP, SEXP TSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getPhiMat(SEXP PhiSEXP, SEXP TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -64,7 +64,7 @@ END_RCPP
 }
 // getHMatCycle
 arma::mat getHMatCycle(int T, int q, int wt);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatCycle(SEXP TSEXP, SEXP qSEXP, SEXP wtSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getHMatCycle(SEXP TSEXP, SEXP qSEXP, SEXP wtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -77,7 +77,7 @@ END_RCPP
 }
 // getHMatMT
 arma::mat getHMatMT(int T, int q);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatMT(SEXP TSEXP, SEXP qSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getHMatMT(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -89,7 +89,7 @@ END_RCPP
 }
 // getHMatSustained
 arma::mat getHMatSustained(int T, int q);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatSustained(SEXP TSEXP, SEXP qSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getHMatSustained(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -101,7 +101,7 @@ END_RCPP
 }
 // getHMatIsolated
 arma::mat getHMatIsolated(int T, int q);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatIsolated(SEXP TSEXP, SEXP qSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getHMatIsolated(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -113,7 +113,7 @@ END_RCPP
 }
 // getHMatGradual
 arma::mat getHMatGradual(int T, int q);
-RcppExport SEXP _BayesianLassoMonitoring_getHMatGradual(SEXP TSEXP, SEXP qSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_getHMatGradual(SEXP TSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -125,7 +125,7 @@ END_RCPP
 }
 // GibbsRFLSMcpp
 Rcpp::List GibbsRFLSMcpp(arma::colvec& Y, int& q, arma::mat& A, double& a, double& b, double& alpha, double& beta, double& theta1, double& theta2, double& xi2, Rcpp::String& method, double& bound0, double& boundqplus1, int& nsim, int& by, int& burnin, double& tol, Rcpp::Nullable<Rcpp::NumericMatrix> H);
-RcppExport SEXP _BayesianLassoMonitoring_GibbsRFLSMcpp(SEXP YSEXP, SEXP qSEXP, SEXP ASEXP, SEXP aSEXP, SEXP bSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP theta1SEXP, SEXP theta2SEXP, SEXP xi2SEXP, SEXP methodSEXP, SEXP bound0SEXP, SEXP boundqplus1SEXP, SEXP nsimSEXP, SEXP bySEXP, SEXP burninSEXP, SEXP tolSEXP, SEXP HSEXP) {
+RcppExport SEXP _BayesianLASSOMonitoring_GibbsRFLSMcpp(SEXP YSEXP, SEXP qSEXP, SEXP ASEXP, SEXP aSEXP, SEXP bSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP theta1SEXP, SEXP theta2SEXP, SEXP xi2SEXP, SEXP methodSEXP, SEXP bound0SEXP, SEXP boundqplus1SEXP, SEXP nsimSEXP, SEXP bySEXP, SEXP burninSEXP, SEXP tolSEXP, SEXP HSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -153,20 +153,20 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BayesianLassoMonitoring_getV", (DL_FUNC) &_BayesianLassoMonitoring_getV, 2},
-    {"_BayesianLassoMonitoring_rtwosegnorm", (DL_FUNC) &_BayesianLassoMonitoring_rtwosegnorm, 5},
-    {"_BayesianLassoMonitoring_getGMat", (DL_FUNC) &_BayesianLassoMonitoring_getGMat, 2},
-    {"_BayesianLassoMonitoring_getPhiMat", (DL_FUNC) &_BayesianLassoMonitoring_getPhiMat, 2},
-    {"_BayesianLassoMonitoring_getHMatCycle", (DL_FUNC) &_BayesianLassoMonitoring_getHMatCycle, 3},
-    {"_BayesianLassoMonitoring_getHMatMT", (DL_FUNC) &_BayesianLassoMonitoring_getHMatMT, 2},
-    {"_BayesianLassoMonitoring_getHMatSustained", (DL_FUNC) &_BayesianLassoMonitoring_getHMatSustained, 2},
-    {"_BayesianLassoMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLassoMonitoring_getHMatIsolated, 2},
-    {"_BayesianLassoMonitoring_getHMatGradual", (DL_FUNC) &_BayesianLassoMonitoring_getHMatGradual, 2},
-    {"_BayesianLassoMonitoring_GibbsRFLSMcpp", (DL_FUNC) &_BayesianLassoMonitoring_GibbsRFLSMcpp, 18},
+    {"_BayesianLASSOMonitoring_getV", (DL_FUNC) &_BayesianLASSOMonitoring_getV, 2},
+    {"_BayesianLASSOMonitoring_rtwosegnorm", (DL_FUNC) &_BayesianLASSOMonitoring_rtwosegnorm, 5},
+    {"_BayesianLASSOMonitoring_getGMat", (DL_FUNC) &_BayesianLASSOMonitoring_getGMat, 2},
+    {"_BayesianLASSOMonitoring_getPhiMat", (DL_FUNC) &_BayesianLASSOMonitoring_getPhiMat, 2},
+    {"_BayesianLASSOMonitoring_getHMatCycle", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatCycle, 3},
+    {"_BayesianLASSOMonitoring_getHMatMT", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatMT, 2},
+    {"_BayesianLASSOMonitoring_getHMatSustained", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatSustained, 2},
+    {"_BayesianLASSOMonitoring_getHMatIsolated", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatIsolated, 2},
+    {"_BayesianLASSOMonitoring_getHMatGradual", (DL_FUNC) &_BayesianLASSOMonitoring_getHMatGradual, 2},
+    {"_BayesianLASSOMonitoring_GibbsRFLSMcpp", (DL_FUNC) &_BayesianLASSOMonitoring_GibbsRFLSMcpp, 18},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_BayesianLassoMonitoring(DllInfo *dll) {
+RcppExport void R_init_BayesianLASSOMonitoring(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

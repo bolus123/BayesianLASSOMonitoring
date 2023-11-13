@@ -10,7 +10,7 @@
 #' Y <- arima.sim(list(ar = 0.5), 100)
 #' getV(Y, 10)
 getV <- function(Y, q) {
-    .Call(`_BayesianLassoMonitoring_getV`, Y, q)
+    .Call(`_BayesianLASSOMonitoring_getV`, Y, q)
 }
 
 #' get a sample from a normal distribution whose absolute observations are constrained.
@@ -24,15 +24,15 @@ getV <- function(Y, q) {
 #' @examples
 #' rtwosegnorm(10, 1, 2, 0, 1)
 rtwosegnorm <- function(n, a, b, mean, sd) {
-    .Call(`_BayesianLassoMonitoring_rtwosegnorm`, n, a, b, mean, sd)
+    .Call(`_BayesianLASSOMonitoring_rtwosegnorm`, n, a, b, mean, sd)
 }
 
 getGMat <- function(T, q) {
-    .Call(`_BayesianLassoMonitoring_getGMat`, T, q)
+    .Call(`_BayesianLASSOMonitoring_getGMat`, T, q)
 }
 
 getPhiMat <- function(Phi, T) {
-    .Call(`_BayesianLassoMonitoring_getPhiMat`, Phi, T)
+    .Call(`_BayesianLASSOMonitoring_getPhiMat`, Phi, T)
 }
 
 #' get a design matrix as that in MT
@@ -44,7 +44,7 @@ getPhiMat <- function(Phi, T) {
 #' @examples
 #' getHMatMT(100, 5)
 getHMatCycle <- function(T, q, wt) {
-    .Call(`_BayesianLassoMonitoring_getHMatCycle`, T, q, wt)
+    .Call(`_BayesianLASSOMonitoring_getHMatCycle`, T, q, wt)
 }
 
 #' get a design matrix as that in MT
@@ -55,7 +55,7 @@ getHMatCycle <- function(T, q, wt) {
 #' @examples
 #' getHMatMT(100, 5)
 getHMatMT <- function(T, q) {
-    .Call(`_BayesianLassoMonitoring_getHMatMT`, T, q)
+    .Call(`_BayesianLASSOMonitoring_getHMatMT`, T, q)
 }
 
 #' get a design matrix for sustained shift
@@ -66,7 +66,7 @@ getHMatMT <- function(T, q) {
 #' @examples
 #' getHMatSustained(100, 5)
 getHMatSustained <- function(T, q) {
-    .Call(`_BayesianLassoMonitoring_getHMatSustained`, T, q)
+    .Call(`_BayesianLASSOMonitoring_getHMatSustained`, T, q)
 }
 
 #' get a design matrix for isolated shift
@@ -77,7 +77,7 @@ getHMatSustained <- function(T, q) {
 #' @examples
 #' getHMatIsolated(100, 5, 1)
 getHMatIsolated <- function(T, q) {
-    .Call(`_BayesianLassoMonitoring_getHMatIsolated`, T, q)
+    .Call(`_BayesianLASSOMonitoring_getHMatIsolated`, T, q)
 }
 
 #' get a design matrix for gradual shift
@@ -88,10 +88,10 @@ getHMatIsolated <- function(T, q) {
 #' @examples
 #' getHMatGradual(100, 5, 1)
 getHMatGradual <- function(T, q) {
-    .Call(`_BayesianLassoMonitoring_getHMatGradual`, T, q)
+    .Call(`_BayesianLASSOMonitoring_getHMatGradual`, T, q)
 }
 
 GibbsRFLSMcpp <- function(Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H = NULL) {
-    .Call(`_BayesianLassoMonitoring_GibbsRFLSMcpp`, Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H)
+    .Call(`_BayesianLASSOMonitoring_GibbsRFLSMcpp`, Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H)
 }
 
