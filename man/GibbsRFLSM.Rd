@@ -35,7 +35,7 @@ GibbsRFLSM(
 
 \item{q}{is the number of lags.}
 
-\item{A}{is a given variance-covariance matrix in MT and regression for the coefficients for autoregressors.}
+\item{A}{is a given variance-covariance matrix in MT and regression for the slab-and-spike coefficients.}
 
 \item{a}{is a given shape of the prior gamma distribution for sigma2.}
 
@@ -43,27 +43,27 @@ GibbsRFLSM(
 
 \item{alpha}{is a given shape of the prior gamma distribution for lambda2.}
 
-\item{beta}{is a given scale of the prior gamma distribution for lambda22.}
+\item{beta}{is a given scale of the prior gamma distribution for lambda2.}
 
-\item{theta1}{is a given shape1 of the prior beta distribution for the probability of Tau.}
+\item{theta1}{is a given shape1 of the prior beta distribution for the probability of Tau and Kappa.}
 
-\item{theta2}{is a given shape2 of the prior beta distribution for the probability of Tau.}
+\item{theta2}{is a given shape2 of the prior beta distribution for the probability of Tau and Kappa.}
 
 \item{xi2}{is a given variance of the prior normal distribution for shifts.}
 
 \item{method}{is a choice of methods including MT(McCulloch-Tsay), regression, LASSO, ALASSO(Adaptive LASSO), MonoLASSO(LASSO with Monotonicity constrains), MonoALASSO(Adaptive LASSO with Monotonicity constrains).}
 
-\item{bound0}{is a lower bound of the methods with Monotonicity constrains.}
+\item{bound0}{is an upper bound of the methods with Monotonicity constrains.}
 
-\item{boundqplus1}{is  a upper bound of the methods with Monotonicity constrains.}
+\item{boundqplus1}{is  a lower bound of the methods with Monotonicity constrains.}
 
-\item{nsim}{is the number of samples draw from MCMC.}
+\item{nsim}{is the number of draws from MCMC.}
 
 \item{by}{is the interval of systematic sampling for the draws from MCMC.}
 
 \item{burnin}{is the length of burn-in period.}
 
-\item{tol}{is the tolerance.}
+\item{tol}{is the tolerance level.}
 }
 \description{
 gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
