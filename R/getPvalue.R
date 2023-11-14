@@ -15,7 +15,7 @@
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
-#' GibbsRFLSM.sim(Y, result$Phi[, 1], result$Mu[, 1], result$sigma2[, 1]) 
+#' GibbsRFLSM.sim(Y, result$Phi[, 1], result$Mu[, 1], result$sigma2[1]) 
 #' 
 GibbsRFLSM.sim <- function(Y, Phihat, Muhat, sigma2hat) {
   
