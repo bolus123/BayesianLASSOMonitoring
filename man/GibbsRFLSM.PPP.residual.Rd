@@ -52,7 +52,7 @@ for (j in 1:nsim) {
 
 Mu0hat <- rep(NA, T)
 for (i in 1:T) {
-  Mu0hat[j] <- median(Mu0[i, ])
+  Mu0hat[i] <- median(Mu0[i, ])
 }
 
 Phihat <- rep(NA, q)
