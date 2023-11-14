@@ -1,9 +1,9 @@
 #' simulates the time series using Draws from MCMC
 #' 
 #' @param Y is a vector
-#' @param Phi is the coefficient
-#' @param Mu is the mean
-#' @param sigma2 is the variance of errors
+#' @param Phihat is the coefficient
+#' @param Muhat is the mean
+#' @param sigma2hat is the variance of errors
 #' @export
 #' @examples
 #' nsim <- 100
@@ -15,7 +15,11 @@
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
-#' GibbsRFLSM.sim(Y, result$Phi[, 1], result$Mu[, 1], result$sigma2[1]) 
+#' Phihat <- result$Phi[, 1]
+#' Muhat <- result$Mu[, 1]
+#' sigma2hat <- result$sigma2[1]
+#'
+#' GibbsRFLSM.sim(Y, Phihat, Muhat, sigma2hat) 
 #' 
 GibbsRFLSM.sim <- function(Y, Phihat, Muhat, sigma2hat) {
   

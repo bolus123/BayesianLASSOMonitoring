@@ -4,9 +4,9 @@
 \name{BayesianLASSOMonitoring-package}
 \alias{BayesianLASSOMonitoring-package}
 \alias{_PACKAGE}
-\title{BayesianLASSOMonitoring: Random Flexible Level Shift Model based Phase I Control Chart with Bayesian LASSO Estimation}
+\title{BayesianLASSOMonitoring: Bayesian LASSO Random Flexible Level Shift Model Based Phase I Monitoring}
 \description{
-This package provides a Phase I Control Chart which is built using Random Flexible Level Shift Model. The model is trained using a Bayesian Technique.
+A Phase I Control Chart which is built using Random Flexible Level Shift Model is provided. The model is trained using the Bayesian LASSO Technique.
 
 Package description.
 }

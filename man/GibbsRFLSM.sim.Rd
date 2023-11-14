@@ -4,16 +4,16 @@
 \alias{GibbsRFLSM.sim}
 \title{simulates the time series using Draws from MCMC}
 \usage{
-GibbsRFLSM.sim(Y, Phi, Mu, sigma2)
+GibbsRFLSM.sim(Y, Phihat, Muhat, sigma2hat)
 }
 \arguments{
 \item{Y}{is a vector}
 
-\item{Phi}{is the coefficient}
+\item{Phihat}{is the coefficient}
 
-\item{Mu}{is the mean}
+\item{Muhat}{is the mean}
 
-\item{sigma2}{is the variance of errors}
+\item{sigma2hat}{is the variance of errors}
 }
 \description{
 simulates the time series using Draws from MCMC
@@ -28,6 +28,10 @@ Y <- arima.sim(list(ar = 0.5), n = T)
 
 result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 
-GibbsRFLSM.sim(Y, result$Phi, result$Mu, result$sigma2) 
+Phihat <- result$Phi[, 1]
+Muhat <- result$Mu[, 1]
+sigma2hat <- result$sigma2[1]
+
+GibbsRFLSM.sim(Y, Phihat, Muhat, sigma2hat) 
 
 }
