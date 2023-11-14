@@ -90,6 +90,7 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
     "Gamma" = Gamma,
     "pGamma" = pGamma,
     "Tau" = Tau,
+    "sigma2" = modoel$sigma2,
     "lambda2" = model$lambda2,
     "muq" = model$muq,
     "Mu" = model$Mu
