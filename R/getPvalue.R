@@ -15,20 +15,20 @@
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
-#' GibbsRFLSM.sim(Y, result$Phi, result$Mu, result$sigma2) 
+#' GibbsRFLSM.sim(Y, result$Phi[, 1], result$Mu[, 1], result$sigma2[, 1]) 
 #' 
-GibbsRFLSM.sim <- function(Y, Phi, Mu, sigma2) {
+GibbsRFLSM.sim <- function(Y, Phihat, Muhat, sigma2hat) {
   
   TT <- length(Y)
-  q <- length(Phi)
+  q <- length(Phihat)
   
   sim <- rep(NA, TT)
   
   sim[1:q] <- Y[1:q]
   
   for (ii in (q + 1):TT) {
-    sim[ii] <- Mu[ii] + (sim[(ii - 1):(ii - q)] - Mu[(ii - 1):(ii - q)]) %*% 
-      Phi + rnorm(1, 0, sqrt(sigma2))
+    sim[ii] <- Muhat[ii] + (sim[(ii - 1):(ii - q)] - Muhat[(ii - 1):(ii - q)]) %*% 
+      Phihat + rnorm(1, 0, sqrt(sigma2hat))
   }
   
   sim 
