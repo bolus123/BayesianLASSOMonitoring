@@ -152,7 +152,7 @@ GibbsRFLSM.PPP.residual <- function(Y, Phi, Mu0, sigma2,
                                       Phihat, Mu0hat, sigma2hat, 
                                       nsim)
   
-  tmp <- Y - muqhat
+  tmp <- Y - Mu0hat
   tmpV <- getV(tmp, q)
   tmp <- tmp[-c(1:q)]
   tmpV <- tmpV[-c(1:q), ]

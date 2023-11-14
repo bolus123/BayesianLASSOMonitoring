@@ -1,7 +1,7 @@
 Package: BayesianLASSOMonitoring
 Type: Package
-Title: Random Flexible Level Shift Model based Phase I Control Chart with Bayesian LASSO Estimators
-Version: 0.9.6
+Title: Random Flexible Level Shift Model based Phase I Control Chart with Bayesian LASSO Estimation
+Version: 0.9.7
 Date: 2023-11-13
 Author: (
 				person("Yuhui", "Yao", role = c("aut", "cre"), email = "yyao17@ua.edu")
