@@ -168,5 +168,60 @@ GibbsRFLSM.PPP.residual <- function(Y, Phi, Mu0, sigma2,
   for (i in 1:(n - q)) {
     tmpInd[i] <- mean(ccrep > tmpresi[i])
   }
-  list("Omni" = tmpOmni, "Ind" = tmpInd) 
+  list("Omni" = tmpOmni, "Ind" = tmpInd, "cs" = max(tmpresi), 'ref' = ccrep) 
+}
+
+#' obtains the Phase I charting constant using posterior predictive p value
+#' 
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param Mu0 is the mean
+#' @param sigma2 is the variance of errors
+#' @param Phihat is the coefficient
+#' @param Mu0hat is the mean
+#' @param sigma2hat is the variance of errors
+#' @param FAP0 is the false alarm probability
+#' @param nsim is the number of simulations
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#' 
+#' Mu0 <- matrix(NA, nrow = T, ncol = nsim)
+#' for (j in 1:nsim) {
+#'   Mu0[, j] <- result$muq[j]
+#' }
+#' 
+#' Mu0hat <- rep(NA, T)
+#' for (i in 1:T) {
+#'   Mu0hat[i] <- median(Mu0[i, ])
+#' }
+#' 
+#' Phihat <- rep(NA, q)
+#' for (i in 1:q) {
+#'   Phihat[i] <- median(result$Phi[i, ])
+#' }
+#' 
+#' sigma2hat <- median(result$sigma2)
+#'
+#' GibbsRFLSM.CC.PPP.residual(Y, result$Phi, Mu0, result$sigma2, 
+#' Phihat, Mu0hat, sigma2hat)
+#' 
+#' 
+GibbsRFLSM.CC.PPP.residual <- function(Y, Phi, Mu0, sigma2, 
+  Phihat, Mu0hat, sigma2hat, FAP0 = 0.2, nsim = 1000) {
+  
+  res <- GibbsRFLSM.PPP.residual(Y, Phi, Mu0, sigma2, 
+                                      Phihat, Mu0hat, sigma2hat, nsim) 
+  
+  cc <- quantile(res$ref, 1 - FAP0)
+  out <- list("cc" = cc, "Bound" = cc * sigma2hat + Mu0hat)
+  return(out)
+  
 }
