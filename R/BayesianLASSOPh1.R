@@ -118,7 +118,7 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
     upperbound <- exp(upperbound) - 0.5
   }
   
-  sig <- rep(NA, TT)
+  sig <- rep(NA, TT - q)
   
   YY <- Y[-c(1:q)]
   
