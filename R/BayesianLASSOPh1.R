@@ -125,6 +125,7 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
   }
   
   out <- list("lowerbound" = lowerbound, "upperbound" = upperbound, "sig" = sig, 
-              "Omni" = chart$Omni, "Ind" = chart$Ind, "model" = model, "Obs" = Y1)
+              "Omni" = chart$Omni, "Ind" = chart$Ind, "model" = model, "Obs" = Y1, 
+              "lowerboundtr" = chart$lowerbound, "upperboundtr" = chart$upperbound)
   
 } 
