@@ -21,6 +21,7 @@
 #' @param burnin is the length of burn-in period.
 #' @param tol is the tolerance level.
 #' @param standardized is the flag triggering the standardization for the time series
+#' @param logcc is the log transformation with continuity correction
 #' @param FAP0 is the given false alarm probability
 #' @param estimation.PPP is the estimation for Mu0, Phi and sigma2
 #' @param nsim.PPP is the number of draws for PPP
@@ -43,7 +44,7 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
                              theta1 = 1, theta2 = 1, xi2 = 0.1,
                              method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
                              nsim = 1000, by = 1, burnin = 1000, tol = 1e-10, 
-                             standardized = TRUE, logcc = TRUE,
+                             standardized = TRUE, logcc = FALSE,
                              FAP0 = 0.2, estimation.PPP = "median", nsim.PPP = 1000) {
   
   TT <- length(Y)
@@ -105,8 +106,8 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
                                          Phihat, Mu0hat, sigma2hat, FAP0, nsim.PPP)
   
   if (standardized == TRUE) {
-    lowerbound <- chart$lowerbound * sdY + meanY
-    upperbound <- chart$upperbound * sdY + meanY
+    lowerbound <- chart$lowerbound * sdY1 + meanY1
+    upperbound <- chart$upperbound * sdY1 + meanY1
   } else {
     lowerbound <- chart$lowerbound
     upperbound <- chart$upperbound
