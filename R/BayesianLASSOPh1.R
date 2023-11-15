@@ -43,18 +43,22 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
                              theta1 = 1, theta2 = 1, xi2 = 0.1,
                              method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
                              nsim = 1000, by = 1, burnin = 1000, tol = 1e-10, 
-                             standardized = TRUE, 
+                             standardized = TRUE, logcc = TRUE,
                              FAP0 = 0.2, estimation.PPP = "median", nsim.PPP = 1000) {
   
   TT <- length(Y)
   
-  if (standardized == TRUE) {
-    meanY <- mean(Y)
-    sdY <- sd(Y)
-    Y1 <- (Y - meanY) / sdY
+  if (logcc == TRUE) {
+    Y1 <- log(Y + 0.5)
   } else {
     Y1 <- Y
   }
+  
+  if (standardized == TRUE) {
+    meanY1 <- mean(Y1)
+    sdY1 <- sd(Y1)
+    Y1 <- (Y1 - meanY1) / sdY1
+  } 
   
   model <- GibbsRFLSM(Y1, H, X, q,      
                       A, 
@@ -106,6 +110,11 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
   } else {
     lowerbound <- chart$lowerbound
     upperbound <- chart$upperbound
+  }
+  
+  if (logcc == TRUE) {
+    lowerbound <- exp(lowerbound) - 0.5
+    upperbound <- exp(upperbound) - 0.5
   }
   
   sig <- rep(NA, TT)
