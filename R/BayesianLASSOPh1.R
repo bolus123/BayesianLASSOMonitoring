@@ -42,7 +42,7 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
                              method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
                              nsim = 1000, by = 1, burnin = 1000, tol = 1e-10, 
                              standardized = TRUE, 
-                             FAP0 = 0.2, estimation.PPP = "median", nsim.PPP = 3000) {
+                             FAP0 = 0.2, estimation.PPP = "median", nsim.PPP = 1000) {
   
   TT <- length(Y)
   
