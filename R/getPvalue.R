@@ -221,7 +221,8 @@ GibbsRFLSM.CC.PPP.residual <- function(Y, Phi, Mu0, sigma2,
                                       Phihat, Mu0hat, sigma2hat, nsim) 
   
   cc <- quantile(res$ref, 1 - FAP0)
-  out <- list("lowerbound" = -cc * sigma2hat + Mu0hat, "upperbound" = cc * sigma2hat + Mu0hat,
+  out <- list("lowerbound" = -cc * sqrt(sigma2hat) + Mu0hat, 
+              "upperbound" = cc * sqrt(sigma2hat) + Mu0hat,
               "cc" = cc,  "Omni" = res$Omni, "Ind" = res$Ind, 
               "cs" = res$cs, 'ref' = res$ref)
   return(out)
