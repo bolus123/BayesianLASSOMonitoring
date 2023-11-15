@@ -22,7 +22,6 @@
 #' @param tol is the tolerance level.
 #' @param standardized is the flag triggering the standardization for the time series
 #' @param nsim.PPP is the number of draws for PPP
-#' @references McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
 #' 
 #' 
 #' @export
@@ -34,5 +33,82 @@
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#' result <- BayesianLASSOPh1(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
+BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5, 
+                             A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
+                             a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
+                             theta1 = 1, theta2 = 1, xi2 = 0.1,
+                             method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
+                             nsim = 1000, by = 1, burnin = 1000, tol = 1e-10, 
+                             standardized = TRUE, 
+                             FAP0 = 0.2, estimation.PPP = "median", nsim.PPP = 3000) {
+  
+  TT <- length(Y)
+  
+  if (standardized == TRUE) {
+    meanY <- mean(Y)
+    sdY <- sd(Y)
+    Y1 <- (Y - meanY) / sdY
+  } else {
+    Y1 <- Y
+  }
+  
+  model <- GibbsRFLSM(Y1, H, X, q,      
+                      A, 
+                      a, b, alpha, beta, 
+                      theta1, theta2, xi2,
+                      method, bound0, boundqplus1,
+                      nsim, by, burnin, tol)
+  
+  Mu0 <- matrix(NA, nrow = TT, ncol = nsim)
+  for (j in 1:nsim) {
+    Mu0[, j] <- model$muq[j]
+  }
+  
+  if (estimation.PPP == "median") {
+    Mu0hat <- rep(NA, TT)
+    for (i in 1:TT) {
+      Mu0hat[i] <- median(Mu0[i, ])
+    }
+    
+    Phihat <- rep(NA, q)
+    for (i in 1:q) {
+      Phihat[i] <- median(model$Phi[i, ])
+    }
+    
+    sigma2hat <- median(model$sigma2)
+  } else if (estimation.PPP == "mean") {
+    Mu0hat <- rep(NA, TT)
+    for (i in 1:TT) {
+      Mu0hat[i] <- mean(Mu0[i, ])
+    }
+    
+    Phihat <- rep(NA, q)
+    for (i in 1:q) {
+      Phihat[i] <- mean(model$Phi[i, ])
+    }
+    
+    sigma2hat <- mean(model$sigma2)
+  }
+  
+  chart <- GibbsRFLSM.CC.PPP.residual(Y1, model$Phi, Mu0, model$sigma2, 
+                                         Phihat, Mu0hat, sigma2hat, FAP0, nsim.PPP)
+  
+  if (standardized == TRUE) {
+    lowerbound <- chart$lowerbound * sdY + meanY
+    upperbound <- chart$upperbound * sdY + meanY
+  } else {
+    lowerbound <- chart$lowerbound
+    upperbound <- chart$upperbound
+  }
+  
+  sig <- rep(NA, TT)
+  
+  for (i in seq(TT)) {
+    sig[i] <- ifelse((Y[i] < lowerbound[i]) || (upperbound[i] > Y[i]), 1, 0)
+  }
+  
+  out <- list("cc" = chart$cc, "lowerbound" = lowerbound, "upperbound" = upperbound, "sig" = sig)
+  
+} 
