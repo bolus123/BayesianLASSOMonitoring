@@ -66,6 +66,9 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
   Mu0 <- matrix(NA, nrow = TT, ncol = nsim)
   for (j in 1:nsim) {
     Mu0[, j] <- model$muq[j]
+    if (!is.null(X)) {
+      Mu0[, j] <- X %*% (model$Beta[, j] * model$Kappa[, j])
+    }
   }
   
   if (estimation.PPP == "median") {
