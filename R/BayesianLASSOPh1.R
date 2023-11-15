@@ -21,6 +21,8 @@
 #' @param burnin is the length of burn-in period.
 #' @param tol is the tolerance level.
 #' @param standardized is the flag triggering the standardization for the time series
+#' @param FAP0 is the given false alarm probability
+#' @param estimation.PPP is the estimation for Mu0, Phi and sigma2
 #' @param nsim.PPP is the number of draws for PPP
 #' 
 #' 

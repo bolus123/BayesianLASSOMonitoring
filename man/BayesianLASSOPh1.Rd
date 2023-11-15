@@ -27,7 +27,7 @@ BayesianLASSOPh1(
   standardized = TRUE,
   FAP0 = 0.2,
   estimation.PPP = "median",
-  nsim.PPP = 3000
+  nsim.PPP = 1000
 )
 }
 \arguments{
@@ -70,6 +70,10 @@ BayesianLASSOPh1(
 \item{tol}{is the tolerance level.}
 
 \item{standardized}{is the flag triggering the standardization for the time series}
+
+\item{FAP0}{is the given false alarm probability}
+
+\item{estimation.PPP}{is the estimation for Mu0, Phi and sigma2}
 
 \item{nsim.PPP}{is the number of draws for PPP}
 }

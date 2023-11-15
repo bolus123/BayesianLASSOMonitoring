@@ -12,6 +12,9 @@
 #' @importFrom stats dnorm
 #' @importFrom stats rnorm
 #' @importFrom stats arima
+#' @importFrom stats median
+#' @importFrom stats quantile
+#' @importFrom stats sd
 #' @importFrom Rcpp evalCpp
 #' @useDynLib BayesianLASSOMonitoring, .registration = TRUE
 NULL
