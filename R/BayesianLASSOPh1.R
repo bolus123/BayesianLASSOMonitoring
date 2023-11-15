@@ -122,14 +122,14 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
   
   YY <- Y[-c(1:q)]
   
-  for (i in seq(TT)) {
-    sig[i] <- ifelse((YY[i] < lowerbound[i]) || (upperbound[i] < YY[i]), 1, 0)
+  for (i in seq(TT - q)) {
+    sig[i] <- ifelse((YY[i + q] < lowerbound[i]) || (upperbound[i] < YY[i + q]), 1, 0)
   }
   
-  out <- list("lowerbound" = lowerbound[-c(1:q)], "upperbound" = upperbound[-c(1:q)], 
-              "sig" = sig[-c(1:q)], 
-              "Omni" = chart$Omni, "Ind" = chart$Ind, "Obs" = Y1[-c(1:q)], 
-              "lowerboundtr" = chart$lowerbound[-c(1:q)], "upperboundtr" = chart$upperbound[-c(1:q)], 
+  out <- list("lowerbound" = lowerbound, "upperbound" = upperbound, 
+              "sig" = sig, 
+              "Omni" = chart$Omni, "Ind" = chart$Ind, "Obs" = Y1, 
+              "lowerboundtr" = chart$lowerbound, "upperboundtr" = chart$upperbound, 
               "model" = model)
   out
 } 
