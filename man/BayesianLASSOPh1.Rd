@@ -25,6 +25,7 @@ BayesianLASSOPh1(
   burnin = 1000,
   tol = 1e-10,
   standardized = TRUE,
+  logcc = FALSE,
   FAP0 = 0.2,
   estimation.PPP = "median",
   nsim.PPP = 1000
@@ -70,6 +71,8 @@ BayesianLASSOPh1(
 \item{tol}{is the tolerance level.}
 
 \item{standardized}{is the flag triggering the standardization for the time series}
+
+\item{logcc}{is the log transformation with continuity correction}
 
 \item{FAP0}{is the given false alarm probability}
 
