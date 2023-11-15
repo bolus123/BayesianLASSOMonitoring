@@ -123,7 +123,7 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
   YY <- Y[-c(1:q)]
   
   for (i in seq(TT - q)) {
-    sig[i] <- ifelse((YY[i + q] < lowerbound[i]) || (upperbound[i] < YY[i + q]), 1, 0)
+    sig[i] <- ifelse((YY[i] < lowerbound[i]) || (upperbound[i] < YY[i]), 1, 0)
   }
   
   out <- list("lowerbound" = lowerbound, "upperbound" = upperbound, 
