@@ -114,6 +114,8 @@ BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5,
     sig[i] <- ifelse((Y[i] < lowerbound[i]) || (upperbound[i] < Y[i]), 1, 0)
   }
   
-  out <- list("cc" = chart$cc, "lowerbound" = lowerbound, "upperbound" = upperbound, "sig" = sig)
+  out <- list("lowerbound" = lowerbound, "upperbound" = upperbound, "sig" = sig, 
+              "cc" = chart$cc, "Omni" = chart$Omni, "Ind" = chart$Ind, 
+              "cs" = chart$cs, 'ref' = chart$ref)
   
 } 
