@@ -41,6 +41,8 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
                        method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
                        nsim = 1000, by = 1, burnin = 1000, tol = 1e-10) {
   
+  TT <- length(Y)
+  
   if (is.null(H) && is.null(X)) {
     model <- GibbsRFLSMcpp(Y, q, 
                        A, a, b, alpha, beta, 
@@ -56,30 +58,47 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
                         method, bound0, boundqplus1,
                         nsim, by, burnin,
                         tol, H1)
-    if (is.null(H)) {
-      m <- 0
-      Gamma <- NA
-      Tau <- NA
-      pGamma <- NA
-    } else {
-      m <- dim(H)[2]
-      Gamma <- model$Gamma[1:m, ]
-      Tau <- model$Tau[1:m, ]
-      pGamma <- model$p[1:m, ]
-    }
     
-    if (is.null(X)) {
-      p <- 0
-      Beta <- NA
-      Kappa <- NA
-      pBeta <- NA
-    } else {
-      p <- dim(X)[2]
-      Beta <- model$Gamma[(m + 1):(m + p), ]
-      Kappa <- model$Tau[(m + 1):(m + p), ]
-      pBeta <- model$p[(m + 1):(m + p), ]
+  }
+  
+  if (is.null(H)) {
+    m <- 0
+    Gamma <- NA
+    Tau <- NA
+    pGamma <- NA
+  } else {
+    m <- dim(H)[2]
+    Gamma <- model$Gamma[1:m, ]
+    Tau <- model$Tau[1:m, ]
+    pGamma <- model$p[1:m, ]
+  }
+  
+  if (is.null(X)) {
+    p <- 0
+    Beta <- NA
+    Kappa <- NA
+    pBeta <- NA
+  } else {
+    p <- dim(X)[2]
+    Beta <- model$Gamma[(m + 1):(m + p), ]
+    Kappa <- model$Tau[(m + 1):(m + p), ]
+    pBeta <- model$p[(m + 1):(m + p), ]
+  }
+  
+  
+  fit <- matrix(NA, nrow = TT, ncol = nsim)
+  resi <- matrix(NA, nrow = TT, ncol = nsim)
+  stdresi <- matrix(NA, nrow = TT, ncol = nsim)
+  V <- rep(NA, )
+  for (i in 1:nsim) {
+    for (j in 1:TT) {
+      if (j > q) {
+        fit[j, i] <- model$Mu[j, i] + 
+      } else {
+        fit[j, i] <- model$Mu[j, i]
+        resi[j, i] <- Y[j] - 
+      }
     }
-    
   }
   
   out <- list(
@@ -94,6 +113,100 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
     "lambda2" = model$lambda2,
     "muq" = model$muq,
     "Mu" = model$Mu
+  )
+  
+  return(out)
+  
+}
+
+movaver <- function(x, n = 5){filter(x, rep(1 / n, n), sides = 1)}
+
+
+#' Random Flexible Level Shift Model
+#' 
+#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+#' @param Y is a vector.
+#' @param H is the design matrix for shifts.
+#' @param X is the input matrix
+#' @param q is the number of lags.
+#' @param A is a given variance-covariance matrix in MT and regression for the slab-and-spike coefficients.
+#' @param a is a given shape of the prior gamma distribution for sigma2.
+#' @param b is a given scale of the prior gamma distribution for sigma2.
+#' @param alpha is a given shape of the prior gamma distribution for lambda2.
+#' @param beta is a given scale of the prior gamma distribution for lambda2.
+#' @param theta1 is a given shape1 of the prior beta distribution for the probability of Tau and Kappa.
+#' @param theta2 is a given shape2 of the prior beta distribution for the probability of Tau and Kappa.
+#' @param xi2 is a given variance of the prior normal distribution for shifts.
+#' @param method is a choice of methods including MT(McCulloch-Tsay), regression, LASSO, ALASSO(Adaptive LASSO), MonoLASSO(LASSO with Monotonicity constrains), MonoALASSO(Adaptive LASSO with Monotonicity constrains).
+#' @param bound0 is an upper bound of the methods with Monotonicity constrains.
+#' @param boundqplus1 is  a lower bound of the methods with Monotonicity constrains.
+#' @param nsim is the number of draws from MCMC.
+#' @param by is the interval of systematic sampling for the draws from MCMC.
+#' @param burnin is the length of burn-in period.
+#' @param tol is the tolerance level.
+#' @param logcc is the log transformation
+#' @param standardized is the standardization
+#' @references McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
+#' 
+#' 
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM.count(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#' 
+GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w), q = 5, 
+                       A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
+                       a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
+                       theta1 = 1, theta2 = 1, xi2 = 0.1,
+                       method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
+                       nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
+                       logcc = TRUE, standardized = TRUE) {
+  
+  Y1 <- c(Y0, Y)
+  
+  ####################################
+  
+    Y1 <- movaver(Y1, w)[-c(1:w)]
+  
+  ####################################
+  
+  if (logcc == TRUE) {
+    Y1 <- log(Y1 + 0.5)
+  }
+  
+  if (standardized == TRUE) {
+    meanY <- mean(Y1)
+    sdY <- sd(Y1)
+    Y1 <- (Y1 - meanY) / sdY
+  }
+  
+  model <- GibbsRFLSM(Y1, H, X, q, 
+                    A, 
+                    a, b, alpha, beta, 
+                    theta1, theta2, xi2,
+                    method, bound0, boundqplus1,
+                    nsim, by, burnin, tol)
+    
+  
+  out <- list(
+    "Phi" = model$Phi,
+    "Beta" = model$Beta,
+    "pBeta" = model$pBeta,
+    "Kappa" = model$Kappa,
+    "Gamma" = model$Gamma,
+    "pGamma" = model$pGamma,
+    "Tau" = model$Tau,
+    "sigma2" = model$sigma2,
+    "lambda2" = model$lambda2,
+    "muq" = model$muq,
+    "Mu" = model$Mu,
+    "Y" = Y1
   )
   
   return(out)

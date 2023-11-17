@@ -4,6 +4,7 @@
 #' @param Y is a vector.
 #' @param H is the design matrix for shifts.
 #' @param X is the input matrix
+#' @param Y0 is the initial Y
 #' @param q is the number of lags.
 #' @param A is a given variance-covariance matrix in MT and regression for the slab-and-spike coefficients.
 #' @param a is a given shape of the prior gamma distribution for sigma2.
@@ -36,9 +37,9 @@
 #' H <- getHMatMT(T, q)
 #' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- BayesianLASSOPh1(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#' result <- Ph1BayesianLASSO(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-BayesianLASSOPh1 <- function(Y, H = NULL, X = NULL, q = 5, 
+Ph1BayesianLASSO <- function(Y, H = NULL, X = NULL, Y0 = NULL, w = 14, q = 5, 
                              A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
                              a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                              theta1 = 1, theta2 = 1, xi2 = 0.1,
