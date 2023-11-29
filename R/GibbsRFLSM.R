@@ -89,16 +89,19 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
   fit <- matrix(NA, nrow = TT, ncol = nsim)
   resi <- matrix(NA, nrow = TT, ncol = nsim)
   stdresi <- matrix(NA, nrow = TT, ncol = nsim)
-  V <- rep(NA, )
+  
   for (i in 1:nsim) {
-    for (j in 1:TT) {
-      if (j > q) {
-        fit[j, i] <- model$Mu[j, i] + 
-      } else {
-        fit[j, i] <- model$Mu[j, i]
-        resi[j, i] <- Y[j] - 
-      }
-    }
+    
+    fit[, i] <- model$Mu[, i]
+    
+    tmpresi <- Y - model$Mu[, i]
+    tmpV <- getV(tmpresi, q)
+    V <- tmpV[-c(1:q), ]
+    
+    fit[(q + 1):TT, i] <- fit[(q + 1):TT, i] + V %*% model$Phi[, i]
+    
+    resi[, i] <- Y - fit[, i]
+
   }
   
   out <- list(
@@ -112,7 +115,9 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
     "sigma2" = model$sigma2,
     "lambda2" = model$lambda2,
     "muq" = model$muq,
-    "Mu" = model$Mu
+    "Mu" = model$Mu,
+    "fit" = fit,
+    "resi" = resi
   )
   
   return(out)
@@ -194,6 +199,16 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w)
                     nsim, by, burnin, tol)
     
   
+  fit0 <- model$fit
+  
+  if (standardized == TRUE) {
+    fit0 <- fit0 * sdY + meanY
+  }
+  
+  if (logcc == TRUE) {
+    fit0 <- exp(fit0) - 0.5
+  }
+  
   out <- list(
     "Phi" = model$Phi,
     "Beta" = model$Beta,
@@ -206,7 +221,11 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w)
     "lambda2" = model$lambda2,
     "muq" = model$muq,
     "Mu" = model$Mu,
-    "Y" = Y1
+    "fit.tr" = model$fit,
+    "resi.tr" = model$resi,
+    "Y.tr" = Y1,
+    "fit" = fit0,
+    "resi" = matrix(Y, ncol = nsim, nrow = length(Y)) - fit0
   )
   
   return(out)

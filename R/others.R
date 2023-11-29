@@ -70,6 +70,8 @@ Residual <- function(Y, Phi, Mu) {
   ee
 }
 
+
+
 #' obtain the fits
 #' 
 #' @param Y is a vector

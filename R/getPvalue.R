@@ -1,9 +1,8 @@
-#' simulates the time series using Draws from MCMC
+#' obtain the fits under H0
 #' 
 #' @param Y is a vector
-#' @param Phihat is the coefficient
-#' @param Muhat is the mean
-#' @param sigma2hat is the variance of errors
+#' @param Phi is the coefficient
+#' @param muq is the mean
 #' @export
 #' @examples
 #' nsim <- 100
@@ -15,28 +14,82 @@
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #'
-#' Phihat <- result$Phi[, 1]
-#' Muhat <- result$Mu[, 1]
-#' sigma2hat <- result$sigma2[1]
-#'
-#' GibbsRFLSM.sim(Y, Phihat, Muhat, sigma2hat) 
+#' Fit0(Y, result$Phi, result$muq)
 #' 
-GibbsRFLSM.sim <- function(Y, Phihat, Muhat, sigma2hat, logcc = FALSE, 
-                           standardization = FALSE, meanY = NULL, sdY = NULL) {
+Fit0 <- function(Y, Phi, muq) {
   
   TT <- length(Y)
-  q <- length(Phihat)
+  q <- dim(Phi)[1]
+  nsim <- dim(Phi)[2]
+  ff <- matrix(NA, nrow = TT - q, ncol = nsim)
   
-  sim <- rep(NA, TT)
-  
-  sim[1:q] <- Y[1:q]
-  
-  sim1 <- sim
-  
-  for (ii in (q + 1):TT) {
-    sim[ii] <- Muhat[ii] + (sim[(ii - 1):(ii - q)] - Muhat[(ii - 1):(ii - q)]) %*% 
-      Phihat + rnorm(1, 0, sqrt(sigma2hat))
+  for (ii in seq(nsim)) {
+    V <- matrix(Y, ncol = 1) - muq[, ii]
+    Vas <- getV(V, q)
+    V <- V[-c(1:q)]
+    Vas <- Vas[-c(1:q), ]
+    ff[, ii] <- Vas %*% Phi[, ii] + muq[, ii]
   }
+  rbind(matrix(muq, nrow = q, ncol = nsim, byrow = TRUE), ff)
+}
+
+#' simulates the time series using Draws from MCMC in Phase I under H0
+#' 
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param muq is the mean
+#' @param sigma2 is the variance of errors
+#' @param logcc is the log
+#' @param standardization is the standardization
+#' @param nsim is the nsim
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#'
+#'
+#' GibbsRFLSM.sim0.ph1(Y, result$Phi, result$muq, result$sigma2) 
+#' 
+GibbsRFLSM.sim0.ph1 <- function(Y, Phi, muq, sigma2, logcc = FALSE, 
+                           standardization = FALSE, nsim = 1000) {
+  
+  TT <- length(Y)
+  q <- dim(Phi)[1]
+  nsim.par <- length(muq)
+  
+  sim <- matrix(NA, nrow = TT, ncol = nsim)
+  
+  Y.tr <- Y
+  
+  if (logcc == TRUE) {
+    Y.tr <- log(Y.tr + 0.5) 
+  }
+  
+  if (standardization == TRUE) {
+    meanY <- mean(Y.tr)
+    sdY <- sd(Y.tr)
+    Y.tr <- (Y.tr - meanY) / sdY
+  }
+  
+  for (i in 1:nsim) {
+    sel <- sample(1:nsim.par, 1)
+    tmpPhi <- Phi[, sel]
+    tmpmuq <- muq[sel]
+    tmpsigma2 <- sigma2[sel]
+    
+    fit0 <- Fit0(Y.tr, matrix(tmpPhi, ncol = 1), matrix(tmpmuq, ncol = 1))
+    tmp <- fit0 + rnorm(TT, 0, sqrt(tmpsigma2))
+  
+    sim[, i] <- tmp
+  }
+  
+  sim0 <- sim
   
   if (standardization == TRUE) {
     sim <- sim * sdY + meanY
@@ -46,7 +99,87 @@ GibbsRFLSM.sim <- function(Y, Phihat, Muhat, sigma2hat, logcc = FALSE,
     sim <- exp(sim) - 0.5
   }
   
-  list("Yr" = sim, "Y" = sim)
+  list("Y.tr" = sim0, "Y" = sim)
+  
+}
+
+#' simulates the time series using Draws from MCMC in Phase II under H0
+#' 
+#' @param n is the number of time series
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param muq is the mean
+#' @param sigma2 is the variance of errors
+#' @param logcc is the log
+#' @param standardization is the standardization
+#' @param nsim is the nsim
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#'
+#' GibbsRFLSM.sim0.ph2(Y, result$Phi, result$muq, result$sigma2) 
+#' 
+GibbsRFLSM.sim0.ph2 <- function(n, Phi, muq, sigma2, Y0, logcc = FALSE, 
+                                standardization = FALSE, nsim = 1000) {
+  
+  TT <- length(Y0)
+  q <- dim(Phi)[1]
+  nsim.par <- length(muq)
+  
+  meanY <- mean(Y0)
+  sdY <- sd(Y0)
+  
+  sim.tr.ph1 <- matrix(NA, nrow = TT, ncol = nsim)
+  sim.ph1 <- matrix(NA, nrow = TT, ncol = nsim)
+  
+  sim <- matrix(NA, nrow = n, ncol = nsim)
+
+  tmp <- rep(NA, n + q)
+  
+  for (i in 1:nsim) {
+    
+    sel <- sample(1:nsim.par, 1)
+    tmpPhi <- Phi[, sel]
+    tmpmuq <- muq[sel]
+    tmpsigma2 <- sigma2[sel]
+    
+    Y0.sim <- GibbsRFLSM.sim0.ph1(Y0, 
+                                  matrix(tmpPhi, ncol = 1), 
+                                  matrix(tmpmuq, ncol = 1), 
+                                  matrix(tmpsigma2, ncol = 1), 
+                                  logcc, standardization, 1)
+    
+    sim.tr.ph1[, i] <- Y0.sim$Y.tr
+    sim.ph1[, i] <- Y0.sim$Y
+    
+    tmp[1:q] <- Y0.sim$Y.tr[(TT - q + 1):TT, 1]
+    
+    for (j in (q + 1):(n + q)) {
+      tmp[j] <- tmpmuq + (tmp[(j - 1):(j - q)] - tmpmuq) %*% 
+        tmpPhi + rnorm(1, 0, sqrt(tmpsigma2))
+    }
+    sim[, i] <- tmp[(q + 1):(n + q)]
+  }
+  
+  
+  sim0 <- sim
+  
+  if (standardization == TRUE) {
+    sim <- sim * sdY + meanY
+  }
+  
+  if (logcc == TRUE) {
+    sim <- exp(sim) - 0.5
+  }
+  
+  list("Y1.tr" = sim.tr.ph1, "Y1" = sim.ph1, "Y2.tr" = sim0, "Y2" = sim)
   
 }
 
@@ -86,32 +219,78 @@ GibbsRFLSM.sim <- function(Y, Phihat, Muhat, sigma2hat, logcc = FALSE,
 #' GibbsRFLSM.simmax.residual(Y, result$Phi, result$Mu, result$sigma2, 
 #' Phihat, Muhat, sigma2hat)
 #' 
-GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2, 
-                                       Phihat, Muhat, sigma2hat, 
+GibbsRFLSM.max.residual <- function(Y.tr, Phihat, muqhat, sigma2hat) {
+  
+  q <- length(Phihat)
+  
+  fit0hat <- Fit0(Y.tr, matrix(Phihat, ncol = 1), matrix(muqhat, ncol = 1))
+    
+  tmp <- (Y.tr[-c(1:q)] - fit0hat[-c(1:q), ]) ^ 2 / sigma2hat
+    
+  maxZ2 <- max(tmp)
+  
+  list("maxZ2" = maxZ2, "Z2" = tmp)
+  
+}
+
+#' simulates the maximums of residuals
+#' 
+#' @param Y is a vector
+#' @param Phi is the coefficient
+#' @param Mu is the mean
+#' @param sigma2 is the variance of errors
+#' @param Phihat is the coefficient
+#' @param Muhat is the mean
+#' @param sigma2hat is the variance of errors
+#' @param nsim is the number of simulations
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#'
+#' Phihat <- rep(NA, q)
+#' for (i in 1:q) {
+#'   Phihat[i] <- median(result$Phi[i, ])
+#' }
+#' 
+#' Muhat <- rep(NA, T)
+#' for (i in 1:T) {
+#'   Muhat[i] <- median(result$Mu[i, ])
+#' }
+#' 
+#' sigma2hat <- median(result$sigma2)
+#' 
+#' GibbsRFLSM.simmax.residual(Y, result$Phi, result$Mu, result$sigma2, 
+#' Phihat, Muhat, sigma2hat)
+#' 
+GibbsRFLSM.max.residual.sim <- function(Y, Phi, muq, sigma2, 
+                                       Phihat, muqhat, sigma2hat, 
+                                       logcc = FALSE,
+                                       standardization = FALSE,
                                        nsim = 1000) {
   
+  TT <- length(Y)
   q <- dim(Phi)[1]
-  n <- length(Y) - q
-  out <- rep(NA, nsim)
-  m <- dim(Phi)[2]
+  
+  Y1 <- GibbsRFLSM.sim0.ph1(Y, Phi, muq, sigma2, logcc, 
+                                  standardization, nsim)
+  
+  maxZ2 <- rep(NA, nsim)
   
   for (i in seq(nsim)) {
     
-    k <- sample(1:m, 1)
-    tmpPhi <- Phi[, k]
-    tmpMu <- Mu[, k]
-    tmpsigma2 <- sigma2[k]
-    
-    tmp <- GibbsRFLSM.sim(Y, tmpPhi, tmpMu, tmpsigma2)$Y
-    tmpV <- tmp - Muhat
-    tmpVas <- getV(tmpV, q)
-    tmpV <- tmpV[-c(1:q)]
-    tmpVas <- tmpVas[-c(1:q), ]
-    tmp <- (tmpV - tmpVas %*% Phihat) ^ 2 / sigma2hat
-    out[i] <- max(tmp)
+    tmp <- GibbsRFLSM.max.residual(Y1$Y.tr[, i], Phihat, muqhat, sigma2hat)
+  
+    maxZ2[i] <- tmp$maxZ2
   }
   
-  out
+  maxZ2
   
 }
 
@@ -152,55 +331,107 @@ GibbsRFLSM.simmax.residual <- function(Y, Phi, Mu, sigma2,
 #' GibbsRFLSM.simmax.residual(Y, result$Phi, result$Mu, result$sigma2, 
 #' Phihat, Muhat)
 #' 
-GibbsRFLSM.simmax.scan <- function(Y, N, w, Phi, Mu, sigma2, 
-                                  Phihat, Muhat, nsim = 1000, 
-                                  logcc = FALSE, standardization = FALSE, 
-                                  meanY = NULL, sdY = NULL) {
+GibbsRFLSM.max.scan <- function(Y, w,
+                                Phihat, muqhat,
+                                logcc = FALSE, standardization = FALSE) {
   
-  q <- dim(Phi)[1]
-  n <- length(Y) - q
-  out <- rep(NA, nsim)
-  m <- dim(Phi)[2]
   
-  U <- rep(NA, n)
   
-  for (i in seq(nsim)) {
-    
-    k <- sample(1:m, 1)
-    tmpPhi <- Phi[, k]
-    tmpMu <- Mu[, k]
-    tmpsigma2 <- sigma2[k]
-    
-    tmp <- GibbsRFLSM.sim(Y, tmpPhi, tmpMu, tmpsigma2)
-    
-    Yr <- tmp$Yr
-    Y <- tmp$Y
-    
-    tmpV <- Y - Muhat
-    tmpVas <- getV(tmpV, q)
-    tmpV <- tmpV[-c(1:q)]
-    tmpVas <- tmpVas[-c(1:q), ]
-    tmpY <- Muhat[-c(1:q)] + tmpVas %*% Phihat
-    
-    if (standardization == TRUE) {
-      tmpY <- tmpY * sdY + meanY
-    }
-    
-    if (logcc == TRUE) {
-      tmpY <- exp(tmpY) - 0.5
-    }
-    
-    U <- w * Yr * log(Yr / tmpY) + 
-      (N - w * Yr) * log((N - w * Yr) / (N - w * tmpY))
-    
-    for (j in seq(n)) {
-      U[j] <- ifelse(Yr[j] > tmpY[j], U[j], 0)
-    }
-    
-    out[i] <- max(U)
+  Y.tr <- Y
+  
+  if (logcc == TRUE) {
+    Y.tr <- log(Y + 0.5)
   }
   
-  out
+  if (standardization == TRUE) {
+    meanY <- mean(Y.tr)
+    sdY <- sd(Y.tr)
+    Y.tr <- (Y.tr - meanY) / sdY
+  }
+  
+  fit0hat <- Fit0(Y.tr, matrix(Phihat, ncol = 1), matrix(muqhat, ncol = 1))
+  
+  if (standardization == TRUE) {
+    fit0hat <- fit0hat * sdY + meanY
+  }
+  
+  if (logcc == TRUE) {
+    fit0hat <- exp(fit0hat) - 0.5
+  }
+  
+  
+  U <- w * Y * log(Y / fit0hat) - w * (Y - fit0hat)
+  
+  for (j in seq(n)) {
+    U[j] <- ifelse(Y[j] > fit0hat[j], U[j], 0)
+  }
+  
+  maxU <- max(U)
+  
+  list("maxU" = maxU, "U" = U)
+  
+}
+
+
+#' simulates the maximums of retrospective scan statistics
+#' 
+#' @param Y is a vector
+#' @param N is the sum of all counts
+#' @param w is the moving window
+#' @param Phi is the coefficient
+#' @param Mu is the mean
+#' @param sigma2 is the variance of errors
+#' @param Phihat is the coefficient
+#' @param Muhat is the mean
+#' @param nsim is the number of simulations
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#'
+#' Phihat <- rep(NA, q)
+#' for (i in 1:q) {
+#'   Phihat[i] <- median(result$Phi[i, ])
+#' }
+#' 
+#' Muhat <- rep(NA, T)
+#' for (i in 1:T) {
+#'   Muhat[i] <- median(result$Mu[i, ])
+#' }
+#' 
+#' sigma2hat <- median(result$sigma2)
+#' 
+#' GibbsRFLSM.simmax.residual(Y, result$Phi, result$Mu, result$sigma2, 
+#' Phihat, Muhat)
+#' 
+GibbsRFLSM.max.scan.sim <- function(Y, Phi, muq, sigma2, w,
+                                  Phihat, muqhat, 
+                                  logcc = FALSE, standardization = FALSE, nsim = 1000) {
+  
+  
+  TT <- length(Y)
+  q <- dim(Phi)[1]
+  
+  Y1 <- GibbsRFLSM.sim0.ph1(Y, Phi, muq, sigma2, logcc, 
+                            standardization, nsim)
+  
+  maxU <- rep(NA, nsim)
+  for (i in seq(nsim)) {
+    
+    tmp <- GibbsRFLSM.max.scan(Y1$Y[, i], w,
+                               Phihat, muqhat,
+                               logcc, standardization)
+    
+    maxU[i] <- tmp$maxU
+  }
+  
+  maxU
   
 }
 
