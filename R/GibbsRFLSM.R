@@ -175,7 +175,7 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   
   YY <- c(Y0, Y)
   TT <- length(Y)
-  nn <- length(Y1)
+  nn <- length(YY)
   ####################################
   
     Y1 <- movaver(YY, w)[(nn - TT + 1):nn]
