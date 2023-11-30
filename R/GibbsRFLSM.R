@@ -178,7 +178,8 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w)
   ####################################
   
     Y1 <- movaver(Y1, w)[-c(1:w)]
-  
+    Y0 <- Y1
+    
   ####################################
   
   if (logcc == TRUE) {
@@ -224,8 +225,9 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w)
     "fit.tr" = model$fit,
     "resi.tr" = model$resi,
     "Y.tr" = Y1,
-    "fit" = fit0,
-    "resi" = matrix(Y, ncol = nsim, nrow = length(Y)) - fit0
+    "fit.ma" = fit0,
+    "resi.ma" = matrix(Y0, ncol = nsim, nrow = length(Y)) - fit0,
+    "Y.ma" = Y0
   )
   
   return(out)
