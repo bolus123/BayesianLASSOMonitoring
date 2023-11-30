@@ -165,7 +165,7 @@ movaver <- function(x, n = 5){filter(x, rep(1 / n, n), sides = 1)}
 #' 
 #' result <- GibbsRFLSM.count(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w), q = 5, 
+GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
                        A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
                        a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                        theta1 = 1, theta2 = 1, xi2 = 0.1,
@@ -174,10 +174,11 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w)
                        logcc = TRUE, standardized = TRUE) {
   
   Y1 <- c(Y0, Y)
-  
+  TT <- length(Y)
+  nn <- length(Y1)
   ####################################
   
-    Y1 <- movaver(Y1, w)[-c(1:w)]
+    Y1 <- movaver(Y1, w)[(nn - TT + 1):nn]
     Y0 <- Y1
     
   ####################################
