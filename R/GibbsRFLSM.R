@@ -214,7 +214,7 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   fit <- fit0 * w
  
   for (i in 1:TT) {
-    fit <- fit[i, ] - sum(YY[w - 1 + i - 1, (w - 1) + i - (w - 1)])
+    fit <- fit[i, ] - sum(YY[(w - 1 + i - 1):((w - 1) + i - (w - 1))])
   }
   
   out <- list(
