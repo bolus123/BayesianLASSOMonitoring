@@ -234,10 +234,10 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     "Y.tr" = Y1,
     "fit.ma" = fit0,
     "resi.ma" = matrix(Y2, ncol = nsim, nrow = length(Y)) - fit0,
-    "Y.ma" = Y2,
-    "fit" = fit,
-    "resi" = matrix(Y, ncol = nsim, nrow = length(Y)) - fit,
-    "Y" = Y
+    "Y.ma" = Y2#,
+    #"fit" = fit,
+    #"resi" = matrix(Y, ncol = nsim, nrow = length(Y)) - fit,
+    #"Y" = Y
   )
   
   return(out)
