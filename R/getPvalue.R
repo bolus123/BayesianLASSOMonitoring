@@ -68,7 +68,7 @@ GibbsRFLSM.sim0.ph1 <- function(Y, Phi, muq, sigma2, logcc = FALSE,
   Y.tr <- Y
   
   if (logcc == TRUE) {
-    Y.tr <- log(Y.tr + 0.5) 
+    Y.tr <- log(Y.tr + 1) 
   }
   
   if (standardization == TRUE) {
@@ -96,7 +96,7 @@ GibbsRFLSM.sim0.ph1 <- function(Y, Phi, muq, sigma2, logcc = FALSE,
   }
   
   if (logcc == TRUE) {
-    sim <- exp(sim) - 0.5
+    sim <- exp(sim) - 1
   }
   
   list("Y.tr" = sim0, "Y" = sim)
@@ -176,7 +176,7 @@ GibbsRFLSM.sim0.ph2 <- function(n, Phi, muq, sigma2, Y0, logcc = FALSE,
   }
   
   if (logcc == TRUE) {
-    sim <- exp(sim) - 0.5
+    sim <- exp(sim) - 1
   }
   
   list("Y1.tr" = sim.tr.ph1, "Y1" = sim.ph1, "Y2.tr" = sim0, "Y2" = sim)
@@ -340,7 +340,7 @@ GibbsRFLSM.max.scan <- function(Y, w,
   Y.tr <- Y
   
   if (logcc == TRUE) {
-    Y.tr <- log(Y + 0.5)
+    Y.tr <- log(Y + 1)
   }
   
   if (standardization == TRUE) {
@@ -356,7 +356,7 @@ GibbsRFLSM.max.scan <- function(Y, w,
   }
   
   if (logcc == TRUE) {
-    fit0hat <- exp(fit0hat) - 0.5
+    fit0hat <- exp(fit0hat) - 1
   }
   
   fit0hat[fit0hat < 0] <- tol
@@ -572,8 +572,8 @@ GibbsRFLSM.PPP.scan <- function(Y, N, w, Phi, Mu0, sigma2,
   }
   
   if (logcc == TRUE) {
-    Yr <- exp(Yr) - 0.5
-    tmpY <- exp(tmpY) - 0.5
+    Yr <- exp(Yr) - 1
+    tmpY <- exp(tmpY) - 1
   }
   
   U <- w * Yr * log(Yr / tmpY) + 

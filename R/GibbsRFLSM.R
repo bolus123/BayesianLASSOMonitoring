@@ -184,7 +184,7 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   ####################################
   
   if (logcc == TRUE) {
-    Y1 <- log(Y1 + 0.5)
+    Y1 <- log(Y1 + 1)
   }
   
   if (standardized == TRUE) {
@@ -208,7 +208,7 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   }
   
   if (logcc == TRUE) {
-    fit0 <- exp(fit0) - 0.5
+    fit0 <- exp(fit0) - 1
   }
   
   fit <- fit0 * w

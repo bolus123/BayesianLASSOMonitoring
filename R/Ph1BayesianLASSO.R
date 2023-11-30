@@ -51,7 +51,7 @@ Ph1BayesianLASSO <- function(Y, H = NULL, X = NULL, Y0 = NULL, w = 14, q = 5,
   TT <- length(Y)
   
   if (logcc == TRUE) {
-    Y1 <- log(Y + 0.5)
+    Y1 <- log(Y + 1)
   } else {
     Y1 <- Y
   }
@@ -115,8 +115,8 @@ Ph1BayesianLASSO <- function(Y, H = NULL, X = NULL, Y0 = NULL, w = 14, q = 5,
   }
   
   if (logcc == TRUE) {
-    lowerbound <- exp(lowerbound) - 0.5
-    upperbound <- exp(upperbound) - 0.5
+    lowerbound <- exp(lowerbound) - 1
+    upperbound <- exp(upperbound) - 1
   }
   
   sig <- rep(NA, TT - q)
