@@ -173,13 +173,13 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
                        nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
                        logcc = TRUE, standardized = TRUE) {
   
-  Y1 <- c(Y0, Y)
+  YY <- c(Y0, Y)
   TT <- length(Y)
   nn <- length(Y1)
   ####################################
   
-    Y1 <- movaver(Y1, w)[(nn - TT + 1):nn]
-    Y0 <- Y1
+    Y1 <- movaver(YY, w)[(nn - TT + 1):nn]
+    Y2 <- Y1
     
   ####################################
   
@@ -211,6 +211,12 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     fit0 <- exp(fit0) - 0.5
   }
   
+  fit <- fit0 * w
+ 
+  for (i in 1:TT) {
+    fit <- fit[i, ] - sum(YY[w - 1 + i - 1, (w - 1) + i - (w - 1)])
+  }
+  
   out <- list(
     "Phi" = model$Phi,
     "Beta" = model$Beta,
@@ -227,8 +233,11 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     "resi.tr" = model$resi,
     "Y.tr" = Y1,
     "fit.ma" = fit0,
-    "resi.ma" = matrix(Y0, ncol = nsim, nrow = length(Y)) - fit0,
-    "Y.ma" = Y0
+    "resi.ma" = matrix(Y2, ncol = nsim, nrow = length(Y)) - fit0,
+    "Y.ma" = Y2,
+    "fit" = fit,
+    "resi" = matrix(Y, ncol = nsim, nrow = length(Y)) - fit,
+    "Y" = Y
   )
   
   return(out)
