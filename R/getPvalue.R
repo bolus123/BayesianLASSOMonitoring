@@ -333,7 +333,7 @@ GibbsRFLSM.max.residual.sim <- function(Y, Phi, muq, sigma2,
 #' 
 GibbsRFLSM.max.scan <- function(Y, w,
                                 Phihat, muqhat,
-                                logcc = FALSE, standardization = FALSE) {
+                                logcc = FALSE, standardization = FALSE, tol = 1e-10) {
   
   
   
@@ -358,6 +358,8 @@ GibbsRFLSM.max.scan <- function(Y, w,
   if (logcc == TRUE) {
     fit0hat <- exp(fit0hat) - 0.5
   }
+  
+  fit0hat[fit0hat < 0] <- tol
   
   
   U <- w * Y * log(Y / fit0hat) - w * (Y - fit0hat)
@@ -412,7 +414,7 @@ GibbsRFLSM.max.scan <- function(Y, w,
 #' 
 GibbsRFLSM.max.scan.sim <- function(Y, Phi, muq, sigma2, w,
                                   Phihat, muqhat, 
-                                  logcc = FALSE, standardization = FALSE, nsim = 1000) {
+                                  logcc = FALSE, standardization = FALSE, nsim = 1000, tol = 1e-10) {
   
   
   TT <- length(Y)
@@ -426,7 +428,7 @@ GibbsRFLSM.max.scan.sim <- function(Y, Phi, muq, sigma2, w,
     
     tmp <- GibbsRFLSM.max.scan(Y1$Y[, i], w,
                                Phihat, muqhat,
-                               logcc, standardization)
+                               logcc, standardization, tol)
     
     maxU[i] <- tmp$maxU
   }
