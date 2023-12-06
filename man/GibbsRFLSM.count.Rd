@@ -9,7 +9,7 @@ GibbsRFLSM.count(
   w = 28,
   H = NULL,
   X = NULL,
-  Y0 = rep(mean(Y), w),
+  Y0 = rep(mean(Y), w - 1),
   q = 5,
   A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])),
   a = 0.1,
@@ -26,8 +26,9 @@ GibbsRFLSM.count(
   by = 1,
   burnin = 1000,
   tol = 1e-10,
-  logcc = TRUE,
-  standardized = TRUE
+  log = TRUE,
+  const = 1,
+  sta = TRUE
 )
 }
 \arguments{
@@ -69,9 +70,11 @@ GibbsRFLSM.count(
 
 \item{tol}{is the tolerance level.}
 
-\item{logcc}{is the log transformation}
+\item{log}{is the flag triggering the log transformation}
 
-\item{standardized}{is the standardization}
+\item{const}{is the constant added to the input during the log transformation}
+
+\item{sta}{is the flag triggering the standardization}
 }
 \description{
 gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
