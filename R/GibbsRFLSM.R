@@ -86,23 +86,6 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
   }
   
   
-  fit <- matrix(NA, nrow = TT, ncol = nsim)
-  resi <- matrix(NA, nrow = TT, ncol = nsim)
-  stdresi <- matrix(NA, nrow = TT, ncol = nsim)
-  
-  for (i in 1:nsim) {
-    
-    fit[, i] <- model$Mu[, i]
-    
-    tmpresi <- Y - model$Mu[, i]
-    tmpV <- getV(tmpresi, q)
-    V <- tmpV[-c(1:q), ]
-    
-    fit[(q + 1):TT, i] <- fit[(q + 1):TT, i] + V %*% model$Phi[, i]
-    
-    resi[, i] <- Y - fit[, i]
-
-  }
   
   out <- list(
     "Phi" = model$Phi,
@@ -115,17 +98,105 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
     "sigma2" = model$sigma2,
     "lambda2" = model$lambda2,
     "muq" = model$muq,
-    "Mu" = model$Mu,
-    "fit" = fit,
-    "resi" = resi
+    "Mu" = model$Mu
   )
   
   return(out)
   
 }
 
-movaver <- function(x, n = 5){filter(x, rep(1 / n, n), sides = 1)}
+#' Caculate the moving averages
+#' 
+#' gets the moving averages
+#' @param Y is the input
+#' @param w is the length of moving window
+#' 
+#' @export
+#' @examples
+#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
+#' lambda <- 0.239385
+#' pi <- 0.1453097
+#'
+#' TT <- 183
+#' w <- 28
+#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = 100)
+#' ma <- movaver(Y, w)
+movaver <- function(Y, w = 5){filter(Y, rep(1 / w, w), sides = 1)}
 
+#' Transform the data
+#' 
+#' gets the transformed input
+#' @param Y is the input
+#' @param log is the flag triggering the log transformation
+#' @param const is the constant added to the input during the log transformation
+#' @param sta is the flag triggering the standardization
+#' 
+#' @export
+#' @examples
+#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
+#' lambda <- 0.239385
+#' pi <- 0.1453097
+#'
+#' TT <- 183
+#' w <- 28
+#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = 100)
+#' ma <- movaver(Y, w)
+#' ma.tr <- trans(ma, TRUE, 1, TRUE)
+trans <- function(Y, log = TRUE, const = 1, sta = TRUE){
+  out <- Y
+  if (log == TRUE) {
+    out <- log(out + const)
+  }
+  meanY <- 0
+  sdY <- 1
+  if (sta == TRUE) {
+    meanY <- mean(out)
+    sdY <- sd(out)
+    out <- (out - meanY) / sdY
+  }
+  
+  list(
+    "Y" = out,
+    "meanY" = meanY,
+    "sdY" = sdY
+  )
+}
+
+#' Back-transform the data
+#' 
+#' gets the back-transformed input
+#' @param Y is the input
+#' @param log is the flag triggering the log transformation
+#' @param const is the constant added to the input during the log transformation
+#' @param sta is the flag triggering the standardization
+#' @param meanY is the mean of the original Y
+#' @param sdY is the standard deviation of the original Y
+#' 
+#' @export
+#' @examples
+#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
+#' lambda <- 0.239385
+#' pi <- 0.1453097
+#'
+#' TT <- 183
+#' w <- 28
+#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = 100)
+#' ma <- movaver(Y, w)
+#' ma.tr <- trans(ma, TRUE, 1, TRUE)
+#' ma.batr <- backtrans(ma.tr$Y, TRUE, 1, TRUE, ma.tr$meanY, ma.tr$sdY)
+backtrans <- function(Y, log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1){
+  out <- Y
+  
+  if (sta == TRUE) {
+    out <- out * sdY + meanY
+  }
+  
+  if (log == TRUE) {
+    out <- exp(out) - const
+  }
+  
+  out
+}
 
 #' Random Flexible Level Shift Model
 #' 
@@ -149,8 +220,9 @@ movaver <- function(x, n = 5){filter(x, rep(1 / n, n), sides = 1)}
 #' @param by is the interval of systematic sampling for the draws from MCMC.
 #' @param burnin is the length of burn-in period.
 #' @param tol is the tolerance level.
-#' @param logcc is the log transformation
-#' @param standardized is the standardization
+#' @param log is the flag triggering the log transformation
+#' @param const is the constant added to the input during the log transformation
+#' @param sta is the flag triggering the standardization
 #' @references McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
 #' 
 #' 
@@ -171,7 +243,7 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
                        theta1 = 1, theta2 = 1, xi2 = 0.1,
                        method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
                        nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
-                       logcc = TRUE, standardized = TRUE) {
+                       log = TRUE, const = 1, sta = TRUE) {
   
   YY <- c(Y0, Y)
   TT <- length(Y)
@@ -179,19 +251,10 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   ####################################
   
     Y1 <- movaver(YY, w)[(nn - TT + 1):nn]
-    Y2 <- Y1
-    
+    Y2 <- trans(Y1, log = log, const = const, sta = sta)
+    Y1 <- Y2$Y
+  
   ####################################
-  
-  if (logcc == TRUE) {
-    Y1 <- log(Y1 + 1)
-  }
-  
-  if (standardized == TRUE) {
-    meanY <- mean(Y1)
-    sdY <- sd(Y1)
-    Y1 <- (Y1 - meanY) / sdY
-  }
   
   model <- GibbsRFLSM(Y1, H, X, q, 
                     A, 
@@ -200,22 +263,6 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
                     method, bound0, boundqplus1,
                     nsim, by, burnin, tol)
     
-  
-  fit0 <- model$fit
-  
-  if (standardized == TRUE) {
-    fit0 <- fit0 * sdY + meanY
-  }
-  
-  if (logcc == TRUE) {
-    fit0 <- exp(fit0) - 1
-  }
-  
-  fit <- fit0 * w
- 
-  for (i in 1:TT) {
-    fit[i, ] <- fit[i, ] - sum(YY[(w - 1 + i - 1):((w - 1) + i - (w - 1))])
-  }
   
   out <- list(
     "Phi" = model$Phi,
@@ -229,15 +276,7 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     "lambda2" = model$lambda2,
     "muq" = model$muq,
     "Mu" = model$Mu,
-    "fit.tr" = model$fit,
-    "resi.tr" = model$resi,
-    "Y.tr" = Y1,
-    "fit.ma" = fit0,
-    "resi.ma" = matrix(Y2, ncol = nsim, nrow = length(Y)) - fit0,
-    "Y.ma" = Y2#,
-    #"fit" = fit,
-    #"resi" = matrix(Y, ncol = nsim, nrow = length(Y)) - fit,
-    #"Y" = Y
+    "Y1" = Y2
   )
   
   return(out)
