@@ -10,6 +10,12 @@
 #' @param Beta is the matrix of coefficients
 #' @param Kappa is the matrix of triggering the corresponding beta
 #' @param Y1 is the transformed vector
+#' @param bt is the flag of triggering the back transformation
+#' @param log is the flag triggering the log transformation
+#' @param const is the constant added to the input during the log transformation
+#' @param sta is the flag triggering the standardization after the log transformation
+#' @param meanY is the mean of the log Y
+#' @param sdY is the standard deviation of the log Y
 #' 
 #' @export
 #' @examples
@@ -24,7 +30,9 @@
 #' 
 GibbsRFLSM.sim.ph1.H0 <- function(nsim, n, Phi, muq, sigma2, 
                                   X = NULL, Beta = NULL, Kappa = NULL,
-                                  Y1 = rep(median(muq), n)) {
+                                  Y1 = rep(median(muq), n), 
+                                  bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
+                                  meanY = 0, sdY = 1) {
   
   m <- dim(Phi)[2]
   q <- dim(Phi)[1]
@@ -42,34 +50,25 @@ GibbsRFLSM.sim.ph1.H0 <- function(nsim, n, Phi, muq, sigma2,
     tmpsigma2 <- sigma2[tmpsel]
     
     for (i in (q + 1):n) {
-      Y.sim[i, j] <- tmpmu0[i] + rnorm(1, 
-                 mean = (Y.sim[(i - 1):(i - q), j] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi, 
-                 sd = sqrt(tmpsigma2))
+      Y.sim[i, j] <- tmpmu0[i] + (Y1[(i - 1):(i - q)] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi + 
+                  rnorm(1, mean = 0, sd = sqrt(tmpsigma2))
     }
     
   }
+  
+  if (bt == TRUE) {
+    Y.sim <- backtrans(Y.sim, log = log, const = const, sta = sta, 
+                       meanY = meanY, sdY = sdY)
+    
+    
+  }
+  
   
   Y.sim[-c(1:q), ]
   
 }
 
-lower.bound.ma <- function(lower.ma = 0, log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1) {
-  
-  out <- lower.ma
-  
-  if (log == TRUE) {
-    out <- log(out + const)
-  }
-  
-  if (sta == TRUE) {
-    out <- (out - meanY) / sdY
-  }
-  
-  out
-  
-}
-
-#' Get a simulated moving averages using Random Flexible Level Shift Model in the retrospective phase under H0 
+#' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H0 without censoring
 #' 
 #' gets the simulated data
 #' @param nsim is the number of simulations
@@ -81,9 +80,12 @@ lower.bound.ma <- function(lower.ma = 0, log = TRUE, const = 1, sta = TRUE, mean
 #' @param Beta is the matrix of coefficients
 #' @param Kappa is the matrix of triggering the corresponding beta
 #' @param Y1 is the transformed vector
+#' @param bt is the flag of triggering the back transformation
 #' @param log is the flag triggering the log transformation
 #' @param const is the constant added to the input during the log transformation
-#' @param sta is the flag triggering the standardization
+#' @param sta is the flag triggering the standardization after the log transformation
+#' @param meanY is the mean of the log Y
+#' @param sdY is the standard deviation of the log Y
 #' 
 #' @export
 #' @examples
@@ -96,18 +98,24 @@ lower.bound.ma <- function(lower.ma = 0, log = TRUE, const = 1, sta = TRUE, mean
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM.sim.ma.ph1.H0 <- function(nsim, n, Phi, muq, sigma2, 
-                                  X = NULL, Beta = NULL, Kappa = NULL, 
-                                  Y1 = rep(median(muq), n),
-                                  log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1) {
+GibbsRFLSM.sim.ph2.H0 <- function(nsim, n, Phi, muq, sigma2, 
+                                  X = NULL, Beta = NULL, Kappa = NULL,
+                                  Y1 = rep(median(muq), n), 
+                                  bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
+                                  meanY = 0, sdY = 1) {
   
   m <- dim(Phi)[2]
   q <- dim(Phi)[1]
-  Y.sim <- matrix(Y1, nrow = n, ncol = nsim)
-  muX <- matrix(0, nrow = n, ncol = m)
+  n.Y1 <- length(Y1)
+  Y1 <- Y1[(n.Y1 - q + 1):n.Y1]
   
-  lower.bound <- lower.bound.ma(lower.ma = 0, log = log, const = const, sta = sta, 
-                                meanY = meanY, sdY = sdY)
+  Y1.sim <- matrix(Y1, nrow = q, ncol = nsim)
+  Y2.sim <- matrix(NA, nrow = n, ncol = nsim)
+  Y.sim <- rbind(Y1.sim, Y2.sim)
+  
+  X <- X[(q + 1):(n + q), ]
+  
+  muX <- matrix(0, nrow = n, ncol = m)
   
   if (!is.null(X)) {
     muX <- X %*% (Beta * Kappa)
@@ -119,38 +127,26 @@ GibbsRFLSM.sim.ma.ph1.H0 <- function(nsim, n, Phi, muq, sigma2,
     tmpmu0 <- muq[tmpsel] + muX[, tmpsel]
     tmpsigma2 <- sigma2[tmpsel]
     
-    for (i in (q + 1):n) {
-      Y.sim[i, j] <- tmpmu0[i] + rnorm(1, 
-                                       mean = (Y.sim[(i - 1):(i - q), j] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi, 
-                                       sd = sqrt(tmpsigma2))
-      Y.sim[i, j] <- ifelse(Y.sim[i, j] < lower.bound, lower.bound, Y.sim[i, j]) 
+    for (i in (q + 1):(n + q)) {
+      Y.sim[i, j] <- tmpmu0[i] + (Y.sim[(i - 1):(i - q)] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi + 
+        rnorm(1, mean = 0, sd = sqrt(tmpsigma2))
     }
     
   }
   
-  out <- backtrans(Y.sim, log = log, const = const, sta = sta, 
-            meanY = meanY, sdY = sdY)
+  if (bt == TRUE) {
+    Y.sim <- backtrans(Y.sim, log = log, const = const, sta = sta, 
+                       meanY = meanY, sdY = sdY)
     
-  out[-c(1:q), ]
-}
-
-lower.bound.count <- function(ma, Y0, w, log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1) {
-  
-  out <- ma - Y0 / w
-  
-  if (log == TRUE) {
-    out <- log(out + const)
+    
   }
   
-  if (sta == TRUE) {
-    out <- (out - meanY) / sdY
-  }
   
-  out
+  Y.sim[-c(1:q), ]
   
 }
 
-#' Get a simulated count using Random Flexible Level Shift Model in the retrospective phase under H0 
+#' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H1 without censoring
 #' 
 #' gets the simulated data
 #' @param nsim is the number of simulations
@@ -162,10 +158,12 @@ lower.bound.count <- function(ma, Y0, w, log = TRUE, const = 1, sta = TRUE, mean
 #' @param Beta is the matrix of coefficients
 #' @param Kappa is the matrix of triggering the corresponding beta
 #' @param Y1 is the transformed vector
-#' @param Y0 is the raw count
+#' @param bt is the flag of triggering the back transformation
 #' @param log is the flag triggering the log transformation
 #' @param const is the constant added to the input during the log transformation
-#' @param sta is the flag triggering the standardization
+#' @param sta is the flag triggering the standardization after the log transformation
+#' @param meanY is the mean of the log Y
+#' @param sdY is the standard deviation of the log Y
 #' 
 #' @export
 #' @examples
@@ -178,49 +176,38 @@ lower.bound.count <- function(ma, Y0, w, log = TRUE, const = 1, sta = TRUE, mean
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM.sim.count.ph1.H0 <- function(nsim, n, w, Phi, muq, sigma2,
-                                     X = NULL, Beta = NULL, Kappa = NULL, 
-                                     Y1 = rep(median(muq), n),
-                                     Y0 = rep(0, n + w - 1),
-                                     log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1) {
-  
-  n.Y0 <- length(Y0)
-  Y0 <- Y0[(n.Y0 - (n + w - 1) + 1):n.Y0]
-  ma <- movaver(Y0)[w:(n + w - 1)]
+GibbsRFLSM.sim.ph1.H1 <- function(nsim, n, Phi, Mu, sigma2, 
+                                  X = NULL, Beta = NULL, Kappa = NULL,
+                                  Y1 = apply(model$Mu, 1, median), 
+                                  bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
+                                  meanY = 0, sdY = 1) {
   
   m <- dim(Phi)[2]
   q <- dim(Phi)[1]
   Y.sim <- matrix(Y1, nrow = n, ncol = nsim)
-  muX <- matrix(0, nrow = n, ncol = m)
-  
-  if (!is.null(X)) {
-    muX <- X %*% (Beta * Kappa)
-  }
+ 
   
   for (j in 1:nsim) {
     tmpsel <- sample(1:m, 1)
     tmpPhi <- Phi[, tmpsel]
-    tmpmu0 <- muq[tmpsel] + muX[, tmpsel]
+    tmpMu <- Mu[, tmpsel]
     tmpsigma2 <- sigma2[tmpsel]
     
     for (i in (q + 1):n) {
-      Y.sim[i, j] <- tmpmu0[i] + rnorm(1, 
-                                       mean = (Y.sim[(i - 1):(i - q), j] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi, 
-                                       sd = sqrt(tmpsigma2))
-      lower.bound <- lower.bound.count(ma[i - 1], Y0[i - 1], w, log = log, const = const, sta = sta, 
-                                       meanY = meanY, sdY = sdY)
-      Y.sim[i, j] <- ifelse(Y.sim[i, j] < lower.bound, lower.bound, Y.sim[i, j]) 
+      Y.sim[i, j] <- tmpMu[i] + (Y1[(i - 1):(i - q)] - tmpMu[(i - 1):(i - q)]) %*% tmpPhi + 
+        rnorm(1, mean = 0, sd = sqrt(tmpsigma2))
     }
     
   }
   
-  out <- backtrans(Y.sim, log = log, const = const, sta = sta, 
-            meanY = meanY, sdY = sdY)
-  
-  for (i in (q + 1):n) {
-    out[i, ] <- round(w * out[i, ] - (w * ma[i - 1] - Y0[i - 1]))
+  if (bt == TRUE) {
+    Y.sim <- backtrans(Y.sim, log = log, const = const, sta = sta, 
+                       meanY = meanY, sdY = sdY)
+    
+    
   }
   
-  out[-c(1:q), ]
+  
+  Y.sim[-c(1:q), ]
   
 }
