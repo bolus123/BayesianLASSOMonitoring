@@ -16,10 +16,8 @@
 #'
 #' Fit0(Y, result$Phi, result$muq)
 #' 
-fit.ph1.H0 <- function(Y, Phi, muq, sigma2, 
-                       X = NULL, Beta = NULL, Kappa = NULL,
-                       bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
-                       meanY = 0, sdY = 1, method = 'median') {
+fit.ph1.H0 <- function(Y1, Phi, muq, sigma2, 
+                       X = NULL, Beta = NULL, Kappa = NULL) {
   
   TT <- length(Y)
   q <- dim(Phi)[1]
@@ -45,16 +43,10 @@ fit.ph1.H0 <- function(Y, Phi, muq, sigma2,
   
   for (i in (q + 1):TT) {
     ff[i] <- muqhat + muXhat[i] + 
-      (Y[(i - 1):(i - q)] - muqhat - muXhat[(i - 1):(i - q)] ) %*% Phihat 
+      (Y1[(i - 1):(i - q)] - muqhat - muXhat[(i - 1):(i - q)] ) %*% Phihat 
   }
   
-  out <- ff
-  
-  if (bt == TRUE) {
-    out <- backtrans(out, log, const, sta, meanY, sdY)
-  }
-  
-  out
+  ff
   
 }
 
