@@ -1,4 +1,4 @@
-#' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H0 without censoring
+#' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H0
 #' 
 #' gets the simulated data
 #' @param nsim is the number of simulations
@@ -68,11 +68,11 @@ GibbsRFLSM.sim.ph1.H0 <- function(nsim, n, Phi, muq, sigma2,
   
 }
 
-#' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H0 without censoring
+#' Get a simulation transformed data using Random Flexible Level Shift Model in the prospective phase under H0
 #' 
 #' gets the simulated data
 #' @param nsim is the number of simulations
-#' @param n is the length of simulated process
+#' @param h is the steps of forward predictions
 #' @param Phi is the matrix of laggy coefficients
 #' @param muq is the vector of grand mean
 #' @param sigma2 is the vector of variance
@@ -98,9 +98,9 @@ GibbsRFLSM.sim.ph1.H0 <- function(nsim, n, Phi, muq, sigma2,
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM.sim.ph2.H0 <- function(nsim, n, Phi, muq, sigma2, 
+GibbsRFLSM.sim.ph2.H0 <- function(nsim, h, Phi, muq, sigma2, 
                                   X = NULL, Beta = NULL, Kappa = NULL,
-                                  Y1 = rep(median(muq), n), 
+                                  Y1 = rep(median(muq), dim(Phi)[1]), 
                                   bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
                                   meanY = 0, sdY = 1) {
   
@@ -110,14 +110,14 @@ GibbsRFLSM.sim.ph2.H0 <- function(nsim, n, Phi, muq, sigma2,
   Y1 <- Y1[(n.Y1 - q + 1):n.Y1]
   
   Y1.sim <- matrix(Y1, nrow = q, ncol = nsim)
-  Y2.sim <- matrix(NA, nrow = n, ncol = nsim)
+  Y2.sim <- matrix(NA, nrow = h, ncol = nsim)
   Y.sim <- rbind(Y1.sim, Y2.sim)
   
-  X <- X[(q + 1):(n + q), ]
-  
-  muX <- matrix(0, nrow = n, ncol = m)
+  muX <- matrix(0, nrow = q + h, ncol = m)
   
   if (!is.null(X)) {
+    n.X <- dim(X)[1]
+    X <- X[(n.X - q - h + 1):n.X, ]
     muX <- X %*% (Beta * Kappa)
   }
   
@@ -127,7 +127,7 @@ GibbsRFLSM.sim.ph2.H0 <- function(nsim, n, Phi, muq, sigma2,
     tmpmu0 <- muq[tmpsel] + muX[, tmpsel]
     tmpsigma2 <- sigma2[tmpsel]
     
-    for (i in (q + 1):(n + q)) {
+    for (i in (q + 1):(h + q)) {
       Y.sim[i, j] <- tmpmu0[i] + (Y.sim[(i - 1):(i - q)] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi + 
         rnorm(1, mean = 0, sd = sqrt(tmpsigma2))
     }
@@ -146,7 +146,7 @@ GibbsRFLSM.sim.ph2.H0 <- function(nsim, n, Phi, muq, sigma2,
   
 }
 
-#' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H1 without censoring
+#' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H1
 #' 
 #' gets the simulated data
 #' @param nsim is the number of simulations
@@ -154,9 +154,6 @@ GibbsRFLSM.sim.ph2.H0 <- function(nsim, n, Phi, muq, sigma2,
 #' @param Phi is the matrix of laggy coefficients
 #' @param muq is the vector of grand mean
 #' @param sigma2 is the vector of variance
-#' @param X is the matrix of X
-#' @param Beta is the matrix of coefficients
-#' @param Kappa is the matrix of triggering the corresponding beta
 #' @param Y1 is the transformed vector
 #' @param bt is the flag of triggering the back transformation
 #' @param log is the flag triggering the log transformation
@@ -177,7 +174,6 @@ GibbsRFLSM.sim.ph2.H0 <- function(nsim, n, Phi, muq, sigma2,
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
 GibbsRFLSM.sim.ph1.H1 <- function(nsim, n, Phi, Mu, sigma2, 
-                                  X = NULL, Beta = NULL, Kappa = NULL,
                                   Y1 = apply(model$Mu, 1, median), 
                                   bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
                                   meanY = 0, sdY = 1) {
@@ -195,6 +191,97 @@ GibbsRFLSM.sim.ph1.H1 <- function(nsim, n, Phi, Mu, sigma2,
     
     for (i in (q + 1):n) {
       Y.sim[i, j] <- tmpMu[i] + (Y1[(i - 1):(i - q)] - tmpMu[(i - 1):(i - q)]) %*% tmpPhi + 
+        rnorm(1, mean = 0, sd = sqrt(tmpsigma2))
+    }
+    
+  }
+  
+  if (bt == TRUE) {
+    Y.sim <- backtrans(Y.sim, log = log, const = const, sta = sta, 
+                       meanY = meanY, sdY = sdY)
+    
+    
+  }
+  
+  
+  Y.sim[-c(1:q), ]
+  
+}
+
+
+#' Get a simulation transformed data using Random Flexible Level Shift Model in the prospective phase under H1
+#' 
+#' gets the simulated data
+#' @param nsim is the number of simulations
+#' @param h is the steps of forward predictions
+#' @param Phi is the matrix of laggy coefficients
+#' @param muq is the vector of grand mean
+#' @param sigma2 is the vector of variance
+#' @param H is the matrix of H
+#' @param Gamma is the matrix of shift coefficients
+#' @param Tau is the matrix of triggering the corresponding gamma
+#' @param X is the matrix of X
+#' @param Beta is the matrix of coefficients
+#' @param Kappa is the matrix of triggering the corresponding beta
+#' @param Y1 is the transformed vector
+#' @param bt is the flag of triggering the back transformation
+#' @param log is the flag triggering the log transformation
+#' @param const is the constant added to the input during the log transformation
+#' @param sta is the flag triggering the standardization after the log transformation
+#' @param meanY is the mean of the log Y
+#' @param sdY is the standard deviation of the log Y
+#' 
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#' 
+GibbsRFLSM.sim.ph2.H1 <- function(nsim, h, Phi, muq, sigma2, 
+                                  H = NULL, Gamma = NULL, Tau = NULL,
+                                  X = NULL, Beta = NULL, Kappa = NULL,
+                                  Y1 = rep(median(muq), dim(Phi)[1]), 
+                                  bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
+                                  meanY = 0, sdY = 1) {
+  
+  m <- dim(Phi)[2]
+  q <- dim(Phi)[1]
+  n.Y1 <- length(Y1)
+  Y1 <- Y1[(n.Y1 - q + 1):n.Y1]
+  
+  Y1.sim <- matrix(Y1, nrow = q, ncol = nsim)
+  Y2.sim <- matrix(NA, nrow = h, ncol = nsim)
+  Y.sim <- rbind(Y1.sim, Y2.sim)
+  
+  muH <- matrix(0, nrow = q + h, ncol = m)
+  
+  if (!is.null(H)) {
+    n.H <- dim(H)[1]
+    H <- H[(n.H - q - h + 1):n.H, ]
+    muH <- H %*% (Gamma * Tau)
+  }
+  
+  muX <- matrix(0, nrow = q + h, ncol = m)
+  
+  if (!is.null(X)) {
+    n.X <- dim(X)[1]
+    X <- X[(n.X - q - h + 1):n.X, ]
+    muX <- X %*% (Beta * Kappa)
+  }
+  
+  for (j in 1:nsim) {
+    tmpsel <- sample(1:m, 1)
+    tmpPhi <- Phi[, tmpsel]
+    tmpmu0 <- muq[tmpsel] + muX[, tmpsel] + muH[, tmpsel]
+    tmpsigma2 <- sigma2[tmpsel]
+    
+    for (i in (q + 1):(h + q)) {
+      Y.sim[i, j] <- tmpmu0[i] + (Y.sim[(i - 1):(i - q)] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi + 
         rnorm(1, mean = 0, sd = sqrt(tmpsigma2))
     }
     

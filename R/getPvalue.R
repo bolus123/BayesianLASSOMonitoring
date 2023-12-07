@@ -16,21 +16,46 @@
 #'
 #' Fit0(Y, result$Phi, result$muq)
 #' 
-Fit0 <- function(Y, Phi, muq) {
+fit.ph1.H0 <- function(Y, Phi, muq, sigma2, 
+                       X = NULL, Beta = NULL, Kappa = NULL,
+                       bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
+                       meanY = 0, sdY = 1, method = 'median') {
   
   TT <- length(Y)
   q <- dim(Phi)[1]
   nsim <- dim(Phi)[2]
   ff <- matrix(NA, nrow = TT - q, ncol = nsim)
   
-  for (ii in seq(nsim)) {
-    V <- matrix(Y, ncol = 1) - muq[, ii]
-    Vas <- getV(V, q)
-    V <- V[-c(1:q)]
-    Vas <- Vas[-c(1:q), ]
-    ff[, ii] <- Vas %*% Phi[, ii] + muq[, ii]
+  if (method == "median") {
+    Phihat <- apply(Phi, 1, median)
+    muqhat <- median(muq)
+    sigma2hat <- median(sigma2)
   }
-  rbind(matrix(muq, nrow = q, ncol = nsim, byrow = TRUE), ff)
+  
+  muXhat <- rep(0, TT)
+  if (!is.null(NULL)) {
+    if (method == "median") {
+      Betahat <- apply(Beta, 1, median)
+      Kappahat <- apply(Kappa, 1, median)
+    }
+    muXhat <- X %*% (Betahat * Kappahat)
+  }
+  
+  ff <- rep(muqhat, TT)
+  
+  for (i in (q + 1):TT) {
+    ff[i] <- muqhat + muXhat[i] + 
+      (Y[(i - 1):(i - q)] - muqhat - muXhat[(i - 1):(i - q)] ) %*% Phihat 
+  }
+  
+  out <- ff
+  
+  if (bt == TRUE) {
+    out <- backtrans(out, log, const, sta, meanY, sdY)
+  }
+  
+  out
+  
 }
 
 #' simulates the time series using Draws from MCMC in Phase I under H0
