@@ -1,8 +1,12 @@
-#' obtain the fits under H0
+#' obtain the fits under H0 in the retrospective phase
 #' 
-#' @param Y is a vector
-#' @param Phi is the coefficient
+#' @param Y1 is a transformed data
+#' @param Phi is the laggy coefficient
 #' @param muq is the mean
+#' @param X is the X
+#' @param Beta is the coefficient
+#' @param Kappa is the triggers of coefficient
+#' @param method is the estimation
 #' @export
 #' @examples
 #' nsim <- 100
@@ -16,22 +20,20 @@
 #'
 #' Fit0(Y, result$Phi, result$muq)
 #' 
-fit.ph1.H0 <- function(Y1, Phi, muq, sigma2, 
-                       X = NULL, Beta = NULL, Kappa = NULL) {
+fit.hat.ph1.H0 <- function(Y1, Phi, muq, 
+                       X = NULL, Beta = NULL, Kappa = NULL, method = "median") {
   
   TT <- length(Y)
   q <- dim(Phi)[1]
-  nsim <- dim(Phi)[2]
-  ff <- matrix(NA, nrow = TT - q, ncol = nsim)
+  ff <- matrix(NA, nrow = TT, ncol = 1)
   
   if (method == "median") {
     Phihat <- apply(Phi, 1, median)
     muqhat <- median(muq)
-    sigma2hat <- median(sigma2)
   }
   
   muXhat <- rep(0, TT)
-  if (!is.null(NULL)) {
+  if (!is.null(X)) {
     if (method == "median") {
       Betahat <- apply(Beta, 1, median)
       Kappahat <- apply(Kappa, 1, median)
@@ -43,12 +45,177 @@ fit.ph1.H0 <- function(Y1, Phi, muq, sigma2,
   
   for (i in (q + 1):TT) {
     ff[i] <- muqhat + muXhat[i] + 
-      (Y1[(i - 1):(i - q)] - muqhat - muXhat[(i - 1):(i - q)] ) %*% Phihat 
+      (Y1[(i - 1):(i - q)] - muqhat - muXhat[(i - 1):(i - q)]) %*% Phihat 
   }
   
   ff
   
 }
+
+#' obtain the fits under H0 in the prospective phase
+#' 
+#' @param h is the length
+#' @param Phi is the laggy coefficient
+#' @param muq is the mean
+#' @param X is the X
+#' @param Beta is the coefficient
+#' @param Kappa is the triggers of coefficient
+#' @param Y1 is a transformed data
+#' @param method is the estimation
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#'
+#' Fit0(Y, result$Phi, result$muq)
+#' 
+fit.hat.ph2.H0 <- function(h, Phi, muq, 
+                           X = NULL, Beta = NULL, Kappa = NULL, 
+                           Y1 = NULL, method = "median") {
+  
+  TT <- length(Y1)
+  q <- dim(Phi)[1]
+ 
+  if (method == "median") {
+    Phihat <- apply(Phi, 1, median)
+    muqhat <- median(muq)
+  }
+  
+  muXhat <- rep(0, q + h)
+  if (!is.null(X)) {
+    if (method == "median") {
+      Betahat <- apply(Beta, 1, median)
+      Kappahat <- apply(Kappa, 1, median)
+    }
+    muXhat <- X %*% (Betahat * Kappahat)
+  }
+  
+  ff <- muqhat + muXhat
+  
+  if (!is.null(Y1)) {
+    tmpY1 <- Y1[(TT - q + 1):TT]
+    ff[1:q] <- tmpY1
+  }
+  
+  for (i in (q + 1):(q + h)) {
+    ff[i] <- muqhat + muXhat[i] + 
+      (ff[(i - 1):(i - q)] - muqhat - muXhat[(i - 1):(i - q)]) %*% Phihat 
+  }
+  
+  ff
+  
+}
+
+
+#' obtain the fits under H1 in the retrospective phase
+#' 
+#' @param Y1 is a transformed data
+#' @param Phi is the laggy coefficient
+#' @param Mu is the mean under H1
+#' @param method is the estimation
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#'
+#' Fit0(Y, result$Phi, result$muq)
+#' 
+fit.hat.ph1.H1 <- function(Y1, Phi, Mu, method = "median") {
+  
+  TT <- length(Y)
+  q <- dim(Phi)[1]
+  ff <- matrix(NA, nrow = TT, ncol = 1)
+  
+  if (method == "median") {
+    Phihat <- apply(Phi, 1, median)
+    Muhat <- apply(Mu, 1, median)
+  }
+  
+  ff <- Muhat
+  
+  for (i in (q + 1):TT) {
+    ff[i] <- Muhat[i] + 
+      (Y1[(i - 1):(i - q)] - Muhat[(i - 1):(i - q)] ) %*% Phihat 
+  }
+  
+  ff
+  
+}
+
+
+#' obtain the fits under H1 in the prospective phase
+#' 
+#' @param h is the length
+#' @param Phi is the laggy coefficient
+#' @param muq is the mean
+#' @param X is the X
+#' @param Beta is the coefficient
+#' @param Kappa is the triggers of coefficient
+#' @param Y1 is a transformed data
+#' @param method is the estimation
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
+#'
+#' Fit0(Y, result$Phi, result$muq)
+#' 
+fit.hat.ph2.H1 <- function(h, Phi, muq, 
+                           H = NULL, Gamma = NULL, Tau = NULL,
+                           X = NULL, Beta = NULL, Kappa = NULL, 
+                           Y1 = NULL, method = "median") {
+  
+  TT <- length(Y1)
+  q <- dim(Phi)[1]
+  
+  if (method == "median") {
+    Phihat <- apply(Phi, 1, median)
+    muqhat <- median(muq)
+  }
+  
+  muXhat <- rep(0, q + h)
+  if (!is.null(X)) {
+    if (method == "median") {
+      Betahat <- apply(Beta, 1, median)
+      Kappahat <- apply(Kappa, 1, median)
+    }
+    muXhat <- X %*% (Betahat * Kappahat)
+  }
+  
+  ff <- muqhat + muXhat
+  
+  if (!is.null(Y1)) {
+    tmpY1 <- Y1[(TT - q + 1):TT]
+    ff[1:q] <- tmpY1
+  }
+  
+  for (i in (q + 1):(q + h)) {
+    ff[i] <- muqhat + muXhat[i] + 
+      (ff[(i - 1):(i - q)] - muqhat - muXhat[(i - 1):(i - q)]) %*% Phihat 
+  }
+  
+  ff
+  
+}
+
 
 #' simulates the time series using Draws from MCMC in Phase I under H0
 #' 

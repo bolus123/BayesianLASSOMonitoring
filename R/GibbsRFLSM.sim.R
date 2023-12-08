@@ -32,7 +32,8 @@ GibbsRFLSM.sim.ph1.H0 <- function(nsim, n, Phi, muq, sigma2,
                                   X = NULL, Beta = NULL, Kappa = NULL,
                                   Y1 = rep(median(muq), n), 
                                   bt = TRUE, log = TRUE, const = 1, sta = TRUE, 
-                                  meanY = 0, sdY = 1) {
+                                  meanY = 0, sdY = 1, 
+                                  lower.bound = -Inf, rounding = FALSE) {
   
   m <- dim(Phi)[2]
   q <- dim(Phi)[1]
@@ -63,6 +64,11 @@ GibbsRFLSM.sim.ph1.H0 <- function(nsim, n, Phi, muq, sigma2,
     
   }
   
+  Y.sim[Y.sim < lower.bound] <- lower.bound
+  
+  if (rounding == TRUE) {
+    Y.sim <- round(Y.sim)
+  }
   
   Y.sim[-c(1:q), ]
   
