@@ -255,6 +255,7 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   ####################################
   
     Y1 <- movaver(YY, w)[(nn - TT + 1):nn]
+    Y1.ma <- Y1
     Y2 <- trans(Y1, log = log, const = const, sta = sta)
     Y1 <- Y2$Y
   
@@ -280,7 +281,10 @@ GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     "lambda2" = model$lambda2,
     "muq" = model$muq,
     "Mu" = model$Mu,
-    "Y1" = Y2
+    "Y.tr" = Y2$Y,
+    "meanY" = Y2$meanY,
+    "sdY" = Y2$sdY,
+    "Y.ma" = Y1.ma
   )
   
   return(out)

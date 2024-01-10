@@ -39,98 +39,61 @@
 #' 
 #' result <- Ph1BayesianLASSO(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-Ph1BayesianLASSO <- function(Y, H = NULL, X = NULL, Y0 = NULL, w = 14, q = 5, 
+Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
                              A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
                              a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                              theta1 = 1, theta2 = 1, xi2 = 0.1,
                              method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
-                             nsim = 1000, by = 1, burnin = 1000, tol = 1e-10, 
-                             standardized = TRUE, logcc = FALSE,
-                             FAP0 = 0.2, estimation.PPP = "median", nsim.PPP = 1000) {
+                             nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
+                             log = TRUE, const = 1, sta = TRUE, 
+                             FAP0 = 0.3, side = "two-sided", 
+                             interval = c(0.00001, 0.4), nsim.chart = 100000, tol.chart = 1e-6, 
+                             plot = TRUE) {
   
   TT <- length(Y)
   
-  if (logcc == TRUE) {
-    Y1 <- log(Y + 1)
-  } else {
-    Y1 <- Y
-  }
+  model <- GibbsRFLSM.count(Y, w, H, X, Y0, q, 
+    A, a, b, alpha, beta, 
+    theta1, theta2, xi2,
+    method, bound0, boundqplus1,
+    nsim, by, burnin, tol,
+    log, const, sta) 
   
-  if (standardized == TRUE) {
-    meanY1 <- mean(Y1)
-    sdY1 <- sd(Y1)
-    Y1 <- (Y1 - meanY1) / sdY1
-  } 
   
-  model <- GibbsRFLSM(Y1, H, X, q,      
-                      A, 
-                      a, b, alpha, beta, 
-                      theta1, theta2, xi2,
-                      method, bound0, boundqplus1,
-                      nsim, by, burnin, tol)
+  Y.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
+                                 model$Phi, model$muq, model$sigma2, 
+                                 X, model$Beta, model$Kappa, 
+                                 NULL, NULL, NULL)
   
-  Mu0 <- matrix(NA, nrow = TT, ncol = nsim)
-  for (j in 1:nsim) {
-    Mu0[, j] <- model$muq[j]
-    if (!is.null(X)) {
-      Mu0[, j] <- X %*% (model$Beta[, j] * model$Kappa[, j])
+  Y.ma.sim <- backtrans(Y.tr.sim, log, const, sta, model$meanY, model$sdY)
+  Y.ma.sim[Y.ma.sim < 0] <- 0
+  
+  adja.tr <- adjalp(Y.tr.sim, FAP0, side, interval, tol.chart)
+  adja.ma <- adjalp(Y.ma.sim, FAP0, side, interval, tol.chart)
+  
+  lim.tr <- matrix(NA, nrow = TT, ncol = 2)
+  lim.ma <- lim.tr
+  
+  for (i in (q + 1):TT) {
+    if (side == "two-sided") {
+      lim.tr[i, ] <- quantile(Y.tr.sim[i, ], c(adja.tr / 2, 1 - adja.tr / 2))
+      lim.ma[i, ] <- quantile(Y.ma.sim[i, ], c(adja.ma / 2, 1 - adja.ma / 2))
+    } else if (side = "right-sided") {
+      lim.tr[i, 1] <- -Inf
+      lim.ma[i, 1] <- -Inf
+      lim.tr[i, 2] <- quantile(Y.tr.sim[i, ], c(1 - adja.tr))
+      lim.ma[i, 2] <- quantile(Y.ma.sim[i, ], c(1 - adja.ma))
+    } else if (side = "left-sided") {
+      lim.tr[i, 1] <- quantile(Y.tr.sim[i, ], c(adja.tr))
+      lim.ma[i, 1] <- quantile(Y.ma.sim[i, ], c(adja.ma))
+      lim.tr[i, 2] <- Inf
+      lim.ma[i, 2] <- Inf
     }
   }
   
-  if (estimation.PPP == "median") {
-    Mu0hat <- rep(NA, TT)
-    for (i in 1:TT) {
-      Mu0hat[i] <- median(Mu0[i, ])
-    }
-    
-    Phihat <- rep(NA, q)
-    for (i in 1:q) {
-      Phihat[i] <- median(model$Phi[i, ])
-    }
-    
-    sigma2hat <- median(model$sigma2)
-  } else if (estimation.PPP == "mean") {
-    Mu0hat <- rep(NA, TT)
-    for (i in 1:TT) {
-      Mu0hat[i] <- mean(Mu0[i, ])
-    }
-    
-    Phihat <- rep(NA, q)
-    for (i in 1:q) {
-      Phihat[i] <- mean(model$Phi[i, ])
-    }
-    
-    sigma2hat <- mean(model$sigma2)
-  }
+  sig.tr <- (lim.tr[, 1] <= model$Y.tr) & (model$Y.tr <= lim.tr[, 2])
+  sig.ma <- (lim.ma[, 1] <= model$Y.ma) & (model$Y.ma <= lim.ma[, 2])
   
-  chart <- GibbsRFLSM.CC.PPP.residual(Y1, model$Phi, Mu0, model$sigma2, 
-                                         Phihat, Mu0hat, sigma2hat, FAP0, nsim.PPP)
-  
-  if (standardized == TRUE) {
-    lowerbound <- chart$lowerbound * sdY1 + meanY1
-    upperbound <- chart$upperbound * sdY1 + meanY1
-  } else {
-    lowerbound <- chart$lowerbound
-    upperbound <- chart$upperbound
-  }
-  
-  if (logcc == TRUE) {
-    lowerbound <- exp(lowerbound) - 1
-    upperbound <- exp(upperbound) - 1
-  }
-  
-  sig <- rep(NA, TT - q)
-  
-  YY <- Y[-c(1:q)]
-  
-  for (i in seq(TT - q)) {
-    sig[i] <- ifelse((YY[i] < lowerbound[i]) || (upperbound[i] < YY[i]), 1, 0)
-  }
-  
-  out <- list("lowerbound" = lowerbound, "upperbound" = upperbound, 
-              "sig" = sig, 
-              "Omni" = chart$Omni, "Ind" = chart$Ind, "Obs" = Y1, 
-              "lowerboundtr" = chart$lowerbound, "upperboundtr" = chart$upperbound, 
-              "model" = model)
+  out <- list("model" = model, "sig.tr" = sig.tr, "sig.ma" = sig.ma) 
   out
 } 
