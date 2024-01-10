@@ -100,6 +100,7 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
          ylab = "Transformed Moving Averages", 
          xlab = "")
     points(model$Y.tr, type = 'o')
+    points(1:TT[which(sig.tr == FALSE)], model$Y.tr[which(sig.tr == FALSE)], col = 'red')
     points(lim.tr[, 1], type = 'l', lty = 2, col = 'red')
     points(lim.tr[, 2], type = 'l', lty = 2, col = 'red')
     
@@ -108,10 +109,12 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
          ylab = "Moving Averages", 
          xlab = "")
     points(model$Y.ma, type = 'o')
+    points(1:TT[which(sig.ma == FALSE)], model$Y.ma[which(sig.ma == FALSE)], col = 'red')
     points(lim.ma[, 1], type = 'l', lty = 2, col = 'red')
     points(lim.ma[, 2], type = 'l', lty = 2, col = 'red')
   }
   
-  out <- list("model" = model, "sig.tr" = sig.tr, "sig.ma" = sig.ma) 
+  out <- list("model" = model, "lim.tr" = lim.tr, "lim.ma" = lim.ma, 
+              "sig.tr" = sig.tr, "sig.ma" = sig.ma) 
   out
 } 
