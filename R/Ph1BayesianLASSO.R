@@ -76,18 +76,18 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   
   for (i in (q + 1):TT) {
     if (side == "two-sided") {
-      lim.tr[i + q, ] <- quantile(Y.tr.sim[i, ], c(adja.tr / 2, 1 - adja.tr / 2))
-      lim.ma[i + q, ] <- quantile(Y.ma.sim[i, ], c(adja.ma / 2, 1 - adja.ma / 2))
+      lim.tr[i, ] <- quantile(Y.tr.sim[i - q, ], c(adja.tr / 2, 1 - adja.tr / 2))
+      lim.ma[i, ] <- quantile(Y.ma.sim[i - q, ], c(adja.ma / 2, 1 - adja.ma / 2))
     } else if (side == "right-sided") {
-      lim.tr[i + q, 1] <- -Inf
-      lim.ma[i + q, 1] <- -Inf
-      lim.tr[i + q, 2] <- quantile(Y.tr.sim[i, ], c(1 - adja.tr))
-      lim.ma[i + q, 2] <- quantile(Y.ma.sim[i, ], c(1 - adja.ma))
+      lim.tr[i, 1] <- -Inf
+      lim.ma[i, 1] <- -Inf
+      lim.tr[i, 2] <- quantile(Y.tr.sim[i - q, ], c(1 - adja.tr))
+      lim.ma[i, 2] <- quantile(Y.ma.sim[i - q, ], c(1 - adja.ma))
     } else if (side == "left-sided") {
-      lim.tr[i + q, 1] <- quantile(Y.tr.sim[i, ], c(adja.tr))
-      lim.ma[i + q, 1] <- quantile(Y.ma.sim[i, ], c(adja.ma))
-      lim.tr[i + q, 2] <- Inf
-      lim.ma[i + q, 2] <- Inf
+      lim.tr[i, 1] <- quantile(Y.tr.sim[i - q, ], c(adja.tr))
+      lim.ma[i, 1] <- quantile(Y.ma.sim[i - q, ], c(adja.ma))
+      lim.tr[i, 2] <- Inf
+      lim.ma[i, 2] <- Inf
     }
   }
   
