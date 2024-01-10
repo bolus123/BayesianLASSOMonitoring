@@ -6,10 +6,10 @@
 \usage{
 Ph1BayesianLASSO(
   Y,
+  w = 28,
   H = NULL,
   X = NULL,
-  Y0 = NULL,
-  w = 14,
+  Y0 = rep(mean(Y), w - 1),
   q = 5,
   A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])),
   a = 0.1,
@@ -26,11 +26,15 @@ Ph1BayesianLASSO(
   by = 1,
   burnin = 1000,
   tol = 1e-10,
-  standardized = TRUE,
-  logcc = FALSE,
-  FAP0 = 0.2,
-  estimation.PPP = "median",
-  nsim.PPP = 1000
+  log = TRUE,
+  const = 1,
+  sta = TRUE,
+  FAP0 = 0.3,
+  side = "two-sided",
+  interval = c(1e-05, 0.4),
+  nsim.chart = 1e+05,
+  tol.chart = 1e-06,
+  plot = TRUE
 )
 }
 \arguments{
@@ -74,11 +78,11 @@ Ph1BayesianLASSO(
 
 \item{tol}{is the tolerance level.}
 
+\item{FAP0}{is the given false alarm probability}
+
 \item{standardized}{is the flag triggering the standardization for the time series}
 
 \item{logcc}{is the log transformation with continuity correction}
-
-\item{FAP0}{is the given false alarm probability}
 
 \item{estimation.PPP}{is the estimation for Mu0, Phi and sigma2}
 
