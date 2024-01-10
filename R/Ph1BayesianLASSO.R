@@ -47,7 +47,7 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
                              nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
                              log = TRUE, const = 1, sta = TRUE, 
                              FAP0 = 0.3, side = "two-sided", 
-                             interval = c(0.00001, 0.4), nsim.chart = 100000, tol.chart = 1e-6, 
+                             interval = c(0.00001, 0.4), nsim.chart = 10000, tol.chart = 1e-6, 
                              plot = TRUE) {
   
   TT <- length(Y)
@@ -63,7 +63,7 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   Y.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
                                  model$Phi, model$muq, model$sigma2, 
                                  X, model$Beta, model$Kappa, 
-                                 NULL, NULL, NULL)
+                                 NULL, NULL, NULL)$Y.tr
   
   Y.ma.sim <- backtrans(Y.tr.sim, log, const, sta, model$meanY, model$sdY)
   Y.ma.sim[Y.ma.sim < 0] <- 0
