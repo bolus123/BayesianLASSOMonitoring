@@ -94,6 +94,24 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   sig.tr <- (lim.tr[, 1] <= model$Y.tr) & (model$Y.tr <= lim.tr[, 2])
   sig.ma <- (lim.ma[, 1] <= model$Y.ma) & (model$Y.ma <= lim.ma[, 2])
   
+  if (plot == TRUE) {
+    plot(c(1, TT), c(min(lim.tr, model$Y.tr), max(lim.tr, model$Y.tr)), type = 'n',
+         main = "Phase I Chart for Transformed Moving Averages", 
+         ylab = "Transformed Moving Averages", 
+         xlab = "")
+    points(model$Y.tr, type = 'o')
+    points(lim.tr[, 1], type = 'l', lty = 2, col = 'red')
+    points(lim.tr[, 2], type = 'l', lty = 2, col = 'red')
+    
+    plot(c(1, TT), c(min(lim.ma, model$Y.ma), max(lim.ma, model$Y.ma)), type = 'n',
+         main = "Phase I Chart for Moving Averages", 
+         ylab = "Moving Averages", 
+         xlab = "")
+    points(model$Y.ma, type = 'o')
+    points(lim.ma[, 1], type = 'l', lty = 2, col = 'red')
+    points(lim.ma[, 2], type = 'l', lty = 2, col = 'red')
+  }
+  
   out <- list("model" = model, "sig.tr" = sig.tr, "sig.ma" = sig.ma) 
   out
 } 
