@@ -28,7 +28,7 @@ cc.ph1 <- function(Y.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided", tol
     tmpFAP0 <- 1 - mean(sig)
     d <- FAP0 - tmpFAP0
     
-    cat("cc:", cc, ", tmpFAP0:", tmpFAP0, "and d:", d, "\n")
+    #cat("cc:", cc, ", tmpFAP0:", tmpFAP0, "and d:", d, "\n")
     
     d
   }
@@ -84,7 +84,7 @@ cc.ph2 <- function(Y.hat, sigma2.hat, Y.sim, ARL0 = 360, side = "two-sided", tol
     tmpARL <- mean(RL)
     d <- ARL0 - tmpARL
     
-    cat("cc:", cc, ", tmpARL:", tmpARL, "and d:", d, "\n")
+    #cat("cc:", cc, ", tmpARL:", tmpARL, "and d:", d, "\n")
     
     d
   }
