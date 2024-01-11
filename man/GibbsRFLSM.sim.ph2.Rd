@@ -7,7 +7,6 @@
 GibbsRFLSM.sim.ph2(
   h,
   nsim,
-  lambda,
   Phi,
   muq,
   sigma2,
