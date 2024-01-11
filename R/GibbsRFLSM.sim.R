@@ -91,7 +91,7 @@ ewma.filter <- function (x, ratio) {
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM.sim.ph2 <- function(h, nsim, lambda, Phi, muq, sigma2, 
+GibbsRFLSM.sim.ph2 <- function(h, nsim, Phi, muq, sigma2, 
                                X = NULL, Beta = NULL, Kappa = NULL, 
                                H = NULL, Gamma = NULL, Tau = NULL, 
                                Y1 = rep(0, dim(Phi)[1]), X1 = NULL, H1 = NULL) {
@@ -134,16 +134,66 @@ GibbsRFLSM.sim.ph2 <- function(h, nsim, lambda, Phi, muq, sigma2,
     tmpsigma2 <- sigma2[tmpsel]
     
     tmperr <- rnorm(TT + h, mean = 0, sd = sqrt(tmpsigma2))
-    tmpewma <- ewma.filter(tmperr, lambda)
-      
+   
     for (i in (q + 1):(TT + h)) {
       fit.sim[i, j] <- tmpmu0[i] + (Y2.sim[(i - 1):(i - q), j] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi
-      Y2.sim[i, j] <- fit.sim[i, j] + tmpewma[i]
+      Y2.sim[i, j] <- fit.sim[i, j] + tmperr[i]
     }
     
   }
   
   list("fit" = fit.sim[-c(1:q), ], "Y.tr" = Y2.sim[-c(1:q), ])
+  
+}
+
+GibbsRFLSM.loglik <- function(Y.tr, Phi, muq, sigma2, 
+                              X = NULL, Beta = NULL, Kappa = NULL, 
+                              H = NULL, Gamma = NULL, Tau = NULL, 
+                              Y1 = rep(0, dim(Phi)[1]), X1 = NULL, H1 = NULL) {
+  
+  YY <- c(Y1, Y.tr)
+  TT <- length(YY)
+  
+  m <- dim(Phi)[2]
+  q <- dim(Phi)[1]
+  
+  muX <- matrix(0, nrow = TT - q, ncol = m)
+  if (!is.null(X)) {
+    muX <- X %*% (Beta * Kappa)
+  }
+  
+  muX1 <- matrix(0, nrow = q, ncol = m)
+  if (!is.null(X1)) {
+    muX1 <- X1 %*% (Beta * Kappa)
+  }
+  muX <- rbind(muX1, muX)
+  
+  muH <- matrix(0, nrow = TT - q, ncol = m)
+  if (!is.null(H)) {
+    muH <- H %*% (Gamma * Tau)
+  }
+  
+  muH1 <- matrix(0, nrow = q, ncol = m)
+  if (!is.null(H1)) {
+    muH1 <- H1 %*% (Gamma * Tau)
+  }
+  muH <- rbind(muH1, muH)
+  fit.sim <- matrix(NA, nrow = TT - q, ncol = m)
+  loglik.sim <- matrix(NA, nrow = TT - q, ncol = m)
+  
+  for (j in 1:m) {
+    tmpPhi <- Phi[, j]
+    tmpmu0 <- muq[j] + muX[, j] + muH[, j]
+    tmpsigma2 <- sigma2[j]
+    
+    for (i in (q + 1):(TT)) {
+      fit.sim[i - q, j] <- tmpmu0[i] + (YY[(i - 1):(i - q)] - tmpmu0[(i - 1):(i - q)]) %*% tmpPhi
+      loglik.sim[i - q, j] <- dnorm(YY[i], fit.sim[i - q, j], sqrt(tmpsigma2), log = TRUE)
+    }
+    
+  }
+  
+  rowMeans(loglik.sim)
   
 }
 
