@@ -8,7 +8,6 @@ Ph2BayesianLASSO.EWMA(
   Y,
   Ph1BayesianLASSO.model,
   lambda = 0.05,
-  w = 7,
   H = NULL,
   X = NULL,
   Y1 = rep(0, dim(Ph1BayesianLASSO.model$Phi)[1] + w),

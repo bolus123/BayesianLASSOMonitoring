@@ -189,6 +189,7 @@ GibbsRFLSM.count <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
     "lambda2" = model$lambda2,
     "muq" = model$muq,
     "Mu" = model$Mu,
+    "w" = w,
     "Y.tr" = Y2$Y,
     "meanY" = Y2$meanY,
     "sdY" = Y2$sdY,

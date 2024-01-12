@@ -417,9 +417,23 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
     tmpGamma <- Ph1BayesianLASSO.model$Gamma[, j]
     tmpTau <- Ph1BayesianLASSO.model$Tau[, j]
     tmpPhi <- Ph1BayesianLASSO.model$Phi[, j]
-    tmpV <- Y.tr - tmpmuq - X %*% (tmpBeta * tmpKappa) - H %*% (tmpGamma * tmpTau)
+    tmpV <- Y.tr - tmpmuq
+    if (!is.null(X)) {
+      tmpV <- tmpV - X %*% (tmpBeta * tmpKappa) 
+    }
+    if (!is.null(H)) {
+      tmpV <- tmpV - H %*% (tmpGamma * tmpTau)
+    }
     for (i in (q + 1):TT) {
-      tmpfit.tr[i] <- tmpmuq + X[i, ] %*% (tmpBeta * tmpKappa) + H[i, ] %*% (tmpGamma * tmpTau) + tmpV[(i - 1):(i - q)] %*% tmpPhi
+      tmpfit.tr[i] <- tmpmuq + tmpV[(i - 1):(i - q)] %*% tmpPhi
+      
+      if (!is.null(X)) {
+        tmpfit.tr[i] <- tmpfit.tr[i] + X[i, ] %*% (tmpBeta * tmpKappa)
+      }
+      if (!is.null(H)) {
+        tmpfit.tr[i] <- tmpfit.tr[i] + H[i, ] %*% (tmpGamma * tmpTau)
+      }
+      
       tmpresi.tr[i] <- Y.tr[i] - tmpfit.tr[i]
       tmpfit.ma[i] <- backtrans(tmpfit.tr[i], log, const, sta, meanY, sdY)
       tmpfit.ma[i] <- ifelse(tmpfit.ma[i] < lowerbound, lowerbound, tmpfit.ma[i])
@@ -461,24 +475,30 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
 #' 
 RMSE.ph2 <- function(Y, Ph1BayesianLASSO.model, X = NULL, H = NULL, 
                      log = TRUE, const = 1, sta = TRUE, lowerbound = 0) {
-  nsim <- dim(Ph1BayesianLASSO.model$Phi)[2]
+  
+  TT <- length(Y)
+  YY <- c(Ph1BayesianLASSO.model$Y, Y)
+  nn <- length(YY)
   q <- dim(Ph1BayesianLASSO.model$Phi)[1]
-  TT <- length(Ph1BayesianLASSO.model$Y.tr)
   
-  tmpfit.tr <- rep(NA, TT)
-  tmpfit.ma <- rep(NA, TT)
-  tmpresi.tr <- rep(NA, TT)
-  tmpresi.ma <- rep(NA, TT)
-  RMSE.tr <- rep(NA, nsim)
-  RMSE.ma <- rep(NA, nsim)
+  Y.ma <- movaver(YY, Ph1BayesianLASSO.model$w)[(nn - TT - q + 1):nn]
+  tt <- length(Y.ma)
   
-  Y.tr <- Ph1BayesianLASSO.model$Y.tr
-  Y.ma <- Ph1BayesianLASSO.model$Y.ma
   meanY <- Ph1BayesianLASSO.model$meanY
   sdY <- Ph1BayesianLASSO.model$sdY
   
-  X <- Ph1BayesianLASSO.model$X
-  H <- Ph1BayesianLASSO.model$H
+  Y.tr <- trans(Y.ma, log, const, sta, meanY, sdY)
+  
+  nsim <- dim(Ph1BayesianLASSO.model$Phi)[2]
+
+  
+  tmpfit.tr <- rep(NA, tt)
+  tmpfit.ma <- rep(NA, tt)
+  tmpresi.tr <- rep(NA, tt)
+  tmpresi.ma <- rep(NA, tt)
+  RMSE.tr <- rep(NA, nsim)
+  RMSE.ma <- rep(NA, nsim)
+  
   
   for (j in 1:nsim) {
     tmpmuq <- Ph1BayesianLASSO.model$muq[j]
@@ -487,19 +507,34 @@ RMSE.ph2 <- function(Y, Ph1BayesianLASSO.model, X = NULL, H = NULL,
     tmpGamma <- Ph1BayesianLASSO.model$Gamma[, j]
     tmpTau <- Ph1BayesianLASSO.model$Tau[, j]
     tmpPhi <- Ph1BayesianLASSO.model$Phi[, j]
-    tmpV <- Y.tr - tmpmuq - X %*% (tmpBeta * tmpKappa) - H %*% (tmpGamma * tmpTau)
-    for (i in (q + 1):TT) {
-      tmpfit.tr[i] <- tmpmuq + X[i, ] %*% (tmpBeta * tmpKappa) + H[i, ] %*% (tmpGamma * tmpTau) + tmpV[(i - 1):(i - q)] %*% tmpPhi
+    tmpV <- Y.tr - tmpmuq
+    if (!is.null(X)) {
+      tmpV <- tmpV - X %*% (tmpBeta * tmpKappa) 
+    }
+    if (!is.null(H)) {
+      tmpV <- tmpV - H %*% (tmpGamma * tmpTau)
+    }
+    
+    for (i in (q + 1):tt) {
+      tmpfit.tr[i] <- tmpmuq + tmpV[(i - 1):(i - q)] %*% tmpPhi
+      
+      if (!is.null(X)) {
+        tmpfit.tr[i] <- tmpfit.tr[i] + X[i, ] %*% (tmpBeta * tmpKappa)
+      }
+      if (!is.null(H)) {
+        tmpfit.tr[i] <- tmpfit.tr[i] + H[i, ] %*% (tmpGamma * tmpTau)
+      }
+      
       tmpresi.tr[i] <- Y.tr[i] - tmpfit.tr[i]
       tmpfit.ma[i] <- backtrans(tmpfit.tr[i], log, const, sta, meanY, sdY)
       tmpfit.ma[i] <- ifelse(tmpfit.ma[i] < lowerbound, lowerbound, tmpfit.ma[i])
       tmpresi.ma[i] <- Y.ma[i] - tmpfit.ma[i]
     }
-    tmpresi.tr <- tmpresi.tr[(q + 1):TT]
-    RMSE.tr[j] <- sqrt(t(tmpresi.tr) %*% tmpresi.tr / (TT - q))
+    tmpresi.tr <- tmpresi.tr[(q + 1):tt]
+    RMSE.tr[j] <- sqrt(t(tmpresi.tr) %*% tmpresi.tr / (tt - q))
     
-    tmpresi.ma <- tmpresi.ma[(q + 1):TT]
-    RMSE.ma[j] <- sqrt(t(tmpresi.ma) %*% tmpresi.ma / (TT - q))
+    tmpresi.ma <- tmpresi.ma[(q + 1):tt]
+    RMSE.ma[j] <- sqrt(t(tmpresi.ma) %*% tmpresi.ma / (tt - q))
   }
   
   list("RMSE.tr" = RMSE.tr, "RMSE.ma" = RMSE.ma)
