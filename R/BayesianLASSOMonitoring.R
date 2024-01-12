@@ -47,6 +47,7 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
                              nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
                              log = TRUE, const = 1, sta = TRUE, 
                              Y.hat.method = "median",
+                             cc.method = "adjusted alpha",
                              FAP0 = 0.3, side = "two-sided", 
                              nsim.chart = 10000, tol.chart = 1e-6, 
                              plot = TRUE) {
@@ -71,28 +72,47 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     for (i in 1:(TT - q)) {
       Y.hat[i] <- median(Y.tr.sim[i, ])
     }
-    sigma2hat <- median(model$sigma2)
+    #sigma2hat <- median(model$sigma2)
   } else if (Y.hat.method == "mean") {
     Y.hat <- rowMeans(Y.tr.sim)
-    sigma2hat <- mean(model$sigma2)
+    #sigma2hat <- mean(model$sigma2)
   }
   
-  cc <- cc.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0, side, tol.chart)
+  sigma2hat <- var(Y[(q + 1):TT] - Y.hat)
   
   lim.tr <- matrix(NA, nrow = TT, ncol = 2)
   
-  for (i in (q + 1):TT) {
-    if (side == "two-sided") {
-      lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigma2hat
-      lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigma2hat
-    } else if (side == "right-sided") {
-      lim.tr[i, 1] <- -Inf
-      lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigma2hat
-    } else if (side == "left-sided") {
-      lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigma2hat
-      lim.tr[i, 2] <- Inf
+  if (cc.method == "adjusted alpha") {
+    adjalpha <- adjalpha.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0, side, tol.chart)
+    
+    for (i in (q + 1):TT) {
+      if (side == "two-sided") {
+        lim.tr[i, ] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha / 2, 1 - adjalpha$adjalpha / 2)) * sigma2hat + Y.hat[i - q]
+      } else if (side == "right-sided") {
+        lim.tr[i, 1] <- -Inf
+        lim.tr[i, 2] <- quantile(adjalpha$resi[i - q, ], c(1 - adjalpha$adjalpha)) * sigma2hat + Y.hat[i - q]
+      } else if (side == "left-sided") {
+        lim.tr[i, 1] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha)) * sigma2hat + Y.hat[i - q]
+        lim.tr[i, 2] <- Inf
+      }
+    }
+  } else if (cc.method == "classic") {
+    cc <- cc.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0, side, tol.chart)
+    
+    for (i in (q + 1):TT) {
+      if (side == "two-sided") {
+        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigma2hat
+        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigma2hat
+      } else if (side == "right-sided") {
+        lim.tr[i, 1] <- -Inf
+        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigma2hat
+      } else if (side == "left-sided") {
+        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigma2hat
+        lim.tr[i, 2] <- Inf
+      }
     }
   }
+  
   
   sig.tr <- (lim.tr[, 1] <= model$Y.tr) & (model$Y.tr <= lim.tr[, 2])
   
@@ -118,7 +138,7 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   }
   
   out <- list("model" = model, "cc" = cc$cc, "lim.tr" = lim.tr, 
-              "sig.tr" = sig.tr) 
+              "sig.tr" = sig.tr, "sigma2hat" = sigma2hat) 
   out
 } 
 
@@ -164,10 +184,11 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
 #' 
 #' result <- Ph1BayesianLASSO(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, w = 28, H = NULL, X = NULL,
+Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, sigma2hat = 1, lambda = 0.05, w = 28, H = NULL, X = NULL,
                              Y1 = rep(0, dim(Ph1BayesianLASSO.model$Phi)[1] + w), X1 = NULL, H1 = NULL,
                              log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1,
                              Y.hat.method = "median",
+                             cc.method = "adjusted alpha",
                              ARL0 = 360, side = "two-sided", max.length = 5000,
                              nsim.chart = 10000, tol.chart = 1e-6, 
                              plot = TRUE) {
@@ -203,33 +224,52 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, w = 
     for (i in 1:TT2) {
       Y.hat[i] <- median(Y2.tr.sim[i, ])
     }
-    sigma2hat <- median(Ph1BayesianLASSO.model$sigma2)
+    #sigma2hat <- median(Ph1BayesianLASSO.model$sigma2)
   } else if (Y.hat.method == "mean") {
     Y.hat <- rowMeans(Y2.tr.sim)
-    sigma2hat <- mean(Ph1BayesianLASSO.model$sigma2)
+    #sigma2hat <- mean(Ph1BayesianLASSO.model$sigma2)
   }
-  
-  cc <- cc.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
   
   ewma <- (Y - Y.hat[1:TT2]) / sqrt(sigma2hat)
-  
   for (i in 2:TT2) {
-    ewma[i] <- lambda * (Y[i] - Y.hat[i]) / sqrt(sigma2hat) + (1 - lambda) * ewma[i - 1]
+    ewma[i] <- lambda * ewma[i] + (1 - lambda) * ewma[i - 1]
   }
+  
   
   lim.tr <- matrix(NA, nrow = TT2, ncol = 2)
   
-  for (i in 1:TT2) {
-    if (side == "two-sided") {
-      lim.tr[i, 1] <- - cc$cc
-      lim.tr[i, 2] <- cc$cc
-    } else if (side == "right-sided") {
-      lim.tr[i, 1] <- -Inf
-      lim.tr[i, 2] <- cc$cc
-    } else if (side == "left-sided") {
-      lim.tr[i, 1] <- - cc$cc
-      lim.tr[i, 2] <- Inf
+  if (cc.method == "adjusted alpha") {
+    adjalpha <- adjalpha.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
+    
+    for (i in 1:TT2) {
+      if (side == "two-sided") {
+        lim.tr[i, ] <- quantile(adjalpha$ewma[i, ], c(adjalpha$adjalpha / 2, 1 - adjalpha$adjalpha / 2))
+      } else if (side == "right-sided") {
+        lim.tr[i, 1] <- -Inf
+        lim.tr[i, 2] <- quantile(adjalpha$ewma[i, ], c(1 - adjalpha$adjalpha))
+      } else if (side == "left-sided") {
+        lim.tr[i, 1] <- quantile(adjalpha$ewma[i, ], c(adjalpha$adjalpha))
+        lim.tr[i, 2] <- Inf
+      }
     }
+    
+  } else if (cc.method == "classic") {
+    cc <- cc.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
+    
+    
+    for (i in 1:TT2) {
+      if (side == "two-sided") {
+        lim.tr[i, 1] <- - cc$cc
+        lim.tr[i, 2] <- cc$cc
+      } else if (side == "right-sided") {
+        lim.tr[i, 1] <- -Inf
+        lim.tr[i, 2] <- cc$cc
+      } else if (side == "left-sided") {
+        lim.tr[i, 1] <- - cc$cc
+        lim.tr[i, 2] <- Inf
+      }
+    }
+    
   }
   
   sig.tr <- (lim.tr[, 1] <= ewma) & (ewma <= lim.tr[, 2])
