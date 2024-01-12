@@ -6,7 +6,7 @@
 \usage{
 GibbsRFLSM.count(
   Y,
-  w = 28,
+  w = 7,
   H = NULL,
   X = NULL,
   Y0 = rep(mean(Y), w - 1),

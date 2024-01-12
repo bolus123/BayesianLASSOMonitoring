@@ -39,7 +39,7 @@
 #' 
 #' result <- Ph1BayesianLASSO(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
+Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
                              A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
                              a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                              theta1 = 1, theta2 = 1, xi2 = 0.1,
@@ -65,20 +65,23 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   Y.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
                                  model$Phi, model$muq, model$sigma2, 
                                  X, model$Beta, model$Kappa, 
-                                 NULL, NULL, NULL)$Y.tr
+                                 NULL, NULL, NULL)
+  
+  Y.hat.sim <- Y.tr.sim$fit
+  Y.tr.sim <- Y.tr.sim$Y.tr
   
   Y.hat <- rep(NA, TT - q)
   if (Y.hat.method == "median") {
     for (i in 1:(TT - q)) {
-      Y.hat[i] <- median(Y.tr.sim[i, ])
+      Y.hat[i] <- median(Y.hat.sim[i, ])
     }
-    #sigma2hat <- median(model$sigma2)
+    sigma2hat <- median(model$sigma2)
   } else if (Y.hat.method == "mean") {
-    Y.hat <- rowMeans(Y.tr.sim)
-    #sigma2hat <- mean(model$sigma2)
+    Y.hat <- rowMeans(Y.hat.sim)
+    sigma2hat <- mean(model$sigma2)
   }
   
-  sigma2hat <- var(Y[(q + 1):TT] - Y.hat)
+  sigmahat <- sqrt(sigma2hat)
   
   lim.tr <- matrix(NA, nrow = TT, ncol = 2)
   
@@ -87,12 +90,12 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     
     for (i in (q + 1):TT) {
       if (side == "two-sided") {
-        lim.tr[i, ] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha / 2, 1 - adjalpha$adjalpha / 2)) * sigma2hat + Y.hat[i - q]
+        lim.tr[i, ] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha / 2, 1 - adjalpha$adjalpha / 2)) * sigmahat + Y.hat[i - q]
       } else if (side == "right-sided") {
         lim.tr[i, 1] <- -Inf
-        lim.tr[i, 2] <- quantile(adjalpha$resi[i - q, ], c(1 - adjalpha$adjalpha)) * sigma2hat + Y.hat[i - q]
+        lim.tr[i, 2] <- quantile(adjalpha$resi[i - q, ], c(1 - adjalpha$adjalpha)) * sigmahat + Y.hat[i - q]
       } else if (side == "left-sided") {
-        lim.tr[i, 1] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha)) * sigma2hat + Y.hat[i - q]
+        lim.tr[i, 1] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha)) * sigmahat + Y.hat[i - q]
         lim.tr[i, 2] <- Inf
       }
     }
@@ -101,13 +104,13 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
     
     for (i in (q + 1):TT) {
       if (side == "two-sided") {
-        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigma2hat
-        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigma2hat
+        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigmahat
+        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigmahat
       } else if (side == "right-sided") {
         lim.tr[i, 1] <- -Inf
-        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigma2hat
+        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigmahat
       } else if (side == "left-sided") {
-        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigma2hat
+        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigmahat
         lim.tr[i, 2] <- Inf
       }
     }
@@ -138,7 +141,7 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
   }
   
   out <- list("model" = model, "cc" = cc$cc, "lim.tr" = lim.tr, 
-              "sig.tr" = sig.tr, "sigma2hat" = sigma2hat) 
+              "sig.tr" = sig.tr) 
   out
 } 
 
@@ -184,7 +187,7 @@ Ph1BayesianLASSO <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w 
 #' 
 #' result <- Ph1BayesianLASSO(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, sigma2hat = 1, lambda = 0.05, w = 28, H = NULL, X = NULL,
+Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, w = 7, H = NULL, X = NULL,
                              Y1 = rep(0, dim(Ph1BayesianLASSO.model$Phi)[1] + w), X1 = NULL, H1 = NULL,
                              log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1,
                              Y.hat.method = "median",
@@ -216,21 +219,25 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, sigma2hat = 1, lamb
                                   Ph1BayesianLASSO.model$Phi, Ph1BayesianLASSO.model$muq, Ph1BayesianLASSO.model$sigma2, 
                                   X, Ph1BayesianLASSO.model$Beta, Ph1BayesianLASSO.model$Kappa, 
                                   H, Ph1BayesianLASSO.model$Gamma, Ph1BayesianLASSO.model$Tau, 
-                                  Y2.tr0, X1, H1)$Y.tr
+                                  Y2.tr0, X1, H1)
 
+  Y2.hat.sim <- Y2.tr.sim$fit
+  Y2.tr.sim <- Y2.tr.sim$Y.tr
   
   Y.hat <- rep(NA, TT2)
   if (Y.hat.method == "median") {
     for (i in 1:TT2) {
-      Y.hat[i] <- median(Y2.tr.sim[i, ])
+      Y.hat[i] <- median(Y2.hat.sim[i, ])
     }
-    #sigma2hat <- median(Ph1BayesianLASSO.model$sigma2)
+    sigma2hat <- median(Ph1BayesianLASSO.model$sigma2)
   } else if (Y.hat.method == "mean") {
-    Y.hat <- rowMeans(Y2.tr.sim)
-    #sigma2hat <- mean(Ph1BayesianLASSO.model$sigma2)
+    Y.hat <- rowMeans(Y2.hat.sim)
+    sigma2hat <- mean(Ph1BayesianLASSO.model$sigma2)
   }
   
-  ewma <- (Y - Y.hat[1:TT2]) / sqrt(sigma2hat)
+  sigmahat <- sqrt(sigma2hat)
+  
+  ewma <- (Y - Y.hat[1:TT2]) / sigmahat
   for (i in 2:TT2) {
     ewma[i] <- lambda * ewma[i] + (1 - lambda) * ewma[i - 1]
   }
@@ -255,7 +262,6 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, sigma2hat = 1, lamb
     
   } else if (cc.method == "classic") {
     cc <- cc.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
-    
     
     for (i in 1:TT2) {
       if (side == "two-sided") {

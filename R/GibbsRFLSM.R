@@ -241,7 +241,7 @@ backtrans <- function(Y, log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1){
 #' 
 #' result <- GibbsRFLSM.count(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM.count <- function(Y, w = 28, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
+GibbsRFLSM.count <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
                        A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
                        a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                        theta1 = 1, theta2 = 1, xi2 = 0.1,

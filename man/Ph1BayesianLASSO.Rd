@@ -6,7 +6,7 @@
 \usage{
 Ph1BayesianLASSO(
   Y,
-  w = 28,
+  w = 7,
   H = NULL,
   X = NULL,
   Y0 = rep(mean(Y), w - 1),
@@ -30,6 +30,7 @@ Ph1BayesianLASSO(
   const = 1,
   sta = TRUE,
   Y.hat.method = "median",
+  cc.method = "adjusted alpha",
   FAP0 = 0.3,
   side = "two-sided",
   nsim.chart = 10000,

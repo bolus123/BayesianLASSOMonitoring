@@ -36,7 +36,8 @@ cc.ph1 <- function(Y.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided", tol
   
   resi <- matrix(NA, nrow = TT, ncol = nsim)
   for (i in 1:nsim) {
-    resi[, i] <- (Y.sim[, i] - Y.hat) / sqrt(sigma2.hat)
+    resi[, i] <- (Y.sim[, i] - Y.hat)
+    resi[, i] <- resi[, i] / sqrt(sigma2.hat)
   }
   
   interval <- c(0, max(abs(resi)))
@@ -94,7 +95,8 @@ adjalpha.ph1 <- function(Y.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided
   
   resi <- matrix(NA, nrow = TT, ncol = nsim)
   for (i in 1:nsim) {
-    resi[, i] <- (Y.sim[, i] - Y.hat) / sqrt(sigma2.hat)
+    resi[, i] <- (Y.sim[, i] - Y.hat)
+    resi[, i] <- resi[, i] / sqrt(sigma2.hat)
   }
   
   interval <- c(0, 0.5)
