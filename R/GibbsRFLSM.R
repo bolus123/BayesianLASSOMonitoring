@@ -105,98 +105,6 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
   
 }
 
-#' Caculate the moving averages
-#' 
-#' gets the moving averages
-#' @param Y is the input
-#' @param w is the length of moving window
-#' 
-#' @export
-#' @examples
-#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
-#' lambda <- 0.239385
-#' pi <- 0.1453097
-#'
-#' TT <- 183
-#' w <- 28
-#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = 100)
-#' ma <- movaver(Y, w)
-movaver <- function(Y, w = 5){filter(Y, rep(1 / w, w), sides = 1)}
-
-#' Transform the data
-#' 
-#' gets the transformed input
-#' @param Y is the input
-#' @param log is the flag triggering the log transformation
-#' @param const is the constant added to the input during the log transformation
-#' @param sta is the flag triggering the standardization
-#' 
-#' @export
-#' @examples
-#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
-#' lambda <- 0.239385
-#' pi <- 0.1453097
-#'
-#' TT <- 183
-#' w <- 28
-#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = 100)
-#' ma <- movaver(Y, w)
-#' ma.tr <- trans(ma, TRUE, 1, TRUE)
-trans <- function(Y, log = TRUE, const = 1, sta = TRUE){
-  out <- Y
-  if (log == TRUE) {
-    out <- log(out + const)
-  }
-  meanY <- 0
-  sdY <- 1
-  if (sta == TRUE) {
-    meanY <- mean(out)
-    sdY <- sd(out)
-    out <- (out - meanY) / sdY
-  }
-  
-  list(
-    "Y" = out,
-    "meanY" = meanY,
-    "sdY" = sdY
-  )
-}
-
-#' Back-transform the data
-#' 
-#' gets the back-transformed input
-#' @param Y is the input
-#' @param log is the flag triggering the log transformation
-#' @param const is the constant added to the input during the log transformation
-#' @param sta is the flag triggering the standardization
-#' @param meanY is the mean of the original Y
-#' @param sdY is the standard deviation of the original Y
-#' 
-#' @export
-#' @examples
-#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
-#' lambda <- 0.239385
-#' pi <- 0.1453097
-#'
-#' TT <- 183
-#' w <- 28
-#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = 100)
-#' ma <- movaver(Y, w)
-#' ma.tr <- trans(ma, TRUE, 1, TRUE)
-#' ma.batr <- backtrans(ma.tr$Y, TRUE, 1, TRUE, ma.tr$meanY, ma.tr$sdY)
-backtrans <- function(Y, log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1){
-  out <- Y
-  
-  if (sta == TRUE) {
-    out <- out * sdY + meanY
-  }
-  
-  if (log == TRUE) {
-    out <- exp(out) - const
-  }
-  
-  out
-}
 
 #' Random Flexible Level Shift Model
 #' 
@@ -286,7 +194,8 @@ GibbsRFLSM.count <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
     "sdY" = Y2$sdY,
     "Y.ma" = Y1.ma,
     "X" = X,
-    "H" = H
+    "H" = H,
+    "Y" = Y
   )
   
   return(out)

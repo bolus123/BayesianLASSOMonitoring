@@ -83,65 +83,70 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   
   sigmahat <- sqrt(sigma2hat)
   
+  
   lim.tr <- matrix(NA, nrow = TT, ncol = 2)
-  
-  if (cc.method == "adjusted alpha") {
-    adjalpha <- adjalpha.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0, side, tol.chart)
-    
-    for (i in (q + 1):TT) {
-      if (side == "two-sided") {
-        lim.tr[i, ] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha / 2, 1 - adjalpha$adjalpha / 2)) * sigmahat + Y.hat[i - q]
-      } else if (side == "right-sided") {
-        lim.tr[i, 1] <- -Inf
-        lim.tr[i, 2] <- quantile(adjalpha$resi[i - q, ], c(1 - adjalpha$adjalpha)) * sigmahat + Y.hat[i - q]
-      } else if (side == "left-sided") {
-        lim.tr[i, 1] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha)) * sigmahat + Y.hat[i - q]
-        lim.tr[i, 2] <- Inf
-      }
-    }
-  } else if (cc.method == "classic") {
-    cc <- cc.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0, side, tol.chart)
-    
-    for (i in (q + 1):TT) {
-      if (side == "two-sided") {
-        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigmahat
-        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigmahat
-      } else if (side == "right-sided") {
-        lim.tr[i, 1] <- -Inf
-        lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigmahat
-      } else if (side == "left-sided") {
-        lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigmahat
-        lim.tr[i, 2] <- Inf
-      }
-    }
-  }
-  
-  
-  sig.tr <- (lim.tr[, 1] <= model$Y.tr) & (model$Y.tr <= lim.tr[, 2])
+  sig.tr <- lim.tr[, 1]
   
   if (plot == TRUE) {
     
-    if (side == "two-sided") {
-      Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
-    } else if (side == "right-sided") {
-      Ylim <- c(min(model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
-    } else if (side == "left-sided") {
-      Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(model$Y.tr, na.rm = TRUE))
+    
+    if (cc.method == "adjusted alpha") {
+      adjalpha <- adjalpha.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0, side, tol.chart)
+      
+      for (i in (q + 1):TT) {
+        if (side == "two-sided") {
+          lim.tr[i, ] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha / 2, 1 - adjalpha$adjalpha / 2)) * sigmahat + Y.hat[i - q]
+        } else if (side == "right-sided") {
+          lim.tr[i, 1] <- -Inf
+          lim.tr[i, 2] <- quantile(adjalpha$resi[i - q, ], c(1 - adjalpha$adjalpha)) * sigmahat + Y.hat[i - q]
+        } else if (side == "left-sided") {
+          lim.tr[i, 1] <- quantile(adjalpha$resi[i - q, ], c(adjalpha$adjalpha)) * sigmahat + Y.hat[i - q]
+          lim.tr[i, 2] <- Inf
+        }
+      }
+    } else if (cc.method == "classic") {
+      cc <- cc.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0, side, tol.chart)
+      
+      for (i in (q + 1):TT) {
+        if (side == "two-sided") {
+          lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigmahat
+          lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigmahat
+        } else if (side == "right-sided") {
+          lim.tr[i, 1] <- -Inf
+          lim.tr[i, 2] <- Y.hat[i - q] + cc$cc * sigmahat
+        } else if (side == "left-sided") {
+          lim.tr[i, 1] <- Y.hat[i - q] - cc$cc * sigmahat
+          lim.tr[i, 2] <- Inf
+        }
+      }
     }
     
-    plot(c(1, TT), Ylim, type = 'n',
-         main = "Phase I Chart for Transformed Moving Averages", 
-         ylab = "Transformed Moving Averages", 
-         xlab = "")
-    points(model$Y.tr, type = 'o')
-    points((1:TT)[which(sig.tr == FALSE)], model$Y.tr[which(sig.tr == FALSE)], col = 'red', pch = 16)
-    points(lim.tr[, 1], type = 'l', lty = 2, col = 'red')
-    points(lim.tr[, 2], type = 'l', lty = 2, col = 'red')
     
+    sig.tr <- (lim.tr[, 1] <= model$Y.tr) & (model$Y.tr <= lim.tr[, 2])
+    
+    
+      
+      if (side == "two-sided") {
+        Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
+      } else if (side == "right-sided") {
+        Ylim <- c(min(model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
+      } else if (side == "left-sided") {
+        Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(model$Y.tr, na.rm = TRUE))
+      }
+      
+      plot(c(1, TT), Ylim, type = 'n',
+           main = "Phase I Chart for Transformed Moving Averages", 
+           ylab = "Transformed Moving Averages", 
+           xlab = "")
+      points(model$Y.tr, type = 'o')
+      points((1:TT)[which(sig.tr == FALSE)], model$Y.tr[which(sig.tr == FALSE)], col = 'red', pch = 16)
+      points(lim.tr[, 1], type = 'l', lty = 2, col = 'red')
+      points(lim.tr[, 2], type = 'l', lty = 2, col = 'red')
+      
   }
   
-  out <- list("model" = model, "cc" = cc$cc, "lim.tr" = lim.tr, 
-              "sig.tr" = sig.tr) 
+  out <- list("model" = model, "lim.tr" = lim.tr, 
+              "sig.tr" = sig.tr, "Y.hat" = Y.hat) 
   out
 } 
 
@@ -237,13 +242,18 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, w = 
   
   sigmahat <- sqrt(sigma2hat)
   
+  lim.tr <- matrix(NA, nrow = TT2, ncol = 2)
+  sig.tr <- lim.tr[, 1]
+  
+  if (plot == TRUE) {
+  
   ewma <- (Y - Y.hat[1:TT2]) / sigmahat
   for (i in 2:TT2) {
     ewma[i] <- lambda * ewma[i] + (1 - lambda) * ewma[i - 1]
   }
   
   
-  lim.tr <- matrix(NA, nrow = TT2, ncol = 2)
+  
   
   if (cc.method == "adjusted alpha") {
     adjalpha <- adjalpha.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
@@ -280,7 +290,7 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, w = 
   
   sig.tr <- (lim.tr[, 1] <= ewma) & (ewma <= lim.tr[, 2])
   
-  if (plot == TRUE) {
+  
     
     if (side == "two-sided") {
       Ylim <- c(min(lim.tr, ewma, na.rm = TRUE), max(lim.tr, ewma, na.rm = TRUE))
@@ -301,7 +311,7 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, w = 
     
   }
   
-  out <- list("EWMA" = ewma, "cc" = cc$cc, "lim.tr" = lim.tr, 
-              "sig.tr" = sig.tr) 
+  out <- list("EWMA" = ewma, "lim.tr" = lim.tr, 
+              "sig.tr" = sig.tr, "Y.hat" = Y.hat) 
   out
 } 
