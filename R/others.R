@@ -101,4 +101,58 @@ rzinpoisinar3 <- function(n, alpha, lambda, pi, h, delta, burnin = 100) {
   
 }
 
-
+#' simulate realizations using INAR(3) with zero-inflated Poisson innovation and one sustained shift
+#' 
+#' @param Ph1BayesianLASSO.model is the length
+#' @param log is the log
+#' @param const is the constant
+#' @param sta is the sta
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
+#' lambda <- 0.239385
+#' pi <- 0.1453097
+#'
+#' TT <- 183
+#' w <- 28
+#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = burnin)
+#' 
+RMSE <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE) {
+  nsim <- dim(Ph1BayesianLASSO.model$Phi)[2]
+  q <- dim(Ph1BayesianLASSO.model$Phi)[1]
+  TT <- length(Ph1BayesianLASSO.model$Y.tr)
+  
+  tmpresi <- rep(NA, TT)
+  RMSE <- rep(NA, nsim)
+  
+  Y.tr <- Ph1BayesianLASSO.model$Y.tr
+  meanY <- Ph1BayesianLASSO.model$meanY
+  sdY <- Ph1BayesianLASSO.model$sdY
+  
+  X <- Ph1BayesianLASSO.model$X
+  H <- Ph1BayesianLASSO.model$H
+  
+  for (j in 1:nsim) {
+    tmpmuq <- Ph1BayesianLASSO.model$muq[j]
+    tmpBeta <- Ph1BayesianLASSO.model$Beta[, j]
+    tmpKappa <- Ph1BayesianLASSO.model$Kappa[, j]
+    tmpGamma <- Ph1BayesianLASSO.model$Gamma[, j]
+    tmpTau <- Ph1BayesianLASSO.model$Tau[, j]
+    tmpPhi <- Ph1BayesianLASSO.model$Phi[, j]
+    tmpV <- Y.tr - tmpmuq - X %*% (tmpBeta * tmpKappa) - H %*% (tmpKappa * tmpTau)
+    for (i in (q + 1):TT) {
+      tmpresi[i] <- tmpV[i] - tmpV[(i - 1):(i - q)] %*% tmpPhi
+    }
+    RMSE[j] <- sqrt(tmpresi %*% t(tmpresi) / (TT - q))
+  }
+  
+  RMSE
+  
+}
