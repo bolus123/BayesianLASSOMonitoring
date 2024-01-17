@@ -487,7 +487,7 @@ RMSE.ph2 <- function(Y, Ph1BayesianLASSO.model, X = NULL, H = NULL,
   meanY <- Ph1BayesianLASSO.model$meanY
   sdY <- Ph1BayesianLASSO.model$sdY
   
-  Y.tr <- trans(Y.ma, log, const, sta, meanY, sdY)
+  Y.tr <- trans(Y.ma, log, const, sta, meanY, sdY)$Y
   
   nsim <- dim(Ph1BayesianLASSO.model$Phi)[2]
 
@@ -499,6 +499,12 @@ RMSE.ph2 <- function(Y, Ph1BayesianLASSO.model, X = NULL, H = NULL,
   RMSE.tr <- rep(NA, nsim)
   RMSE.ma <- rep(NA, nsim)
   
+  if (!is.null(X)) {
+    X <- rbind(Ph1BayesianLASSO.model$X, X)[(nn - TT - q + 1):nn, ]
+  }
+  if (!is.null(H)) {
+    H <- rbind(Ph1BayesianLASSO.model$H, H)[(nn - TT - q + 1):nn, ]
+  }
   
   for (j in 1:nsim) {
     tmpmuq <- Ph1BayesianLASSO.model$muq[j]

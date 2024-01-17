@@ -247,16 +247,16 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, H = 
   lim.tr <- matrix(NA, nrow = TT2, ncol = 2)
   sig.tr <- lim.tr[, 1]
   
-  if (plot == TRUE) {
+  
   
   ewma <- (Y - Y.hat[1:TT2]) / sigmahat
   for (i in 2:TT2) {
     ewma[i] <- lambda * ewma[i] + (1 - lambda) * ewma[i - 1]
   }
   
+  if (plot == TRUE) {
   
-  
-  
+    
   if (cc.method == "adjusted alpha") {
     adjalpha <- adjalpha.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
     
