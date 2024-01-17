@@ -343,16 +343,16 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
   
   for (j in 1:nsim) {
     tmpmuq <- Ph1BayesianLASSO.model$muq[j]
-    tmpBeta <- Ph1BayesianLASSO.model$Beta[, j]
-    tmpKappa <- Ph1BayesianLASSO.model$Kappa[, j]
-    tmpGamma <- Ph1BayesianLASSO.model$Gamma[, j]
-    tmpTau <- Ph1BayesianLASSO.model$Tau[, j]
     tmpPhi <- Ph1BayesianLASSO.model$Phi[, j]
     tmpV <- Y.tr - tmpmuq
     if (!is.null(X)) {
+      tmpBeta <- Ph1BayesianLASSO.model$Beta[, j]
+      tmpKappa <- Ph1BayesianLASSO.model$Kappa[, j]
       tmpV <- tmpV - X %*% (tmpBeta * tmpKappa) 
     }
     if (!is.null(H)) {
+      tmpGamma <- Ph1BayesianLASSO.model$Gamma[, j]
+      tmpTau <- Ph1BayesianLASSO.model$Tau[, j]
       tmpV <- tmpV - H %*% (tmpGamma * tmpTau)
     }
     for (i in (q + 1):TT) {
@@ -439,16 +439,16 @@ RMSE.ph2 <- function(Y, Ph1BayesianLASSO.model, X = NULL, H = NULL,
   
   for (j in 1:nsim) {
     tmpmuq <- Ph1BayesianLASSO.model$muq[j]
-    tmpBeta <- Ph1BayesianLASSO.model$Beta[, j]
-    tmpKappa <- Ph1BayesianLASSO.model$Kappa[, j]
-    tmpGamma <- Ph1BayesianLASSO.model$Gamma[, j]
-    tmpTau <- Ph1BayesianLASSO.model$Tau[, j]
     tmpPhi <- Ph1BayesianLASSO.model$Phi[, j]
     tmpV <- Y.tr - tmpmuq
     if (!is.null(X)) {
+      tmpBeta <- Ph1BayesianLASSO.model$Beta[, j]
+      tmpKappa <- Ph1BayesianLASSO.model$Kappa[, j]
       tmpV <- tmpV - X %*% (tmpBeta * tmpKappa) 
     }
     if (!is.null(H)) {
+      tmpGamma <- Ph1BayesianLASSO.model$Gamma[, j]
+      tmpTau <- Ph1BayesianLASSO.model$Tau[, j]
       tmpV <- tmpV - H %*% (tmpGamma * tmpTau)
     }
     
