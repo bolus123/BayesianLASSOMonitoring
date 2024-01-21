@@ -42,64 +42,6 @@ fpi1 <- function(delta, alpha, lambda0, pi0, lambda1 = lambda0,
 }
 
 
-#' simulate realizations using INAR(3) with zero-inflated Poisson innovation and one sustained shift
-#' 
-#' @param n is the length
-#' @param alpha is the alpha
-#' @param lambda is the mean of poisson mixture
-#' @param pi is the proportion of zeros
-#' @param h is the start point of shift
-#' @param delta is the value of the standardized shift
-#' @param burnin is the length of the burn-in period
-#' @export
-#' @examples
-#' nsim <- 100
-#' burnin <- 100
-#' T <- 100
-#' q <- 5
-#' H <- getHMatMT(T, q)
-#' Y <- arima.sim(list(ar = 0.5), n = T)
-#' 
-#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
-#' lambda <- 0.239385
-#' pi <- 0.1453097
-#'
-#' TT <- 183
-#' w <- 28
-#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = burnin)
-#' 
-rzinpoisinar3 <- function(n, alpha, lambda, pi, h, delta, burnin = 100) {
-  
-  q <- length(alpha)
-  out <- rep(NA, n + burnin + q)
-  out[1:q] <- VGAM::rzipois(q, lambda, pi)
-  
-  
-  k <- 0
-  
-  lambda1 <- flambda1(delta, alpha, lambda, pi, pi1 = pi, interval = c(1e-10, 1000))
-  
-  for (i in (q + 1):(n + burnin + q)) {
-    for (j in 1:q) {
-      out[i] <- rbinom(1, out[i - j], alpha[j])
-    }
-    
-    if (i >= (q + 1 + burnin)) {
-      k <- k + 1
-    }
-    
-    if (k >= h) {
-      out[i] <- out[i] + VGAM::rzipois(1, lambda1, pi)
-    } else {
-      out[i] <- out[i] + VGAM::rzipois(1, lambda, pi)
-    }
-    
-    
-  }
-  
-  out[(burnin + q + 1):(n + burnin + q)]
-  
-}
 
 
 fdelta <- function(alpha, lambda0, pi0, lambda1, pi1) {
@@ -206,6 +148,93 @@ rzinpoisinar3 <- function(n, alpha, lambda, pi, h, delta, burnin = 100) {
 }
 
 
+invert.q <- function(coef) {
+  out <- 1
+  
+  if (all(abs(coef) < 1)) {
+    minmod <- min(Mod(polyroot(c(1, coef))))
+    
+    if (minmod <= 1) {
+      out <- 0
+    }
+  } else {
+    out <- 0
+  }
+  
+  return(out)
+}
+
+pars.mat <- function(n, parsVec, norder = 1) {
+  Check <- invert.q(parsVec)
+  if (Check == 0) {
+    NULL
+  } else {
+    Mat <- diag(n)
+    for (i in 1:norder) {
+      Mat <- Mat + Diag(rep(parsVec[i], n - i), k = -i)
+    }
+    Mat
+  }
+}
+
+
+sigma.mat <- function(n, order = c(1, 0, 0), phi.vec = 0.5, theta.vec = NULL, sigma2 = 1, burn.in = 50) {
+  if (order[1] == 0) {
+    phiMat <- diag(n + burn.in)
+  } else {
+    phiMat <- pars.mat(n + burn.in, -phi.vec, norder = order[1])
+  }
+  
+  if (order[3] == 0) {
+    thetaMat <- diag(n + burn.in)
+  } else {
+    thetaMat <- pars.mat(n + burn.in, theta.vec, norder = order[3])
+  }
+  
+  out <- solve(phiMat) %*% thetaMat %*% t(thetaMat) %*% t(solve(phiMat)) * sigma2
+  
+  gamma0 <- out[dim(out)[1], dim(out)[2]]
+  
+  if (burn.in > 0) {
+    out <- out[-c(1:burn.in), -c(1:burn.in)]
+  }
+  
+  list(sigma.mat = out, sqrtsigma.mat = sqrtm(out)$B, gamma0 = gamma0)
+}
+
+#' simulate realizations using ARMA(p, q) and one sustained shift
+#' 
+#' @param n is the length
+#' @param phi is the alpha
+#' @param theta is the mean of poisson mixture
+#' @param sigma2 is the mean of poisson mixture
+#' @param h is the proportion of zeros
+#' @param delta is the start point of shift
+#' @param burnin is the length of the burn-in period
+#' @param burnin is the length of the burn-in period
+#' @export
+#' @examples
+#' nsim <- 100
+#' burnin <- 100
+#' T <- 100
+#' q <- 5
+#' H <- getHMatMT(T, q)
+#' Y <- arima.sim(list(ar = 0.5), n = T)
+#' 
+#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
+#' lambda <- 0.239385
+#' pi <- 0.1453097
+#'
+#' TT <- 183
+#' w <- 28
+#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = burnin)
+#' 
+rarma <- function(n, phi, theta, sigma2, h, delta, nsim = 100, burnin = 50, lowerbound = 0) {
+  ts <- arima.sim(list(ar = phi, ma = theta), n = n, sd = sqrt(sigma2))
+  gamma0 <- sigma.mat(nsim, order = c(length(phi), 0, length(theta)), phi.vec = phi, theta.vec = theta, sigma2 = sigma2, burn.in = burnin)$gamma0
+  ts[h:n] <- ts[h:n] + sqrt(gamma0) * delta
+  ts[which(ts < lowerbound)] <- lowerbound
+}
 
 #' Caculate the moving averages
 #' 
