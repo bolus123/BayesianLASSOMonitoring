@@ -440,10 +440,10 @@ RMSE.ph2 <- function(Y, Ph1BayesianLASSO.model, X = NULL, H = NULL,
   RMSE.ma <- rep(NA, nsim)
   
   if (!is.null(X)) {
-    X <- rbind(Ph1BayesianLASSO.model$X, X)[(nn - TT - q + 1):nn, ]
+    X <- as.matrix(rbind(Ph1BayesianLASSO.model$X, X)[(nn - TT - q + 1):nn, ])
   }
   if (!is.null(H)) {
-    H <- rbind(Ph1BayesianLASSO.model$H, H)[(nn - TT - q + 1):nn, ]
+    H <- as.matrix(rbind(Ph1BayesianLASSO.model$H, H)[(nn - TT - q + 1):nn, ])
   }
   
   for (j in 1:nsim) {
