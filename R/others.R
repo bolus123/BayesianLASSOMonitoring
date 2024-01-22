@@ -234,6 +234,7 @@ rarma <- function(n, phi, theta, sigma2, h, delta, nsim = 100, burnin = 50, lowe
   gamma0 <- sigma.mat(nsim, order = c(length(phi), 0, length(theta)), phi.vec = phi, theta.vec = theta, sigma2 = sigma2, burn.in = burnin)$gamma0
   ts[h:n] <- ts[h:n] + sqrt(gamma0) * delta
   ts[which(ts < lowerbound)] <- lowerbound
+  ts
 }
 
 #' Caculate the moving averages
