@@ -17,6 +17,7 @@
 #' @importFrom stats sd
 #' @importFrom Rcpp evalCpp
 #' @importFrom pracma Diag
+#' @importFrom pracma sqrtm
 #' @useDynLib BayesianLASSOMonitoring, .registration = TRUE
 NULL
 

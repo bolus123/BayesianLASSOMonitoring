@@ -42,52 +42,6 @@ fpi1 <- function(delta, alpha, lambda0, pi0, lambda1 = lambda0,
 }
 
 
-
-
-fdelta <- function(alpha, lambda0, pi0, lambda1, pi1) {
-  
-  a <- sqrt(1 - sum(alpha ^ 2)) / (1 - sum(alpha))
-  d1 <- (1 - pi1) * lambda1 / 
-    sqrt(lambda1 * (1 - pi1) * (1 + pi1 * lambda1))
-  d0 <- (1 - pi0) * lambda0 / 
-    sqrt(lambda0 * (1 - pi0) * (1 + pi0 * lambda0))
-  
-  a * (d1 - d0)
-  
-}
-
-flambda1 <- function(delta, alpha, lambda0, pi0, pi1 = pi0, interval = c(1e-10, 1000)) {
-  
-  rootfinding <- function(lambda1, delta, alpha, lambda0, pi0, pi1) {
-    tmp <- fdelta(alpha, lambda0, pi0, lambda1, pi1) 
-    #cat("tmp:", tmp, "lambda1:", lambda1, "\n")
-    delta - tmp
-  }
-  
-  uniroot(rootfinding, interval = interval, delta = delta, 
-          alpha = alpha, 
-          lambda0 = lambda0, pi0 = pi0, pi1 = pi1)$root
-  
-}
-
-
-
-fpi1 <- function(delta, alpha, lambda0, pi0, lambda1 = lambda0, 
-                 interval = c(1e-10, 1 - 1e-10)) {
-  
-  rootfinding <- function(pi1, delta, alpha, lambda0, pi0, lambda1) {
-    tmp <- fdelta(alpha, lambda0, pi0, lambda1, pi1) 
-    #cat("tmp:", tmp, "pi1:", pi1, "\n")
-    delta - tmp
-  }
-  
-  uniroot(rootfinding, interval = interval, delta = delta, 
-          alpha = alpha, 
-          lambda0 = lambda0, lambda1 = lambda1, pi0 = pi0)$root
-  
-}
-
-
 #' simulate realizations using INAR(3) with zero-inflated Poisson innovation and one sustained shift
 #' 
 #' @param n is the length
