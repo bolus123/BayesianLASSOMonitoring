@@ -40,7 +40,7 @@
 #' result <- Ph1BayesianLASSO(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
 Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
-                             A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])), 
+                             A = diag(nrow = q), 
                              a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
                              theta1 = 1, theta2 = 1, xi2 = 0.1,
                              method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
