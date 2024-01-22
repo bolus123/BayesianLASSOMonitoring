@@ -8,7 +8,7 @@ Author: (
 			)
 Maintainer: Yuhui Yao <yyao17@ua.edu>
 Description: A Phase I Control Chart which is built using Random Flexible Level Shift Model is provided.  The model is trained using the Bayesian LASSO Technique.
-Imports: Rcpp, VGAM, ZINARp
+Imports: Rcpp, VGAM, ZINARp, pracma
 LinkingTo: Rcpp, RcppArmadillo
 URL: https://github.com/bolus123/BayesianLASSOMonitoring
 BugReports: https://github.com/bolus123/BayesianLASSOMonitoring/issues
