@@ -183,10 +183,35 @@ sigma.mat <- function(n, order = c(1, 0, 0), phi.vec = 0.5, theta.vec = NULL, si
 #' w <- 28
 #' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = burnin)
 #' 
-rarma <- function(n, phi, theta, sigma2, h, delta, nsim = 100, burnin = 50, lowerbound = 0) {
-  ts <- arima.sim(list(ar = phi, ma = theta), n = n, sd = sqrt(sigma2))
-  gamma0 <- sigma.mat(nsim, order = c(length(phi), 0, length(theta)), phi.vec = phi, theta.vec = theta, sigma2 = sigma2, burn.in = burnin)$gamma0
-  ts[h:n] <- ts[h:n] + sqrt(gamma0) * delta
+rarma <- function(object, n, h, delta, nsim = 100, burnin = 50, lowerbound = 0) {
+  
+  nphi <- grep("ar", names(object$coef))
+  ntheta <- grep("ma", names(object$coef))
+  
+  if (length(nphi) == 0) {
+    phi <- NULL
+  } else {
+    phi <- object$coef[nphi]
+  }
+  
+  if (length(ntheta) == 0) {
+    theta <- NULL
+  } else {
+    theta <- object$coef[ntheta]
+  }
+  
+  gamma0 <- sigma.mat(n = nsim, order = c(length(nphi), 0, length(ntheta)), 
+                      phi.vec = phi, theta.vec = theta, sigma2 = object$sigma2, burn.in = burnin)$gamma0
+  
+  tmpint <- grep("intercept", names(object$coef))
+  
+  mu <- rep(ifelse(length(tmpint) == 0, 0, object$coef[tmpint]), n)
+  mu[h:n] <- mu[h:n] + sqrt(gamma0) * delta
+  
+  innov <- rnorm(n, mu, sqrt(object$sigma2))
+
+  ts <- simulate(object, nsim = n, future = FALSE, innov = innov)
+
   ts[which(ts < lowerbound)] <- lowerbound
   ts
 }

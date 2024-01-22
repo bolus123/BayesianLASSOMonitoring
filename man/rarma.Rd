@@ -4,22 +4,22 @@
 \alias{rarma}
 \title{simulate realizations using ARMA(p, q) and one sustained shift}
 \usage{
-rarma(n, phi, theta, sigma2, h, delta, nsim = 100, burnin = 50, lowerbound = 0)
+rarma(object, n, h, delta, nsim = 100, burnin = 50, lowerbound = 0)
 }
 \arguments{
 \item{n}{is the length}
-
-\item{phi}{is the alpha}
-
-\item{theta}{is the mean of poisson mixture}
-
-\item{sigma2}{is the mean of poisson mixture}
 
 \item{h}{is the proportion of zeros}
 
 \item{delta}{is the start point of shift}
 
 \item{burnin}{is the length of the burn-in period}
+
+\item{phi}{is the alpha}
+
+\item{theta}{is the mean of poisson mixture}
+
+\item{sigma2}{is the mean of poisson mixture}
 }
 \description{
 simulate realizations using ARMA(p, q) and one sustained shift
