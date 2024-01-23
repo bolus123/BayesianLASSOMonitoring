@@ -241,3 +241,44 @@ adjalpha.ph2 <- function(Y.hat, sigma2.hat, Y.sim, ARL0 = 360, side = "two-sided
   
 }
 
+
+
+#' obtain the residual statistics 
+#'
+#' @param Y.hat is the transformed vector 
+#' @param sigma2.hat is the transformed vector
+#' @param Y.sim is the transformed vector
+#' @param FAP0 is the matrix of laggy coefficients
+#' @param side is the side
+#' @param tol is the tolerance
+#' @export
+#' 
+lim.ph1 <- function(Y.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided") {
+  
+  nsim <- dim(Y.sim)[2]
+  TT <- dim(Y.sim)[1]
+  
+  resi <- matrix(NA, nrow = TT, ncol = nsim)
+  for (i in 1:nsim) {
+    resi[, i] <- (Y.sim[, i] - Y.hat)
+    resi[, i] <- resi[, i] / sqrt(sigma2.hat)
+    resi[, i] <- (resi[, i] - mean(resi[, i])) / sd(resi[, i])
+  }
+  
+  max.resi <- rep(NA, nsim)
+  
+  for (i in 1:nsim) {
+    if (side == "two-sided") {
+      max.resi[i] <- max(abs(resi[, i]))
+    } else if (side == "right-sided") {
+      max.resi[i] <- max(resi[, i])
+    } else if (side == "left-sided") {
+      max.resi[i] <- max(-resi[, i])
+    }
+  }
+  
+  lim <- quantile(max.resi, 1 - FAP0)
+  
+  lim
+  
+} 
