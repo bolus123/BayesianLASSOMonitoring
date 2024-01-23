@@ -131,7 +131,8 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   }
   
   out <- list("model" = model, "lim.tr" = lim.tr, 
-              "sig.tr" = sig.tr, "Y.hat" = Y.hat) 
+              "sig.tr" = sig.tr, "Y.hat" = Y.hat, 
+              "cs.mean" = cs.mean, "cs.sd" = cs.sd) 
   out
 } 
 
