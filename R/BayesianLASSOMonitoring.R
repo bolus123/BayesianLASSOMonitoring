@@ -96,13 +96,13 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   
   for (i in (q + 1):TT) {
     if (side == "two-sided") {
-      lim.tr[i, 1] <- Y.hat[i] + (cs.mean - lim * cs.sd) * sigmahat
-      lim.tr[i, 2] <- Y.hat[i] + (cs.mean + lim * cs.sd) * sigmahat
+      lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
+      lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
     } else if (side == "right-sided") {
       lim.tr[i, 1] <- -Inf
-      lim.tr[i, 2] <- Y.hat[i] + (cs.mean + lim * cs.sd) * sigmahat
+      lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
     } else if (side == "left-sided") {
-      lim.tr[i, 1] <- Y.hat[i] + (cs.mean - lim * cs.sd) * sigmahat
+      lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
       lim.tr[i, 2] <- Inf
     }
   }
