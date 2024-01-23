@@ -219,23 +219,22 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
   Y2.hat.sim <- Y2.tr.sim$fit
   Y2.tr.sim <- Y2.tr.sim$Y.tr
   
+  Y.hat.overall <- rep(NA, max.length)
   Y.hat <- rep(NA, TT2)
   if (Y.hat.method == "median") {
-    for (i in 1:TT2) {
-      Y.hat[i] <- median(Y2.hat.sim[i, ])
+    for (i in 1:max.length) {
+      Y.hat.overall[i] <- median(Y2.hat.sim[i, ])
     }
     sigma2hat <- median(Ph1BayesianLASSO.model$sigma2)
   } else if (Y.hat.method == "mean") {
-    Y.hat <- rowMeans(Y2.hat.sim)
+    Y.hat.overall <- rowMeans(Y2.hat.sim)
     sigma2hat <- mean(Ph1BayesianLASSO.model$sigma2)
   }
-  
+  Y.hat <- Y.hat.overall[1:TT2]
   sigmahat <- sqrt(sigma2hat)
   
   lim.tr <- matrix(NA, nrow = TT2, ncol = 2)
   sig.tr <- lim.tr[, 1]
-  
-  
   
   ewma <- (Y - Y.hat[1:TT2]) / sigmahat
   ewma <- (ewma - Ph1BayesianLASSO.chart$cs.mean) / Ph1BayesianLASSO.chart$cs.sd
@@ -247,7 +246,7 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
   
     
   if (cc.method == "adjusted alpha") {
-    adjalpha <- adjalpha.ph2(Y.hat, sigma2hat, Y2.tr.sim, 
+    adjalpha <- adjalpha.ph2(Y.hat.overall, sigma2hat, Y2.tr.sim, 
                              Ph1BayesianLASSO.chart$cs.mean, Ph1BayesianLASSO.chart$cs.sd, 
                              ARL0, side, tol.chart)
     
@@ -264,7 +263,7 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
     }
     
   } else if (cc.method == "classic") {
-    cc <- cc.ph2(Y.hat, sigma2hat, Y2.tr.sim, 
+    cc <- cc.ph2(Y.hat.overall, sigma2hat, Y2.tr.sim, 
                  Ph1BayesianLASSO.chart$cs.mean, Ph1BayesianLASSO.chart$cs.sd, 
                  ARL0, side, tol.chart)
     
@@ -285,8 +284,6 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
   
   sig.tr <- (lim.tr[, 1] <= ewma) & (ewma <= lim.tr[, 2])
   
-  
-    
     if (side == "two-sided") {
       Ylim <- c(min(lim.tr, ewma, na.rm = TRUE), max(lim.tr, ewma, na.rm = TRUE))
     } else if (side == "right-sided") {
