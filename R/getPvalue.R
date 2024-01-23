@@ -118,7 +118,8 @@ adjalpha.ph1 <- function(Y.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided
 #' @param tol is the tolerance
 #' @export
 #' 
-cc.ph2 <- function(Y.hat, sigma2.hat, Y.sim, lambda = 0.05, ARL0 = 360, side = "two-sided", tol = 1e-6) {
+cc.ph2 <- function(Y.hat, sigma2.hat, Y.sim, 
+                   cs.mean, cs.sd, lambda = 0.05, ARL0 = 360, side = "two-sided", tol = 1e-6) {
   root.finding <- function(cc, ARL0, ewma, nsim, TT, side) {
  
     RL <- rep(NA, nsim)
@@ -152,6 +153,7 @@ cc.ph2 <- function(Y.hat, sigma2.hat, Y.sim, lambda = 0.05, ARL0 = 360, side = "
   resi <- matrix(NA, nrow = TT, ncol = nsim)
   for (i in 1:nsim) {
     resi[, i] <- (Y.sim[, i] - Y.hat) / sqrt(sigma2.hat)
+    resi[, i] <- (resi[, i] - cs.mean) / cs.sd
   }
   
   ewma.sim <- resi
@@ -178,7 +180,8 @@ cc.ph2 <- function(Y.hat, sigma2.hat, Y.sim, lambda = 0.05, ARL0 = 360, side = "
 #' @param tol is the tolerance
 #' @export
 #' 
-adjalpha.ph2 <- function(Y.hat, sigma2.hat, Y.sim, ARL0 = 360, side = "two-sided", tol = 1e-6) {
+adjalpha.ph2 <- function(Y.hat, sigma2.hat, Y.sim, cs.mean, cs.sd, 
+                         ARL0 = 360, side = "two-sided", tol = 1e-6) {
   root.finding <- function(adjalpha, ARL0, ewma, nsim, TT, side) {
     tmplower <- rep(NA, TT)
     tmpupper <- rep(NA, TT)
@@ -225,6 +228,7 @@ adjalpha.ph2 <- function(Y.hat, sigma2.hat, Y.sim, ARL0 = 360, side = "two-sided
   resi <- matrix(NA, nrow = TT, ncol = nsim)
   for (i in 1:nsim) {
     resi[, i] <- (Y.sim[, i] - Y.hat) / sqrt(sigma2.hat)
+    resi[, i] <- (resi[, i] - cs.mean) / cs.sd
   }
   
   ewma.sim <- resi

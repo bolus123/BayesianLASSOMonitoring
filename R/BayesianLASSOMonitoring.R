@@ -198,9 +198,9 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
   TT <- length(Y2)
   
   Y2.ma <- movaver(Y2, w)[(TT - TT2 - q + 1):TT]
-  
+  Y2.tr <- Y2.ma
   if (log == TRUE) {
-    Y2.tr <- log(Y2.ma + const)
+    Y2.tr <- log(Y2.tr + const)
   }
   
   if (sta == TRUE) {
@@ -247,7 +247,9 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
   
     
   if (cc.method == "adjusted alpha") {
-    adjalpha <- adjalpha.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
+    adjalpha <- adjalpha.ph2(Y.hat, sigma2hat, Y2.tr.sim, 
+                             Ph1BayesianLASSO.chart$cs.mean, Ph1BayesianLASSO.chart$cs.sd, 
+                             ARL0, side, tol.chart)
     
     for (i in 1:TT2) {
       if (side == "two-sided") {
@@ -262,7 +264,9 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
     }
     
   } else if (cc.method == "classic") {
-    cc <- cc.ph2(Y.hat, sigma2hat, Y2.tr.sim, ARL0, side, tol.chart)
+    cc <- cc.ph2(Y.hat, sigma2hat, Y2.tr.sim, 
+                 Ph1BayesianLASSO.chart$cs.mean, Ph1BayesianLASSO.chart$cs.sd, 
+                 ARL0, side, tol.chart)
     
     for (i in 1:TT2) {
       if (side == "two-sided") {
