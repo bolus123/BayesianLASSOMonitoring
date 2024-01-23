@@ -178,7 +178,7 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
 #' 
 #' result <- Ph1BayesianLASSO(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, H = NULL, X = NULL,
+Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = NULL, X = NULL,
                              Y1 = rep(0, dim(Ph1BayesianLASSO.model$Phi)[1] + w), X1 = NULL, H1 = NULL,
                              log = TRUE, const = 1, sta = TRUE, meanY = 0, sdY = 1,
                              Y.hat.method = "median",
@@ -186,6 +186,8 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, H = 
                              ARL0 = 360, side = "two-sided", max.length = 5000,
                              nsim.chart = 10000, tol.chart = 1e-6, 
                              plot = TRUE) {
+  
+  Ph1BayesianLASSO.model <- Ph1BayesianLASSO.chart$model
   
   w <- Ph1BayesianLASSO.model$w
   
@@ -236,6 +238,7 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.model, lambda = 0.05, H = 
   
   
   ewma <- (Y - Y.hat[1:TT2]) / sigmahat
+  ewma <- (ewma - Ph1BayesianLASSO.chart$cs.mean) / Ph1BayesianLASSO.chart$cs.sd
   for (i in 2:TT2) {
     ewma[i] <- lambda * ewma[i] + (1 - lambda) * ewma[i - 1]
   }
