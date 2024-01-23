@@ -86,7 +86,7 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   
   lim <- lim.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0 = FAP0, side = side) 
   
-  cs <- (model$Y.tr - Y.hat) / sigmahat
+  cs <- (model$Y.tr[-c(1:q)] - Y.hat) / sigmahat
   cs.mean <- mean(cs)
   cs.sd <- sd(cs)
   cs <- (cs - cs.mean) / cs.sd
