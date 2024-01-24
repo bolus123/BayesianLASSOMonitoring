@@ -103,7 +103,28 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   #} else if (side == "left-sided") {
   #  cs <- cs * (Y1.hat < Y.hat)
   #}
-  debug(lim.ph1)
+  
+  fit0 <- matrix(NA, nrow = TT - q, ncol = nsim)
+  fit1 <- matrix(NA, nrow = TT - q, ncol = nsim)
+  
+  tmp1 <- rep(0, TT - q)
+  tmp0 <- rep(0, TT - q)
+  for (j in 1:nsim) {
+    fit0[, j] <- fit.GibbsRFLSM(model$Y.tr, model$Phi[, j], model$muq[j], 
+                                model$X, model$Beta[, j], model$Kappa[, j], 
+                                H = NULL, Gamma = NULL, Tau = NULL)
+    fit1[, j] <- fit.GibbsRFLSM(model$Y.tr, model$Phi[, j], model$muq[j],
+                                model$X, model$Beta[, j], model$Kappa[, j], 
+                                model$H, model$Gamma[, j], model$Tau[, j])
+    
+    tmp0 <- tmp0 + dnorm(model$Y.tr[-c(1:q)], fit0[, j], sqrt(model$sigma2[j]))
+    tmp1 <- tmp1 + dnorm(model$Y.tr[-c(1:q)], fit1[, j], sqrt(model$sigma2[j]))
+  }
+  llr.H1 <- tmp1 / nsimmodel
+  llr.H0 <- tmp0 / nsimmodel
+  
+  cs <- log(llr.H1 / llr.H0)
+  
   lim <- lim.ph1(rbind(matrix(model$Y.tr[c(1:q)], nrow = q, ncol = nsim.chart), Y.tr.sim), 
                  model, FAP0 = 0.3, side = "two-sided")
     

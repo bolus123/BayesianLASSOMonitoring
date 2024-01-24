@@ -268,7 +268,7 @@ lim.ph1 <- function(Y.sim, model, FAP0 = 0.3, side = "two-sided") {
   llr.H1 <- matrix(NA, nrow = TT - q, ncol = nsimY)
   llr.H0 <- matrix(NA, nrow = TT - q, ncol = nsimY)
   bf <- matrix(NA, nrow = TT - q, ncol = nsimY)
-  bf.max <- rep(NA, nsimY)
+  bf.max <- matrix(NA, nsimY)
   
   fit0 <- matrix(NA, nrow = TT - q, ncol = nsimmodel)
   fit1 <- matrix(NA, nrow = TT - q, ncol = nsimmodel)
@@ -290,13 +290,11 @@ lim.ph1 <- function(Y.sim, model, FAP0 = 0.3, side = "two-sided") {
     llr.H1[, i] <- tmp1 / nsimmodel
     llr.H0[, i] <- tmp0 / nsimmodel
     
-    bf[, i] <- llr.H1[, i] / llr.H0[, i]
+    bf[, i] <- log(llr.H1[, i] / llr.H0[, i])
     bf.max[i] <- max(bf[, i])
      
   }
   
-  lim <- quantile(bf.max, 1 - FAP0)
-  
-  lim
+  quantile(bf.max, 1 - FAP0)
   
 } 
