@@ -120,8 +120,8 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
     tmp0 <- tmp0 + dnorm(model$Y.tr[-c(1:q)], fit0[, j], sqrt(model$sigma2[j]))
     tmp1 <- tmp1 + dnorm(model$Y.tr[-c(1:q)], fit1[, j], sqrt(model$sigma2[j]))
   }
-  llr.H1 <- tmp1 / nsimmodel
-  llr.H0 <- tmp0 / nsimmodel
+  llr.H1 <- tmp1 / nsim
+  llr.H0 <- tmp0 / nsim
   
   cs <- log(llr.H1 / llr.H0)
   
