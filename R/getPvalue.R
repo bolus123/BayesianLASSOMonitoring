@@ -265,17 +265,17 @@ lim.ph1 <- function(Y.sim, model, FAP0 = 0.3, side = "two-sided") {
   nsimmodel <- dim(model$Phi)[2]
   q <- dim(model$Phi)[1]
   
-  llr.H1 <- matrix(NA, nrow = TT, ncol = nsimY)
-  llr.H0 <- matrix(NA, nrow = TT, ncol = nsimY)
-  bf <- matrix(NA, nrow = TT, ncol = nsimY)
+  llr.H1 <- matrix(NA, nrow = TT - q, ncol = nsimY)
+  llr.H0 <- matrix(NA, nrow = TT - q, ncol = nsimY)
+  bf <- matrix(NA, nrow = TT - q, ncol = nsimY)
   bf.max <- rep(NA, nsimY)
   
   fit0 <- matrix(NA, nrow = TT - q, ncol = nsimmodel)
   fit1 <- matrix(NA, nrow = TT - q, ncol = nsimmodel)
   
   for (i in 1:nsimY) {
-    tmp1 <- rep(0, TT)
-    tmp0 <- rep(0, TT)
+    tmp1 <- rep(0, TT - q)
+    tmp0 <- rep(0, TT - q)
     for (j in 1:nsimmodel) {
       fit0[, j] <- fit.GibbsRFLSM(Y.sim[, i], model$Phi[, j], model$muq[j], 
                                   model$X, model$Beta[, j], model$Kappa[, j], 
@@ -284,8 +284,8 @@ lim.ph1 <- function(Y.sim, model, FAP0 = 0.3, side = "two-sided") {
                                   model$X, model$Beta[, j], model$Kappa[, j], 
                                   model$H, model$Gamma[, j], model$Tau[, j])
       
-      tmp0 <- tmp0 + dnorm(Y.sim[, i], fit0[, j], sqrt(model$sigma2[j]))
-      tmp1 <- tmp1 + dnorm(Y.sim[, i], fit1[, j], sqrt(model$sigma2[j]))
+      tmp0 <- tmp0 + dnorm(Y.sim[-c(1:q), i], fit0[, j], sqrt(model$sigma2[j]))
+      tmp1 <- tmp1 + dnorm(Y.sim[-c(1:q), i], fit1[, j], sqrt(model$sigma2[j]))
     }
     llr.H1[, i] <- tmp1 / nsim
     llr.H0[, i] <- tmp0 / nsim
