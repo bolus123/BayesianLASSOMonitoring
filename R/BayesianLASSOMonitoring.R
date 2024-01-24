@@ -70,13 +70,13 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   Y.hat.sim <- Y.tr.sim$fit
   Y.tr.sim <- Y.tr.sim$Y.tr
   
-  Y1.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
-                                 model$Phi, model$muq, model$sigma2, 
-                                 X, model$Beta, model$Kappa, 
-                                 H, model$Gamma, model$Tau)
+  #Y1.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
+  #                               model$Phi, model$muq, model$sigma2, 
+  #                               X, model$Beta, model$Kappa, 
+  #                               H, model$Gamma, model$Tau)
   
-  Y1.hat.sim <- Y1.tr.sim$fit
-  Y1.tr.sim <- Y1.tr.sim$Y.tr
+  #Y1.hat.sim <- Y1.tr.sim$fit
+  #Y1.tr.sim <- Y1.tr.sim$Y.tr
   
   Y.hat <- rep(NA, TT - q)
   Y1.hat <- rep(NA, TT - q)
@@ -84,26 +84,26 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   if (Y.hat.method == "median") {
     for (i in 1:(TT - q)) {
       Y.hat[i] <- median(Y.hat.sim[i, ])
-      Y1.hat[i] <- median(Y1.hat.sim[i, ])
+      #Y1.hat[i] <- median(Y1.hat.sim[i, ])
     }
     sigma2hat <- median(model$sigma2)
   } else if (Y.hat.method == "mean") {
     Y.hat <- rowMeans(Y.hat.sim)
-    Y1.hat <- rowMeans(Y1.hat.sim)
+    #Y1.hat <- rowMeans(Y1.hat.sim)
     sigma2hat <- mean(model$sigma2)
   }
   
   sigmahat <- sqrt(sigma2hat)
   
-  cs <- 2 * (dnorm(Y[-c(1:q)], Y1.hat, sigmahat, log = TRUE) - 
-                dnorm(Y[-c(1:q)], Y.hat, sigmahat, log = TRUE))
-  
-  if (side == "right-sided") {
-    cs <- cs * (Y1.hat > Y.hat)
-  } else if (side == "left-sided") {
-    cs <- cs * (Y1.hat < Y.hat)
-  }
-
+  #cs <- 2 * (dnorm(Y[-c(1:q)], Y1.hat, sigmahat, log = TRUE) - 
+  #              dnorm(Y[-c(1:q)], Y.hat, sigmahat, log = TRUE))
+  #
+  #if (side == "right-sided") {
+  #  cs <- cs * (Y1.hat > Y.hat)
+  #} else if (side == "left-sided") {
+  #  cs <- cs * (Y1.hat < Y.hat)
+  #}
+  debug(lim.ph1)
   lim <- lim.ph1(rbind(matrix(Y[c(1:q)], nrow = q, ncol = nsim.chart), Y.tr.sim), 
                  model, FAP0 = 0.3, side = "two-sided")
     
