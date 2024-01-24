@@ -266,7 +266,7 @@ lim.ph1 <- function(Y.hat, Y1.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-si
   llr.max <- rep(NA, nsim)
   for (i in 1:nsim) {
     llr[, i] <- 2 * (dnorm(Y.sim[, i], Y1.hat, sqrt(sigma2.hat), log = TRUE) - 
-           dnorm(Y[-c(1:q)], Y.hat, sqrt(sigma2.hat), log = TRUE))
+           dnorm(Y.sim[, i], Y.hat, sqrt(sigma2.hat), log = TRUE))
     if (side == "right-sided") {
       llr[, i] <- llr[, i] * (Y1.hat > Y.hat)
     } else if (side == "left-sided") {
