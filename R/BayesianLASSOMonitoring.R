@@ -106,7 +106,7 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   
   lim <- lim.ph1(Y.hat, Y1.hat, sigma2hat, Y.tr.sim, FAP0 = FAP0, side = side) 
   
-  lim.tr <- matrix(NA, nrow = TT, ncol = 2)
+  lim.tr <- matrix(NA, nrow = TT - q, ncol = 2)
   sig.tr <- lim.tr[, 1]
   
   #for (i in (q + 1):TT) {
@@ -122,12 +122,10 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   #  }
   #}
   
-  for (i in (q + 1):TT) {
-    lim.tr[i, 1] <- -Inf
-    lim.tr[i, 2] <- lim
-  }
+  lim.tr[, 1] <- -Inf
+  lim.tr[, 2] <- lim
   
-  sig.tr <- (lim.tr[, 1] <= model$Y.tr) & (model$Y.tr <= lim.tr[, 2])
+  sig.tr <- (lim.tr[, 1] <= cs) & (cs <= lim.tr[, 2])
   
   if (plot == TRUE) {   
     
@@ -139,20 +137,20 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
     #  Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(model$Y.tr, na.rm = TRUE))
     #}
     
-    Ylim <- c(min(model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
+    Ylim <- c(min(cs, na.rm = TRUE), max(lim.tr, cs, na.rm = TRUE))
     
     plot(c(1, TT), Ylim, type = 'n',
          main = "Phase I Chart", 
          ylab = "Charting Statistics", 
          xlab = "")
-    points(model$Y.tr, type = 'o')
-    points((1:TT)[which(sig.tr == FALSE)], model$Y.tr[which(sig.tr == FALSE)], col = 'red', pch = 16)
+    points(cs, type = 'o')
+    points((1:(TT - q))[which(sig.tr == FALSE)], cs[which(sig.tr == FALSE)], col = 'red', pch = 16)
     points(lim.tr[, 1], type = 'l', lty = 2, col = 'red')
     points(lim.tr[, 2], type = 'l', lty = 2, col = 'red')
     
   }
   
-  out <- list("model" = model, "lim.tr" = lim.tr, 
+  out <- list("model" = model, "cs" = cs, "lim.tr" = lim.tr, 
               "sig.tr" = sig.tr, "Y.hat" = Y.hat) 
   out
 } 
