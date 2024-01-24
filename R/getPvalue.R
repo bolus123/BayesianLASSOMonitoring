@@ -287,8 +287,8 @@ lim.ph1 <- function(Y.sim, model, FAP0 = 0.3, side = "two-sided") {
       tmp0 <- tmp0 + dnorm(Y.sim[-c(1:q), i], fit0[, j], sqrt(model$sigma2[j]))
       tmp1 <- tmp1 + dnorm(Y.sim[-c(1:q), i], fit1[, j], sqrt(model$sigma2[j]))
     }
-    llr.H1[, i] <- tmp1 / nsim
-    llr.H0[, i] <- tmp0 / nsim
+    llr.H1[, i] <- tmp1 / nsimmodel
+    llr.H0[, i] <- tmp0 / nsimmodel
     
     bf[, i] <- llr.H1[, i] / llr.H0[, i]
     bf.max[i] <- max(bf[, i])

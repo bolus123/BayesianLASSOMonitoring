@@ -104,7 +104,7 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   #  cs <- cs * (Y1.hat < Y.hat)
   #}
   debug(lim.ph1)
-  lim <- lim.ph1(rbind(matrix(Y[c(1:q)], nrow = q, ncol = nsim.chart), Y.tr.sim), 
+  lim <- lim.ph1(rbind(matrix(model$Y.tr[c(1:q)], nrow = q, ncol = nsim.chart), Y.tr.sim), 
                  model, FAP0 = 0.3, side = "two-sided")
     
   
