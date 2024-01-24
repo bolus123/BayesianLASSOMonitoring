@@ -257,31 +257,25 @@ adjalpha.ph2 <- function(Y.hat, sigma2.hat, Y.sim, cs.mean, cs.sd,
 #' @param tol is the tolerance
 #' @export
 #' 
-lim.ph1 <- function(Y.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided") {
+lim.ph1 <- function(Y.hat, Y1.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided") {
   
   nsim <- dim(Y.sim)[2]
   TT <- dim(Y.sim)[1]
   
-  resi <- matrix(NA, nrow = TT, ncol = nsim)
+  llr <- matrix(NA, nrow = TT, ncol = nsim)
+  llr.max <- rep(NA, nsim)
   for (i in 1:nsim) {
-    resi[, i] <- (Y.sim[, i] - Y.hat)
-    resi[, i] <- resi[, i] / sqrt(sigma2.hat)
-    resi[, i] <- (resi[, i] - mean(resi[, i])) / sd(resi[, i])
-  }
-  
-  max.resi <- rep(NA, nsim)
-  
-  for (i in 1:nsim) {
-    if (side == "two-sided") {
-      max.resi[i] <- max(abs(resi[, i]))
-    } else if (side == "right-sided") {
-      max.resi[i] <- max(resi[, i])
+    llr[, i] <- 2 * (dnorm(Y.sim[, i], Y1.hat, sqrt(sigma2.hat), log = TRUE) - 
+           dnorm(Y[-c(1:q)], Y.hat, sqrt(sigma2.hat), log = TRUE))
+    if (side == "right-sided") {
+      llr[, i] <- llr[, i] * (Y1.hat > Y.hat)
     } else if (side == "left-sided") {
-      max.resi[i] <- max(-resi[, i])
+      llr[, i] <- llr[, i] * (Y1.hat < Y.hat)
     }
+    llr.max[i] <- max(llr[, i])
   }
   
-  lim <- quantile(max.resi, 1 - FAP0)
+  lim <- quantile(llr.max, 1 - FAP0)
   
   lim
   

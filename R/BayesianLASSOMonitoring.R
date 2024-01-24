@@ -70,58 +70,80 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   Y.hat.sim <- Y.tr.sim$fit
   Y.tr.sim <- Y.tr.sim$Y.tr
   
+  Y1.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
+                                 model$Phi, model$muq, model$sigma2, 
+                                 X, model$Beta, model$Kappa, 
+                                 H, model$Gamma, model$Tau)
+  
+  Y1.hat.sim <- Y1.tr.sim$fit
+  Y1.tr.sim <- Y1.tr.sim$Y.tr
+  
   Y.hat <- rep(NA, TT - q)
+  Y1.hat <- rep(NA, TT - q)
+  
   if (Y.hat.method == "median") {
     for (i in 1:(TT - q)) {
       Y.hat[i] <- median(Y.hat.sim[i, ])
+      Y1.hat[i] <- median(Y1.hat.sim[i, ])
     }
     sigma2hat <- median(model$sigma2)
   } else if (Y.hat.method == "mean") {
     Y.hat <- rowMeans(Y.hat.sim)
+    Y1.hat <- rowMeans(Y1.hat.sim)
     sigma2hat <- mean(model$sigma2)
   }
   
   sigmahat <- sqrt(sigma2hat)
   
+  cs <- 2 * (dnorm(Y[-c(1:q)], Y1.hat, sigmahat, log = TRUE) - 
+                dnorm(Y[-c(1:q)], Y.hat, sigmahat, log = TRUE))
   
-  lim <- lim.ph1(Y.hat, sigma2hat, Y.tr.sim, FAP0 = FAP0, side = side) 
+  if (side == "right-sided") {
+    cs <- cs * (Y1.hat > Y.hat)
+  } else if (side == "left-sided") {
+    cs <- cs * (Y1.hat < Y.hat)
+  }
   
-  cs <- (model$Y.tr[-c(1:q)] - Y.hat) / sigmahat
-  cs.mean <- mean(cs)
-  cs.sd <- sd(cs)
-  cs <- (cs - cs.mean) / cs.sd
+  lim <- lim.ph1(Y.hat, Y1.hat, sigma2hat, Y.tr.sim, FAP0 = FAP0, side = side) 
   
   lim.tr <- matrix(NA, nrow = TT, ncol = 2)
   sig.tr <- lim.tr[, 1]
   
+  #for (i in (q + 1):TT) {
+  #  if (side == "two-sided") {
+  #    lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
+  #    lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
+  #  } else if (side == "right-sided") {
+  #    lim.tr[i, 1] <- -Inf
+  #    lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
+  #  } else if (side == "left-sided") {
+  #    lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
+  #    lim.tr[i, 2] <- Inf
+  #  }
+  #}
+  
   for (i in (q + 1):TT) {
-    if (side == "two-sided") {
-      lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
-      lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
-    } else if (side == "right-sided") {
-      lim.tr[i, 1] <- -Inf
-      lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
-    } else if (side == "left-sided") {
-      lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
-      lim.tr[i, 2] <- Inf
-    }
+    lim.tr[i, 1] <- -Inf
+    lim.tr[i, 2] <- lim
   }
   
   sig.tr <- (lim.tr[, 1] <= model$Y.tr) & (model$Y.tr <= lim.tr[, 2])
   
   if (plot == TRUE) {   
     
-    if (side == "two-sided") {
-      Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
-    } else if (side == "right-sided") {
-      Ylim <- c(min(model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
-    } else if (side == "left-sided") {
-      Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(model$Y.tr, na.rm = TRUE))
-    }
+    #if (side == "two-sided") {
+    #  Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
+    #} else if (side == "right-sided") {
+    #  Ylim <- c(min(model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
+    #} else if (side == "left-sided") {
+    #  Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(model$Y.tr, na.rm = TRUE))
+    #}
+    
+    Ylim <- c(min(model$Y.tr, na.rm = TRUE), max(lim.tr, model$Y.tr, na.rm = TRUE))
     
     plot(c(1, TT), Ylim, type = 'n',
-         main = "Phase I Chart for Transformed Moving Averages", 
-         ylab = "Transformed Moving Averages", 
+         main = "Phase I Chart", 
+         ylab = "Charting Statistics", 
          xlab = "")
     points(model$Y.tr, type = 'o')
     points((1:TT)[which(sig.tr == FALSE)], model$Y.tr[which(sig.tr == FALSE)], col = 'red', pch = 16)
@@ -131,8 +153,7 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   }
   
   out <- list("model" = model, "lim.tr" = lim.tr, 
-              "sig.tr" = sig.tr, "Y.hat" = Y.hat, 
-              "cs.mean" = cs.mean, "cs.sd" = cs.sd) 
+              "sig.tr" = sig.tr, "Y.hat" = Y.hat) 
   out
 } 
 
@@ -236,7 +257,7 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
   lim.tr <- matrix(NA, nrow = TT2, ncol = 2)
   sig.tr <- lim.tr[, 1]
   
-  ewma <- (Y - Y.hat[1:TT2]) / sigmahat
+  ewma <- (Y - Y.hat) / sigmahat
   ewma <- (ewma - Ph1BayesianLASSO.chart$cs.mean) / Ph1BayesianLASSO.chart$cs.sd
   for (i in 2:TT2) {
     ewma[i] <- lambda * ewma[i] + (1 - lambda) * ewma[i - 1]
@@ -293,7 +314,7 @@ Ph2BayesianLASSO.EWMA <- function(Y, Ph1BayesianLASSO.chart, lambda = 0.05, H = 
     }
     
     plot(c(1, TT2), Ylim, type = 'n',
-         main = "Phase II Chart for Transformed Moving Averages", 
+         main = "Phase II Chart", 
          ylab = "EWMA", 
          xlab = "")
     points(ewma, type = 'o')
