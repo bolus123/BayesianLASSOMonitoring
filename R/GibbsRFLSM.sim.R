@@ -1,3 +1,31 @@
+fit.GibbsRFLSM <- function(Y, Phi, muq, 
+                          X = NULL, Beta = NULL, Kappa = NULL, 
+                          H = NULL, Gamma = NULL, Tau = NULL) {
+  
+  TT <- length(Y)
+  
+  q <- length(Phi)
+  muX <- rep(0, TT)
+  if (!is.null(X)) {
+    muX <- X %*% (Beta * Kappa)
+  }
+  
+  muH <- rep(0, TT)
+  if (!is.null(H)) {
+    muH <- H %*% (Gamma * Tau)
+  }
+  
+  mu <- muq + muX + muH
+  fit <- rep(NA, TT)
+  
+  for (i in (q + 1):TT) {
+    fit[i] <- mu[i] + (Y[(i - 1):(i - q)] - mu[(i - 1):(i - q)]) %*% Phi
+  }
+  
+  fit[-c(1:q)]
+  
+}
+
 #' Get a simulation transformed data using Random Flexible Level Shift Model in the retrospective phase under H0
 #' 
 #' gets the simulated data
@@ -33,6 +61,8 @@ GibbsRFLSM.sim.ph1 <- function(nsim, Y1, Phi, muq, sigma2,
   q <- dim(Phi)[1]
   Y1.sim <- matrix(Y1, nrow = TT, ncol = nsim)
   fit.sim <- matrix(NA, nrow = TT, ncol = nsim)
+  sigma2.sim <- rep(NA, nsim)
+  
   muX <- matrix(0, nrow = TT, ncol = m)
   
   if (!is.null(X)) {
@@ -49,6 +79,7 @@ GibbsRFLSM.sim.ph1 <- function(nsim, Y1, Phi, muq, sigma2,
     tmpPhi <- Phi[, tmpsel]
     tmpmu <- muq[tmpsel] + muX[, tmpsel] + muH[, tmpsel]
     tmpsigma2 <- sigma2[tmpsel]
+    sigma2.sim[j] <- tmpsigma2
     
     for (i in (q + 1):TT) {
       fit.sim[i, j] <- tmpmu[i] + (Y1[(i - 1):(i - q)] - tmpmu[(i - 1):(i - q)]) %*% tmpPhi
@@ -57,7 +88,7 @@ GibbsRFLSM.sim.ph1 <- function(nsim, Y1, Phi, muq, sigma2,
     
   }
   
-  list("fit" = fit.sim[-c(1:q), ], "Y.tr" = Y1.sim[-c(1:q), ])
+  list("fit" = fit.sim[-c(1:q), ], "Y.tr" = Y1.sim[-c(1:q), ], "sigma2" = sigma2.sim)
   
 }
 
@@ -100,6 +131,7 @@ GibbsRFLSM.sim.ph2 <- function(h, nsim, Phi, muq, sigma2,
   m <- dim(Phi)[2]
   q <- dim(Phi)[1]
   Y1.sim <- matrix(Y1, nrow = TT, ncol = nsim)
+  sigma2.sim <- rep(NA, nsim)
   
   muX <- matrix(0, nrow = h, ncol = m)
   if (!is.null(X)) {
@@ -132,6 +164,7 @@ GibbsRFLSM.sim.ph2 <- function(h, nsim, Phi, muq, sigma2,
     tmpPhi <- Phi[, tmpsel]
     tmpmu <- muq[tmpsel] + muX[, tmpsel] + muH[, tmpsel]
     tmpsigma2 <- sigma2[tmpsel]
+    sigma2.sim[j] <- tmpsigma2
     
     tmperr <- rnorm(TT + h, mean = 0, sd = sqrt(tmpsigma2))
    
@@ -142,7 +175,7 @@ GibbsRFLSM.sim.ph2 <- function(h, nsim, Phi, muq, sigma2,
     
   }
   
-  list("fit" = fit.sim[-c(1:q), ], "Y.tr" = Y2.sim[-c(1:q), ])
+  list("fit" = fit.sim[-c(1:q), ], "Y.tr" = Y2.sim[-c(1:q), ], "sigma2" = sigma2.sim)
   
 }
 

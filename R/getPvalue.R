@@ -257,25 +257,45 @@ adjalpha.ph2 <- function(Y.hat, sigma2.hat, Y.sim, cs.mean, cs.sd,
 #' @param tol is the tolerance
 #' @export
 #' 
-lim.ph1 <- function(Y.hat, Y1.hat, sigma2.hat, Y.sim, FAP0 = 0.3, side = "two-sided") {
+lim.ph1 <- function(Y.sim, model, FAP0 = 0.3, side = "two-sided") {
   
-  nsim <- dim(Y.sim)[2]
+  nsimY <- dim(Y.sim)[2]
   TT <- dim(Y.sim)[1]
   
-  llr <- matrix(NA, nrow = TT, ncol = nsim)
-  llr.max <- rep(NA, nsim)
-  for (i in 1:nsim) {
-    llr[, i] <- 2 * (dnorm(Y.sim[, i], Y1.hat, sqrt(sigma2.hat), log = TRUE) - 
-           dnorm(Y.sim[, i], Y.hat, sqrt(sigma2.hat), log = TRUE))
-    if (side == "right-sided") {
-      llr[, i] <- llr[, i] * (Y1.hat > Y.hat)
-    } else if (side == "left-sided") {
-      llr[, i] <- llr[, i] * (Y1.hat < Y.hat)
+  nsimmodel <- dim(model$Phi)[2]
+  q <- dim(model$Phi)[1]
+  
+  llr.H1 <- matrix(NA, nrow = TT, ncol = nsimY)
+  llr.H0 <- matrix(NA, nrow = TT, ncol = nsimY)
+  bf <- matrix(NA, nrow = TT, ncol = nsimY)
+  bf.max <- rep(NA, nsimY)
+  
+  fit0 <- matrix(NA, nrow = TT - q, ncol = nsimmodel)
+  fit1 <- matrix(NA, nrow = TT - q, ncol = nsimmodel)
+  
+  for (i in 1:nsimY) {
+    tmp1 <- rep(0, TT)
+    tmp0 <- rep(0, TT)
+    for (j in 1:nsimmodel) {
+      fit0[, j] <- fit.GibbsRFLSM(Y.sim[, i], model$Phi[, j], model$muq[j], 
+                                  model$X, model$Beta[, j], model$Kappa[, j], 
+                                  H = NULL, Gamma = NULL, Tau = NULL)
+      fit1[, j] <- fit.GibbsRFLSM(Y.sim[, i], model$Phi[, j], model$muq[j],
+                                  model$X, model$Beta[, j], model$Kappa[, j], 
+                                  model$H, model$Gamma[, j], model$Tau[, j])
+      
+      tmp0 <- tmp0 + dnorm(Y.sim[, i], fit0[, j], sqrt(model$sigma2[j]))
+      tmp1 <- tmp1 + dnorm(Y.sim[, i], fit1[, j], sqrt(model$sigma2[j]))
     }
-    llr.max[i] <- max(llr[, i])
+    llr.H1[, i] <- tmp1 / nsim
+    llr.H0[, i] <- tmp0 / nsim
+    
+    bf[, i] <- llr.H1[, i] / llr.H0[, i]
+    bf.max[i] <- max(bf[, i])
+     
   }
   
-  lim <- quantile(llr.max, 1 - FAP0)
+  lim <- quantile(bf.max, 1 - FAP0)
   
   lim
   
