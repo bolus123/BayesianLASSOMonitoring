@@ -1,6 +1,75 @@
 #' Bayesian LASSO Phase I Monitoring
 #' 
 #' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+#' @param model is model.
+#' @param sign.method is .
+#' @param adj.method is 
+#' @param side is side
+#' 
+#' 
+#' @export
+Ph1MultipleTesting <- function(model, sign.method = "DM",
+                               adj.method = "holm",
+                               side = "two-sided") {
+  
+  TT <- length(model$Y)
+  q <- dim(model$Phi)[1]
+  nsim <- dim(model$Phi)[2]
+  
+  mu <- model$H %*% (model$Gamma * model$Tau)
+  
+  mu.dif <- matrix(NA, nrow = TT - q, ncol = nsim)
+  
+  for (i in (q + 1):TT) {
+    if (i == q + 1) {
+      mu.dif[i - q, ] <- mu[i, ]
+    } else {
+      mu.dif[i - q, ] <- mu[i, ] - mu[i - 1, ]
+    }
+  }
+  
+  sign <- matrix(NA, nrow = TT - q, ncol = 3)
+  sign[, 1] <- rowSums(mu.dif > 0)
+  sign[, 2] <- rowSums(mu.dif == 0)
+  sign[, 3] <- rowSums(mu.dif < 0)
+  
+  pvalue <- rep(NA, TT - q)
+  
+  if (sign.method == "DM") {
+    for (i in 1:(TT - q)) {
+      pvalue[i] <- pbinom(sign[i, 1] + sign[i, 2] / 2, nsim, 0.5)
+    }
+  } else if (sign.method == "trinomial") {
+    
+    tmp <- cbind(sign[, 1] - sign[, 3], nsim, sign[, 2] / nsim)
+    
+    for (i in 1:(TT - q)) {
+      if (tmp[i, 3] == 1) {
+        pvalue[i] <- 1
+      } else {
+        pvalue[i] <- ptrinomial(tmp[i, 1], tmp[i, 2], tmp[i, 3])
+      }
+    }
+  }
+  
+  if (side == "left-sided") {
+    pvalue <- pvalue
+  } else if (side == "right-sided") {
+    pvalue <- 1 - pvalue
+  } else if (side == "two-sided") {
+    for (i in 1:(TT - q)) {
+      pvalue[i] <- 2 * min(1 - pvalue[i], pvalue[i])
+    }
+  }
+  
+  adj.pvalue <- p.adjust(pvalue, method = adj.method)
+  adj.pvalue
+   
+}
+
+#' Bayesian LASSO Phase I Monitoring
+#' 
+#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
 #' @param Y is a vector.
 #' @param H is the design matrix for shifts.
 #' @param X is the input matrix
@@ -60,59 +129,7 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
     nsim, by, burnin, tol,
     log, const, sta) 
   
-  mu <- model$H %*% (model$Gamma * model$Tau)
-  
-  mu.dif <- matrix(NA, nrow = TT - q, ncol = nsim)
-  
-  for (i in (q + 1):TT) {
-    if (i == q + 1) {
-      mu.dif[i - q, ] <- mu[i, ]
-    } else {
-      mu.dif[i - q, ] <- mu[i, ] - mu[i - 1, ]
-    }
-  }
-  
-  sign <- matrix(NA, nrow = TT - q, ncol = 3)
-  sign[, 1] <- rowSums(mu.dif > 0)
-  sign[, 2] <- rowSums(mu.dif == 0)
-  sign[, 3] <- rowSums(mu.dif < 0)
-  
-  pvalue <- rep(NA, TT - q)
-  
-  if (sign.method == "DM") {
-    for (i in 1:(TT - q)) {
-      pvaluetmp <- pbinom(sign[i, 1] + sign[i, 2] / 2, nsim, 0.5)
-      
-      if (side == "left-sided") {
-        pvalue[i] <- pvaluetmp
-      } else if (side == "right-sided") {
-        pvalue[i] <- 1 - pvaluetmp
-      } else if (side == "two-sided") {
-        pvalue[i] <- 2 * min(1 - pvaluetmp, pvaluetmp)
-      }
-      
-    }
-  } else if (sign.method == "trinomial") {
-    
-    tmp <- cbind(sign[, 1] - sign[, 3], nsim, sign[, 2] / nsim)
-    
-    for (i in 1:(TT - q)) {
-      if (tmp[i, 3] == 1) {
-        pvalue[i] <- 1
-      } else {
-        pvaluetmp <- ptrinomial(tmp[i, 1], tmp[i, 2], tmp[i, 3])
-        if (side == "left-sided") {
-          pvalue[i] <- pvaluetmp
-        } else if (side == "right-sided") {
-          pvalue[i] <- 1 - pvaluetmp
-        } else if (side == "two-sided") {
-          pvalue[i] <- 2 * min(1 - pvaluetmp, pvaluetmp)
-        }
-      }
-    }
-  }
-  
-  adj.pvalue <- p.adjust(pvalue, method = adj.method)
+  adj.pvalue <- Ph1MultipleTesting(model, sign.method, adj.method, side)
   
   sig <- adj.pvalue < FAP0
   
@@ -140,7 +157,7 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
   }
   
   out <- list("model" = model, "adj.pvalue" = adj.pvalue, 
-              "adj.pvalue" = adj.pvalue) 
+              "sig" = sig) 
   out
 } 
 
