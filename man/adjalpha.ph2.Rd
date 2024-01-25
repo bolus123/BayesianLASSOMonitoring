@@ -8,6 +8,8 @@ adjalpha.ph2(
   Y.hat,
   sigma2.hat,
   Y.sim,
+  cs.mean,
+  cs.sd,
   ARL0 = 360,
   side = "two-sided",
   tol = 1e-06

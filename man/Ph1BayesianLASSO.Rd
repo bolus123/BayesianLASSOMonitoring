@@ -11,7 +11,7 @@ Ph1BayesianLASSO(
   X = NULL,
   Y0 = rep(mean(Y), w - 1),
   q = 5,
-  A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])),
+  A = diag(nrow = q),
   a = 0.1,
   b = 0.1,
   alpha = 0.1,
@@ -29,12 +29,10 @@ Ph1BayesianLASSO(
   log = TRUE,
   const = 1,
   sta = TRUE,
-  Y.hat.method = "median",
-  cc.method = "adjusted alpha",
+  sign.method = "DM",
+  adj.method = "holm",
   FAP0 = 0.3,
   side = "two-sided",
-  nsim.chart = 10000,
-  tol.chart = 1e-06,
   plot = TRUE
 )
 }

@@ -46,10 +46,9 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
                              method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
                              nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
                              log = TRUE, const = 1, sta = TRUE, 
-                             Y.hat.method = "median",
-                             cc.method = "adjusted alpha",
-                             FAP0 = 0.3, side = "two-sided", 
-                             nsim.chart = 10000, tol.chart = 1e-6, 
+                             sign.method = "DM",
+                             adj.method = "holm",
+                             FAP0 = 0.3, side = "two-sided",  
                              plot = TRUE) {
   
   TT <- length(Y)
@@ -61,94 +60,61 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
     nsim, by, burnin, tol,
     log, const, sta) 
   
+  mu <- model$H %*% (model$Gamma * model$Tau)
   
-  Y.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
-                                 model$Phi, model$muq, model$sigma2, 
-                                 X, model$Beta, model$Kappa, 
-                                 NULL, NULL, NULL)
+  mu.dif <- matrix(NA, nrow = TT - q, ncol = nsim)
   
-  Y.hat.sim <- Y.tr.sim$fit
-  Y.tr.sim <- Y.tr.sim$Y.tr
-  
-  #Y1.tr.sim <- GibbsRFLSM.sim.ph1(nsim.chart, model$Y.tr, 
-  #                               model$Phi, model$muq, model$sigma2, 
-  #                               X, model$Beta, model$Kappa, 
-  #                               H, model$Gamma, model$Tau)
-  
-  #Y1.hat.sim <- Y1.tr.sim$fit
-  #Y1.tr.sim <- Y1.tr.sim$Y.tr
-  
-  Y.hat <- rep(NA, TT - q)
-  Y1.hat <- rep(NA, TT - q)
-  
-  if (Y.hat.method == "median") {
-    for (i in 1:(TT - q)) {
-      Y.hat[i] <- median(Y.hat.sim[i, ])
-      #Y1.hat[i] <- median(Y1.hat.sim[i, ])
+  for (i in (q + 1):TT) {
+    if (i == q + 1) {
+      mu.dif[i - q, ] <- mu[i, ]
+    } else {
+      mu.dif[i - q, ] <- mu[i, ] - mu[i - 1, ]
     }
-    sigma2hat <- median(model$sigma2)
-  } else if (Y.hat.method == "mean") {
-    Y.hat <- rowMeans(Y.hat.sim)
-    #Y1.hat <- rowMeans(Y1.hat.sim)
-    sigma2hat <- mean(model$sigma2)
   }
   
-  sigmahat <- sqrt(sigma2hat)
+  sign <- matrix(NA, nrow = TT - q, ncol = 3)
+  sign[, 1] <- rowSums(mu.dif > 0)
+  sign[, 2] <- rowSums(mu.dif == 0)
+  sign[, 3] <- rowSums(mu.dif < 0)
   
-  #cs <- 2 * (dnorm(Y[-c(1:q)], Y1.hat, sigmahat, log = TRUE) - 
-  #              dnorm(Y[-c(1:q)], Y.hat, sigmahat, log = TRUE))
-  #
-  #if (side == "right-sided") {
-  #  cs <- cs * (Y1.hat > Y.hat)
-  #} else if (side == "left-sided") {
-  #  cs <- cs * (Y1.hat < Y.hat)
-  #}
+  pvalue <- rep(NA, TT - q)
   
-  fit0 <- matrix(NA, nrow = TT - q, ncol = nsim)
-  fit1 <- matrix(NA, nrow = TT - q, ncol = nsim)
-  
-  tmp1 <- rep(0, TT - q)
-  tmp0 <- rep(0, TT - q)
-  for (j in 1:nsim) {
-    fit0[, j] <- fit.GibbsRFLSM(model$Y.tr, model$Phi[, j], model$muq[j], 
-                                model$X, model$Beta[, j], model$Kappa[, j], 
-                                H = NULL, Gamma = NULL, Tau = NULL)
-    fit1[, j] <- fit.GibbsRFLSM(model$Y.tr, model$Phi[, j], model$muq[j],
-                                model$X, model$Beta[, j], model$Kappa[, j], 
-                                model$H, model$Gamma[, j], model$Tau[, j])
+  if (sign.method == "DM") {
+    for (i in 1:(TT - q)) {
+      pvaluetmp <- pbinom(sign[i, 1] + sign[i, 2] / 2, nsim, 0.5)
+      
+      if (side == "left-sided") {
+        pvalue[i] <- pvaluetmp
+      } else if (side == "right-sided") {
+        pvalue[i] <- 1 - pvaluetmp
+      } else if (side == "two-sided") {
+        pvalue[i] <- 2 * min(1 - pvaluetmp, pvaluetmp)
+      }
+      
+    }
+  } else if (sign.method == "trinomial") {
     
-    tmp0 <- tmp0 + dnorm(model$Y.tr[-c(1:q)], fit0[, j], sqrt(model$sigma2[j]))
-    tmp1 <- tmp1 + dnorm(model$Y.tr[-c(1:q)], fit1[, j], sqrt(model$sigma2[j]))
+    tmp <- cbind(sign[, 1] - sign[, 3], nsim, sign[, 2] / nsim)
+    
+    for (i in 1:(TT - q)) {
+      if (tmp[i, 3] == 1) {
+        pvalue[i] <- 1
+      } else {
+        pvaluetmp <- ptrinomial(tmp[i, 1], tmp[i, 2], tmp[i, 3])
+        if (side == "left-sided") {
+          pvalue[i] <- pvaluetmp
+        } else if (side == "right-sided") {
+          pvalue[i] <- 1 - pvaluetmp
+        } else if (side == "two-sided") {
+          pvalue[i] <- 2 * min(1 - pvaluetmp, pvaluetmp)
+        }
+      }
+    }
   }
-  llr.H1 <- tmp1 / nsim
-  llr.H0 <- tmp0 / nsim
   
-  cs <- log(llr.H1 / llr.H0)
+  adj.pvalue <- p.adjust(pvalue, method = adj.method)
   
-  lim <- lim.ph1(rbind(matrix(model$Y.tr[c(1:q)], nrow = q, ncol = nsim.chart), Y.tr.sim), 
-                 model, FAP0 = 0.3, side = "two-sided")
-    
-  
-  lim.tr <- matrix(NA, nrow = TT - q, ncol = 2)
-  sig.tr <- lim.tr[, 1]
-  
-  #for (i in (q + 1):TT) {
-  #  if (side == "two-sided") {
-  #    lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
-  #    lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
-  #  } else if (side == "right-sided") {
-  #    lim.tr[i, 1] <- -Inf
-  #    lim.tr[i, 2] <- Y.hat[i - q] + (cs.mean + lim * cs.sd) * sigmahat
-  #  } else if (side == "left-sided") {
-  #    lim.tr[i, 1] <- Y.hat[i - q] + (cs.mean - lim * cs.sd) * sigmahat
-  #    lim.tr[i, 2] <- Inf
-  #  }
-  #}
-  
-  lim.tr[, 1] <- -Inf
-  lim.tr[, 2] <- lim
-  
-  sig.tr <- (lim.tr[, 1] <= cs) & (cs <= lim.tr[, 2])
+  sig <- adj.pvalue < FAP0
   
   if (plot == TRUE) {   
     
@@ -160,21 +126,21 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
     #  Ylim <- c(min(lim.tr, model$Y.tr, na.rm = TRUE), max(model$Y.tr, na.rm = TRUE))
     #}
     
-    Ylim <- c(min(cs, na.rm = TRUE), max(lim.tr, cs, na.rm = TRUE))
+    Ylim <- c(min(FAP0, adj.pvalue, na.rm = TRUE), 
+              max(FAP0, adj.pvalue, na.rm = TRUE))
     
     plot(c(1, TT), Ylim, type = 'n',
          main = "Phase I Chart", 
-         ylab = "Charting Statistics", 
+         ylab = "Adjusted P-Value", 
          xlab = "")
-    points(cs, type = 'o')
-    points((1:(TT - q))[which(sig.tr == FALSE)], cs[which(sig.tr == FALSE)], col = 'red', pch = 16)
-    points(lim.tr[, 1], type = 'l', lty = 2, col = 'red')
-    points(lim.tr[, 2], type = 'l', lty = 2, col = 'red')
+    points(adj.pvalue, type = 'o')
+    points((1:(TT - q))[which(sig == TRUE)], adj.pvalue[which(sig == TRUE)], col = 'red', pch = 16)
+    abline(h = FAP0, col = 'red')
     
   }
   
-  out <- list("model" = model, "cs" = cs, "lim.tr" = lim.tr, 
-              "sig.tr" = sig.tr, "Y.hat" = Y.hat) 
+  out <- list("model" = model, "adj.pvalue" = adj.pvalue, 
+              "adj.pvalue" = adj.pvalue) 
   out
 } 
 

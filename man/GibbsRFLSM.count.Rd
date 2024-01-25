@@ -11,7 +11,7 @@ GibbsRFLSM.count(
   X = NULL,
   Y0 = rep(mean(Y), w - 1),
   q = 5,
-  A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])),
+  A = diag(nrow = q),
   a = 0.1,
   b = 0.1,
   alpha = 0.1,

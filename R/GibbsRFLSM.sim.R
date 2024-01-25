@@ -64,7 +64,6 @@ GibbsRFLSM.sim.ph1 <- function(nsim, Y1, Phi, muq, sigma2,
   sigma2.sim <- rep(NA, nsim)
   
   muX <- matrix(0, nrow = TT, ncol = m)
-  
   if (!is.null(X)) {
     muX <- X %*% (Beta * Kappa)
   }

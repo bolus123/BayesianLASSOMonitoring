@@ -9,7 +9,7 @@ GibbsRFLSM(
   H = NULL,
   X = NULL,
   q = 5,
-  A = diag(nrow = q + ifelse(is.null(X), 0, dim(X)[2])),
+  A = diag(nrow = q),
   a = 0.1,
   b = 0.1,
   alpha = 0.1,

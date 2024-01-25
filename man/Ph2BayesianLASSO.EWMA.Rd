@@ -6,7 +6,7 @@
 \usage{
 Ph2BayesianLASSO.EWMA(
   Y,
-  Ph1BayesianLASSO.model,
+  Ph1BayesianLASSO.chart,
   lambda = 0.05,
   H = NULL,
   X = NULL,
