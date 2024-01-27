@@ -16,34 +16,27 @@ Ph1MultipleTesting <- function(model, sign.method = "DM",
   q <- dim(model$Phi)[1]
   nsim <- dim(model$Phi)[2]
   
-  mu <- model$H %*% (model$Gamma * model$Tau)
+  m <- dim(model$Gamma)[1]
   
-  mu.dif <- matrix(NA, nrow = TT - q, ncol = nsim)
+  GammaTau <- model$Gamma * model$Tau
   
-  for (i in (q + 1):TT) {
-    if (i == q + 1) {
-      mu.dif[i - q, ] <- mu[i, ]
-    } else {
-      mu.dif[i - q, ] <- mu[i, ] - mu[i - 1, ]
-    }
-  }
   
-  sign <- matrix(NA, nrow = TT - q, ncol = 3)
-  sign[, 1] <- rowSums(mu.dif > 0)
-  sign[, 2] <- rowSums(mu.dif == 0)
-  sign[, 3] <- rowSums(mu.dif < 0)
+  sign <- matrix(NA, nrow = m, ncol = 3)
+  sign[, 1] <- rowSums(GammaTau > 0)
+  sign[, 2] <- rowSums(GammaTau == 0)
+  sign[, 3] <- rowSums(GammaTau < 0)
   
-  pvalue <- rep(NA, TT - q)
+  pvalue <- rep(NA, m)
   
   if (sign.method == "DM") {
-    for (i in 1:(TT - q)) {
+    for (i in 1:m) {
       pvalue[i] <- pbinom(sign[i, 1] + sign[i, 2] / 2, nsim, 0.5)
     }
   } else if (sign.method == "trinomial") {
     
     tmp <- cbind(sign[, 1] - sign[, 3], nsim, sign[, 2] / nsim)
     
-    for (i in 1:(TT - q)) {
+    for (i in 1:m) {
       if (tmp[i, 3] == 1) {
         pvalue[i] <- 1
       } else {
@@ -57,7 +50,7 @@ Ph1MultipleTesting <- function(model, sign.method = "DM",
   } else if (side == "right-sided") {
     pvalue <- 1 - pvalue
   } else if (side == "two-sided") {
-    for (i in 1:(TT - q)) {
+    for (i in 1:m) {
       pvalue[i] <- 2 * min(1 - pvalue[i], pvalue[i])
     }
   }
@@ -147,12 +140,37 @@ Ph1BayesianLASSO <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w -
               max(FAP0, adj.pvalue, na.rm = TRUE))
     
     plot(c(1, TT), Ylim, type = 'n',
-         main = "Phase I Chart", 
+         main = "Gamma Diagnosis", 
          ylab = "Adjusted P-Value", 
          xlab = "")
-    points(adj.pvalue, type = 'o')
-    points((1:(TT - q))[which(sig == TRUE)], adj.pvalue[which(sig == TRUE)], col = 'red', pch = 16)
+    points((q + 1):(TT), adj.pvalue, type = 'o')
+    points(((q + 1):(TT))[which(sig == TRUE)], adj.pvalue[which(sig == TRUE)], col = 'red', pch = 16)
     abline(h = FAP0, col = 'red')
+    
+    occpoint <- which(diff(H %*% sig) == 1) + 1 + q
+
+    mulen <- dim(model$Mu)[1]
+    mumedian <- rep(NA, mulen)
+    
+    for (i in 1:mulen) {
+      mumedian[i] <- median(model$Mu[i, ], na.rm = TRUE)
+    }
+    
+    plot(c(1, TT), c(min(mumedian), max(mumedian)), type = 'n',
+         main = "Median Mu", 
+         ylab = "Magnitude", 
+         xlab = "")
+    
+    points(mumedian, type = 'o')
+    points(occpoint, mumedian[occpoint], col = 'red', pch = 16)
+    
+    plot(c(1, TT), c(min(Y), max(Y)), type = 'n',
+         main = "Y", 
+         ylab = "Magnitude", 
+         xlab = "")
+    
+    points(Y, type = 'o')
+    points(occpoint, Y[occpoint], col = 'red', pch = 16)
     
   }
   
