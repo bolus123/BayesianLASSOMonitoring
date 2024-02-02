@@ -118,7 +118,7 @@ invert.q <- function(coef) {
   return(out)
 }
 
-pars.mat <- function(n, parsVec, norder = 1, isPhi == TRUE) {
+pars.mat <- function(n, parsVec, norder = 1, isPhi = TRUE) {
   if (isPhi == TRUE) {
     Check <- invert.q(parsVec)
     if (Check == 0) {
