@@ -118,10 +118,18 @@ invert.q <- function(coef) {
   return(out)
 }
 
-pars.mat <- function(n, parsVec, norder = 1) {
-  Check <- invert.q(parsVec)
-  if (Check == 0) {
-    NULL
+pars.mat <- function(n, parsVec, norder = 1, isPhi == TRUE) {
+  if (isPhi == TRUE) {
+    Check <- invert.q(parsVec)
+    if (Check == 0) {
+      NULL
+    } else {
+      Mat <- diag(n)
+      for (i in 1:norder) {
+        Mat <- Mat + Diag(rep(parsVec[i], n - i), k = -i)
+      }
+      Mat
+    }
   } else {
     Mat <- diag(n)
     for (i in 1:norder) {
@@ -129,6 +137,7 @@ pars.mat <- function(n, parsVec, norder = 1) {
     }
     Mat
   }
+  return(Mat)
 }
 
 
@@ -142,7 +151,7 @@ sigma.mat <- function(n, order = c(1, 0, 0), phi.vec = 0.5, theta.vec = NULL, si
   if (order[3] == 0) {
     thetaMat <- diag(n + burn.in)
   } else {
-    thetaMat <- pars.mat(n + burn.in, theta.vec, norder = order[3])
+    thetaMat <- pars.mat(n + burn.in, theta.vec, norder = order[3], isPhi = FALSE)
   }
   
   out <- solve(phiMat) %*% thetaMat %*% t(thetaMat) %*% t(solve(phiMat)) * sigma2
