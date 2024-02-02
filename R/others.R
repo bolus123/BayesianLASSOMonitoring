@@ -183,7 +183,7 @@ sigma.mat <- function(n, order = c(1, 0, 0), phi.vec = 0.5, theta.vec = NULL, si
 #' w <- 28
 #' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = burnin)
 #' 
-rarma <- function(object, n, h, delta, nsim = 100, burnin = 50, lowerbound = 0) {
+rarma <- function(object, n, h, delta, xreg = NULL, nsim = 100, burnin = 50, lowerbound = 0) {
   
   nphi <- grep("ar", names(object$coef))
   ntheta <- grep("ma", names(object$coef))
@@ -210,7 +210,7 @@ rarma <- function(object, n, h, delta, nsim = 100, burnin = 50, lowerbound = 0) 
   
   innov <- rnorm(n, mu, sqrt(object$sigma2))
 
-  ts <- simulate(object, nsim = n, future = FALSE, innov = innov)
+  ts <- simulate(object, nsim = n, future = FALSE, innov = innov, xreg = xreg)
 
   ts[which(ts < lowerbound)] <- lowerbound
   ts
