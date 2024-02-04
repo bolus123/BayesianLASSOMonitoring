@@ -4,7 +4,16 @@
 \alias{rarma}
 \title{simulate realizations using ARMA(p, q) and one sustained shift}
 \usage{
-rarma(object, n, h, delta, nsim = 100, burnin = 50, lowerbound = 0)
+rarma(
+  object,
+  n,
+  h,
+  delta,
+  xreg = NULL,
+  nsim = 100,
+  burnin = 50,
+  lowerbound = 0
+)
 }
 \arguments{
 \item{n}{is the length}

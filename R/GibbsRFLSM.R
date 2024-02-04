@@ -66,11 +66,15 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
     Gamma <- NA
     Tau <- NA
     pGamma <- NA
+    muGamma <- NA
+    sigma2Gamma <- NA
   } else {
     m <- dim(H)[2]
     Gamma <- model$Gamma[1:m, ]
     Tau <- model$Tau[1:m, ]
     pGamma <- model$p[1:m, ]
+    muGamma <- model$muGamma[1:m, ]
+    sigma2Gamma <- model$sigma2Gamma[1:m, ]
   }
   
   if (is.null(X)) {
@@ -78,11 +82,15 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
     Beta <- NA
     Kappa <- NA
     pBeta <- NA
+    muBeta <- NA
+    sigma2Beta <- NA
   } else {
     p <- dim(X)[2]
     Beta <- model$Gamma[(m + 1):(m + p), ]
     Kappa <- model$Tau[(m + 1):(m + p), ]
     pBeta <- model$p[(m + 1):(m + p), ]
+    muBeta <- model$muGamma[(m + 1):(m + p), ]
+    sigma2Beta <- model$sigma2Gamma[(m + 1):(m + p), ]
   }
   
   
@@ -91,9 +99,13 @@ GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5,
     "Phi" = matrix(model$Phi, ncol = nsim),
     "Beta" = matrix(Beta, ncol = nsim),
     "pBeta" = matrix(pBeta, ncol = nsim),
+    "muBeta" = matrix(muBeta, ncol = nsim),
+    "sigma2Beta" = matrix(sigma2Beta, ncol = nsim),
     "Kappa" = matrix(Kappa, ncol = nsim),
     "Gamma" = matrix(Gamma, ncol = nsim),
     "pGamma" = matrix(pGamma, ncol = nsim),
+    "muGamma" = matrix(muGamma, ncol = nsim),
+    "sigma2Gamma" = matrix(sigma2Gamma, ncol = nsim),
     "Tau" = matrix(Tau, ncol = nsim),
     "sigma2" = model$sigma2,
     "lambda2" = model$lambda2,
@@ -181,9 +193,13 @@ GibbsRFLSM.ma <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1)
     "Phi" = model$Phi,
     "Beta" = model$Beta,
     "pBeta" = model$pBeta,
+    "muBeta" = model$muBeta,
+    "sigma2Beta" = model$sigma2Beta,
     "Kappa" = model$Kappa,
     "Gamma" = model$Gamma,
     "pGamma" = model$pGamma,
+    "muGamma" = model$muGamma,
+    "sigma2Gamma" = model$sigma2Gamma,
     "Tau" = model$Tau,
     "sigma2" = model$sigma2,
     "lambda2" = model$lambda2,

@@ -625,6 +625,9 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
   
   arma::mat pvec(m, 1); 
   
+  arma::mat muGamma = Gamma;
+  arma::mat sigma2Gamma = Gamma;
+  
   double tmpzetanot;
   double tmpzetat;
   arma::mat tmp;
@@ -699,6 +702,8 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
       }
       
       Gamma(jj) = R::rnorm(mt, sqrt(st));
+      muGamma(jj) = mt;
+      sigma2Gamma(jj) = st;
     }
     
   }
@@ -706,7 +711,9 @@ Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma:
   Rcpp::List out = Rcpp::List::create(
     Rcpp::_["Tau"] = Tau,
     Rcpp::_["Gamma"] = Gamma,
-    Rcpp::_["p"] = pvec
+    Rcpp::_["p"] = pvec,
+    Rcpp::_["muGamma"] = muGamma,
+    Rcpp::_["sigma2Gamma"] = sigma2Gamma
   );
   return(out);
 }
@@ -803,6 +810,11 @@ Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q,
   arma::mat Gammaout(m, nsim);
   Gammaout.zeros();
   
+  arma::mat muGammaout(m, nsim);
+  muGammaout.zeros();
+  arma::mat sigma2Gammaout(m, nsim);
+  sigma2Gammaout.zeros();
+  
   arma::mat pout(m, nsim);
   pout.zeros();
   
@@ -887,6 +899,11 @@ Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q,
   
   arma::mat Gamma(m, 1);
   Gamma.zeros();
+  
+  arma::mat muGamma(m, 1);
+  muGamma.zeros();
+  arma::mat sigma2Gamma(m, 1);
+  sigma2Gamma.zeros();
   
   arma::mat pvec(m, 1);
   pvec.zeros();
@@ -1010,6 +1027,8 @@ Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q,
     Tau = Rcpp::as<arma::mat>(TauGamma["Tau"]);
     Gamma = Rcpp::as<arma::mat>(TauGamma["Gamma"]);
     pvec = Rcpp::as<arma::mat>(TauGamma["p"]);
+    muGamma = Rcpp::as<arma::mat>(TauGamma["muGamma"]);
+    sigma2Gamma = Rcpp::as<arma::mat>(TauGamma["sigma2Gamma"]);
     
     //#update muq and Mu
     
@@ -1033,6 +1052,8 @@ Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q,
         sigma2out.col(rr) = sigma2;
         Tauout.col(rr) = Tau;
         Gammaout.col(rr) = Gamma;
+        muGammaout.col(rr) = muGamma;
+        sigma2Gammaout.col(rr) = sigma2Gamma;
         pout.col(rr) = pvec;
         muqout.col(rr) = muq;
         Muout.col(rr) = Mu;
@@ -1064,6 +1085,8 @@ Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q,
     _["sigma2"] = sigma2out,
     _["Tau"] = Tauout,
     _["Gamma"] = Gammaout,
+    _["muGamma"] = muGammaout,
+    _["sigma2Gamma"] = sigma2Gammaout,
     _["p"] = pout,
     _["muq"] = muqout,
     _["Mu"] = Muout,
