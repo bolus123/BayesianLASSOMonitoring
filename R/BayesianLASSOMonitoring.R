@@ -60,6 +60,87 @@ Ph1MultipleTesting <- function(model, sign.method = "DM",
    
 }
 
+getlogBF <- function(Y, model) {
+  m <- dim(model$Phi)[2]
+  q <- dim(model$Phi)[1]
+  n <- length(Y) - q
+  
+  tmp0 <- rep(0, n)
+  tmp1 <- rep(0, n)
+  
+  for (i in 1:m) {
+    Y0.sim.fit0 <- fit.GibbsRFLSM(Y, 
+                                  model$Phi[, i], model$muq[i], 
+                                  X = model$X, Beta = model$Beta[, i], 
+                                  Kappa = model$Kappa[, i], 
+                                  H = NULL, Gamma = NULL, Tau = NULL)
+    
+    Y0.sim.fit1 <- fit.GibbsRFLSM(Y, 
+                                  model$Phi[, i], model$muq[i], 
+                                  X = model$X, Beta = model$Beta[, i], 
+                                  Kappa = model$Kappa[, i], 
+                                  H = model$H, Gamma = model$Gamma[, i], 
+                                  Tau = model$Tau[, i])
+    
+    tmp0 <- tmp0 + dnorm(Y[-c(1:q)], Y0.sim.fit0, sd = sqrt(model$sigma2[i])) / m
+    tmp1 <- tmp1 + dnorm(Y[-c(1:q)], Y0.sim.fit1, sd = sqrt(model$sigma2[i])) / m
+  }
+  
+  b10 <- log(tmp1 / tmp0)
+  b10
+}
+
+
+#' Bayesian LASSO Phase I Monitoring
+#' 
+#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+#' @param model is model.
+#' @param sign.method is .
+#' @param adj.method is 
+#' @param side is side
+#' 
+#' 
+#' @export
+Ph1MultipleTesting.BF <- function(model, nsim = 1000, FAP0 = 0.2) {
+  
+  q <- dim(model$Phi)[1]
+  n <- length(model$Y.tr) - q
+  m <- dim(model$Phi)[2]
+  
+  b10.matrix <- matrix(NA, nrow = n, ncol = nsim)
+  b10.max <- rep(NA, nsim)
+  
+  for (j in 1:nsim) {
+    
+    tmpsel <- sample(1:m, 1)
+    Y0fit <- fit.GibbsRFLSM(model$Y.tr, 
+                            model$Phi[, tmpsel], model$muq[tmpsel], 
+                            X = model$X, Beta = model$Beta[, tmpsel], 
+                            Kappa = model$Kappa[, tmpsel], 
+                            H = NULL, Gamma = NULL, Tau = NULL)
+    
+    Y0.sim <- rnorm(n, Y0fit, sqrt(model$sigma2[tmpsel]))
+    
+    tmpY.sim <- c(model$Y.tr[1:q], Y0.sim)
+    
+    b10 <- getlogBF(tmpY.sim, model)
+    
+    b10.matrix[, j] <- b10
+    b10.max[j] <- max(b10)
+    
+  }
+  
+  cs <- getlogBF(model$Y.tr, model)
+  
+  p.value <- mean(b10.max > max(cs))
+  
+  lim <- quantile(b10.max, 1 - FAP0)
+  
+  list(p.value = p.value, lim = lim, cs = cs, sig = cs > lim)
+  
+}
+
+
 #' Bayesian LASSO Phase I Monitoring
 #' 
 #' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model

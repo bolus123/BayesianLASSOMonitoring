@@ -347,11 +347,44 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
   tmpfit.tr <- rep(NA, TT)
   tmpfit.ma <- rep(NA, TT)
   tmpfit <- rep(NA, TT)
+  
+  tmpfit0.tr <- rep(NA, TT)
+  tmpfit0.ma <- rep(NA, TT)
+  tmpfit0 <- rep(NA, TT)
+  
   tmpresi.tr <- rep(NA, TT)
   tmpresi.ma <- rep(NA, TT)
+  tmpresi <- rep(NA, TT)
+  
+  tmpresi0.tr <- rep(NA, TT)
+  tmpresi0.ma <- rep(NA, TT)
+  tmpresi0 <- rep(NA, TT)
+  
   RMSE.tr <- rep(NA, nsim)
   RMSE.ma <- rep(NA, nsim)
+  RMSE <- rep(NA, nsim)
   
+  RMSE0.tr <- rep(NA, nsim)
+  RMSE0.ma <- rep(NA, nsim)
+  RMSE0 <- rep(NA, nsim)
+  
+  fit.tr <- matrix(NA, nrow = TT, ncol = nsim)
+  fit.ma <- matrix(NA, nrow = TT, ncol = nsim)
+  fit <- matrix(NA, nrow = TT, ncol = nsim)
+  
+  fit0.tr <- matrix(NA, nrow = TT, ncol = nsim)
+  fit0.ma <- matrix(NA, nrow = TT, ncol = nsim)
+  fit0 <- matrix(NA, nrow = TT, ncol = nsim)
+  
+  resi.tr <- matrix(NA, nrow = TT, ncol = nsim)
+  resi.ma <- matrix(NA, nrow = TT, ncol = nsim)
+  resi <- matrix(NA, nrow = TT, ncol = nsim)
+  
+  resi0.tr <- matrix(NA, nrow = TT, ncol = nsim)
+  resi0.ma <- matrix(NA, nrow = TT, ncol = nsim)
+  resi0 <- matrix(NA, nrow = TT, ncol = nsim)
+  
+  Y <- Ph1BayesianLASSO.model$Y
   Y.tr <- Ph1BayesianLASSO.model$Y.tr
   Y.ma <- Ph1BayesianLASSO.model$Y.ma
   meanY <- Ph1BayesianLASSO.model$meanY
@@ -359,6 +392,8 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
   
   X <- Ph1BayesianLASSO.model$X
   H <- Ph1BayesianLASSO.model$H
+  
+  tmpY0 <- c(Ph1BayesianLASSO.model$Y0, Ph1BayesianLASSO.model$Y)
   
   for (j in 1:nsim) {
     tmpmuq <- Ph1BayesianLASSO.model$muq[j]
@@ -380,6 +415,21 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
       if (!is.null(X)) {
         tmpfit.tr[i] <- tmpfit.tr[i] + X[i, ] %*% (tmpBeta * tmpKappa)
       }
+      
+      tmpfit0.tr[i] <- tmpfit.tr[i]
+      
+      tmpresi0.tr[i] <- Y.tr[i] - tmpfit0.tr[i]
+      tmpfit0.ma[i] <- backtrans(tmpfit0.tr[i], log, const, sta, meanY, sdY)
+      
+      tmpfit0[i] <- tmpfit0.ma[i] * w - sum(tmpY0[(i - 1 + w - 1):(i - 1 + w - 1 - (w - 1) + 1)])
+      
+      tmpfit0[i] <- ifelse(tmpfit0[i] < lowerbound, lowerbound, tmpfit0[i])
+      
+      tmpfit0.ma[i] <- ifelse(tmpfit0.ma[i] < lowerbound, lowerbound, tmpfit0.ma[i])
+      tmpresi0.ma[i] <- Y.ma[i] - tmpfit0.ma[i]
+      
+      tmpresi0[i] <- Y[i] - tmpfit0[i]
+      
       if (!is.null(H)) {
         tmpfit.tr[i] <- tmpfit.tr[i] + H[i, ] %*% (tmpGamma * tmpTau)
       }
@@ -387,21 +437,58 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
       tmpresi.tr[i] <- Y.tr[i] - tmpfit.tr[i]
       tmpfit.ma[i] <- backtrans(tmpfit.tr[i], log, const, sta, meanY, sdY)
       
-      tmpY0 <- c(Ph1BayesianLASSO.model$Y0, Ph1BayesianLASSO.model$Y)
-      #if ()
+      tmpfit[i] <- tmpfit.ma[i] * w - sum(tmpY0[(i - 1 + w - 1):(i - 1 + w - 1 - (w - 1) + 1)])
+      
+      tmpfit[i] <- ifelse(tmpfit[i] < lowerbound, lowerbound, tmpfit[i])
       
       tmpfit.ma[i] <- ifelse(tmpfit.ma[i] < lowerbound, lowerbound, tmpfit.ma[i])
       tmpresi.ma[i] <- Y.ma[i] - tmpfit.ma[i]
+      
+      tmpresi[i] <- Y[i] - tmpfit[i]
     }
+    
+    fit.tr[, j] <- tmpfit.tr
+    fit.ma[, j] <- tmpfit.ma
+    fit[, j] <- tmpfit
+    
+    fit0.tr[, j] <- tmpfit0.tr
+    fit0.ma[, j] <- tmpfit0.ma
+    fit0[, j] <- tmpfit0
+    
+    resi.tr[, j] <- tmpresi.tr
+    resi.ma[, j] <- tmpresi.ma
+    resi[, j] <- tmpresi
+    
+    resi0.tr[, j] <- tmpresi0.tr
+    resi0.ma[, j] <- tmpresi0.ma
+    resi0[, j] <- tmpresi0
+    
+    tmpresi0.tr <- tmpresi0.tr[(q + 1):TT]
+    RMSE0.tr[j] <- sqrt(t(tmpresi0.tr) %*% tmpresi0.tr / (TT - q))
+    
+    tmpresi0.ma <- tmpresi0.ma[(q + 1):TT]
+    RMSE0.ma[j] <- sqrt(t(tmpresi0.ma) %*% tmpresi0.ma / (TT - q))
+    
+    tmpresi0 <- tmpresi0[(q + 1):TT]
+    RMSE0[j] <- sqrt(t(tmpresi0) %*% tmpresi0 / (TT - q))
+    
     tmpresi.tr <- tmpresi.tr[(q + 1):TT]
     RMSE.tr[j] <- sqrt(t(tmpresi.tr) %*% tmpresi.tr / (TT - q))
     
     tmpresi.ma <- tmpresi.ma[(q + 1):TT]
     RMSE.ma[j] <- sqrt(t(tmpresi.ma) %*% tmpresi.ma / (TT - q))
+    
+    tmpresi <- tmpresi[(q + 1):TT]
+    RMSE[j] <- sqrt(t(tmpresi) %*% tmpresi / (TT - q))
   }
   
-  list("RMSE.tr" = RMSE.tr, "RMSE.ma" = RMSE.ma)
-  
+  list("RMSE.tr" = RMSE.tr, "RMSE.ma" = RMSE.ma, "RMSE" = RMSE, 
+       "fit.tr" = fit.tr[-c(1:q), ], "fit.ma" = fit.ma[-c(1:q), ], "fit" = fit[-c(1:q), ], 
+       "resi.tr" = resi.tr[-c(1:q), ], "resi.ma" = resi.ma[-c(1:q), ], "resi" = resi[-c(1:q), ], 
+       "RMSE0.tr" = RMSE0.tr, "RMSE0.ma" = RMSE0.ma, "RMSE0" = RMSE0, 
+       "fit0.tr" = fit0.tr[-c(1:q), ], "fit0.ma" = fit0.ma[-c(1:q), ], "fit0" = fit0[-c(1:q), ],
+       "resi0.tr" = resi0.tr[-c(1:q), ], "resi0.ma" = resi0.ma[-c(1:q), ], "resi0" = resi0[-c(1:q), ], )
+
 }
 
 #' simulate realizations using INAR(3) with zero-inflated Poisson innovation and one sustained shift
