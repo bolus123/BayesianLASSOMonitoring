@@ -387,8 +387,8 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
       tmpresi.tr[i] <- Y.tr[i] - tmpfit.tr[i]
       tmpfit.ma[i] <- backtrans(tmpfit.tr[i], log, const, sta, meanY, sdY)
       
-      tmpY0 <- 
-      if ()
+      tmpY0 <- c(Ph1BayesianLASSO.model$Y0, Ph1BayesianLASSO.model$Y)
+      #if ()
       
       tmpfit.ma[i] <- ifelse(tmpfit.ma[i] < lowerbound, lowerbound, tmpfit.ma[i])
       tmpresi.ma[i] <- Y.ma[i] - tmpfit.ma[i]
