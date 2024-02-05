@@ -400,7 +400,6 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
       tmpfit.ma[i] <- ifelse(tmpfit.ma[i] < lowerbound, lowerbound, tmpfit.ma[i])
       tmpresi.ma[i] <- Y.ma[i] - tmpfit.ma[i]
       
-      tmpresi[i] <- Y[i] - tmpfit[i]
     }
     
     fit.tr[, j] <- tmpfit.tr
