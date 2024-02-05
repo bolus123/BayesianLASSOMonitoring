@@ -487,7 +487,7 @@ RMSE.ph1 <- function(Ph1BayesianLASSO.model, log = TRUE, const = 1, sta = TRUE, 
        "resi.tr" = resi.tr[-c(1:q), ], "resi.ma" = resi.ma[-c(1:q), ], "resi" = resi[-c(1:q), ], 
        "RMSE0.tr" = RMSE0.tr, "RMSE0.ma" = RMSE0.ma, "RMSE0" = RMSE0, 
        "fit0.tr" = fit0.tr[-c(1:q), ], "fit0.ma" = fit0.ma[-c(1:q), ], "fit0" = fit0[-c(1:q), ],
-       "resi0.tr" = resi0.tr[-c(1:q), ], "resi0.ma" = resi0.ma[-c(1:q), ], "resi0" = resi0[-c(1:q), ], )
+       "resi0.tr" = resi0.tr[-c(1:q), ], "resi0.ma" = resi0.ma[-c(1:q), ], "resi0" = resi0[-c(1:q), ])
 
 }
 
