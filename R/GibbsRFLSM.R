@@ -213,7 +213,7 @@ GibbsRFLSM.ma <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1)
     "X" = X,
     "H" = H,
     "Y" = Y,
-    "Y0" = ifelse(w == 1, NA, YY[(nn - TT - (w - 1) + 1):(nn - TT)])
+    "Y0" = ifelse(w == 1, NULL, YY[(nn - TT - (w - 1) + 1):(nn - TT)])
   )
   
   return(out)
