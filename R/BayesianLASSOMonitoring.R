@@ -126,15 +126,15 @@ Ph1MultipleTesting.BF <- function(model, nsim = 1000, FAP0 = 0.2) {
     b10 <- getlogBF(tmpY.sim, model)
     
     b10.matrix[, j] <- b10
-    b10.max[j] <- max(b10)
+    b10.max[j] <- max(b10, na.rm =TRUE)
     
   }
   
   cs <- getlogBF(model$Y.tr, model)
   
-  p.value <- mean(b10.max > max(cs))
+  p.value <- mean(b10.max > max(cs, na.rm = TRUE), na.rm = TRUE)
   
-  lim <- quantile(b10.max, 1 - FAP0)
+  lim <- quantile(b10.max, 1 - FAP0, na.rm = TRUE)
   
   list(p.value = p.value, lim = lim, cs = cs, sig = cs > lim)
   
