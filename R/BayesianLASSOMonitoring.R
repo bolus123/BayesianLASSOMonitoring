@@ -95,9 +95,8 @@ getlogBF <- function(Y, model) {
 #' 
 #' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
 #' @param model is model.
-#' @param sign.method is .
-#' @param adj.method is 
-#' @param side is side
+#' @param nsim is .
+#' @param FAP0 is 
 #' 
 #' 
 #' @export
@@ -137,6 +136,109 @@ Ph1MultipleTesting.BF <- function(model, nsim = 1000, FAP0 = 0.2) {
   lim <- quantile(b10.max, 1 - FAP0, na.rm = TRUE)
   
   list(p.value = p.value, lim = lim, cs = cs, sig = cs > lim)
+  
+}
+
+
+#' Bayesian LASSO Phase I Monitoring
+#' 
+#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+#' @param model is model.
+#' @param nsim is .
+#' @param FAP0 is 
+#' @param log is model.
+#' @param const is .
+#' @param sta is 
+#' 
+#' 
+#' @export
+Ph1MultipleTesting.Y0 <- function(model, nsim = 1000, FAP0 = 0.2, log = FALSE, const = 1, sta = FALSE, lowerbound = 0, side = "right-sided") {
+  
+  q <- dim(model$Phi)[1]
+  n <- length(model$Y.tr) - q
+  m <- dim(model$Phi)[2]
+  
+  tmpY.sim <- matrix(NA, nrow = n, ncol = nsim)
+  tmpY.resi <- matrix(NA, nrow = n, ncol = nsim)
+  
+  Y.resi <- rep(NA, n)
+  
+  for (j in 1:nsim) {
+    
+    tmpsel <- sample(1:m, 1)
+    Y0fit <- fit.GibbsRFLSM(model$Y.tr, 
+                            model$Phi[, tmpsel], model$muq[tmpsel], 
+                            X = model$X, Beta = model$Beta[, tmpsel], 
+                            Kappa = model$Kappa[, tmpsel], 
+                            H = NULL, Gamma = NULL, Tau = NULL)
+    
+    Y0.sim <- rnorm(n, Y0fit, sqrt(model$sigma2[tmpsel]))
+    
+    Y0.sim <- backtrans(Y0.sim, log, const, sta, model$meanY, model$sdY)
+    
+    Y0.sim[Y0.sim < lowerbound] <- lowerbound
+    
+    tmpY.sim[, j] <- Y0.sim
+    
+  }
+  
+  tmpY.sim.median <- rep(NA, n)
+  
+  for (i in 1:n) {
+    tmpY.sim.median[i] <- median(tmpY.sim[i, ], na.rm = TRUE)
+    tmpY.resi[i, ] <- tmpY.sim[i, ] - tmpY.sim.median[i]
+    Y.resi[i] <- model$Y.ma[i + q] - tmpY.sim.median[i]
+  }
+  
+  
+  tmpY.resi.max <- rep(NA, nsim)
+  tmpY.resi.min <- rep(NA, nsim)
+  
+  for (j in 1:nsim) {
+    tmpY.resi.max[j] <- max(tmpY.resi[, j], na.rm = TRUE)
+    tmpY.resi.min[j] <- min(tmpY.resi[, j], na.rm = TRUE)
+  }
+  
+  p.value.right <- mean(tmpY.resi.max >= max(Y.resi), na.rm = TRUE)
+  p.value.left <- mean(tmpY.resi.min <= min(Y.resi), na.rm = TRUE)
+  p.value.two <- mean((tmpY.resi.min <= min(Y.resi)) | (max(Y.resi) <= tmpY.resi.max), na.rm = TRUE)
+    
+  lower <- NA
+  upper <- NA
+  
+  if (side == "right-sided") {
+    p.value <- p.value.right
+    lower <- NA
+    upper <- quantile(tmpY.resi.max, 1 - FAP0)
+    sig.ind <- Y.resi >= upper
+  } else if (side == "left-sided") {
+    p.value <- p.value.left
+    lower <- quantile(tmpY.resi.min, FAP0)
+    upper <- NA
+    sig.ind <- Y.resi <= lower
+  } else {
+    p.value <- p.value.two
+    lower <- quantile(tmpY.resi.min, FAP0 / 2)
+    upper <- quantile(tmpY.resi.max, 1 - FAP0 / 2)
+    sig.ind <- (Y.resi <= lower) | (Y.resi >= upper)
+  }
+  
+  sig <- p.value <= FAP0
+  
+  sig.ind <- 
+  
+  if (side == "right-sided")
+  
+  list(sig = sig,
+       p.value = p.value,
+       sig.ind = sig.ind,
+       cs = Y.resi,
+       lower = lower,
+       upper = upper,
+       Y0.median = tmpY.sim.median,
+       p.value.right = p.value.right, 
+       p.value.left = p.value.left,
+       p.value.two = p.value.two)
   
 }
 
