@@ -191,10 +191,12 @@ Ph1MultipleTesting.Y0 <- function(model, nsim = 1000, FAP0 = 0.2, log = FALSE, c
   }
   
   for (j in 1:nsim) {
-    tmpY.resi[, j] <- (tmpY.resi[, j] - mean(tmpY.resi[, j])) / sd(tmpY.resi[, j])
+    tmpY.resi[, j] <- tmpY.resi[, j] / sqrt(mean(tmpY.resi ^ 2))
+      #(tmpY.resi[, j] - mean(tmpY.resi[, j])) / sd(tmpY.resi[, j])
   }
   
-  Y.resi <- (Y.resi - mean(Y.resi)) / sd(Y.resi)
+  Y.resi <- Y.resi / sqrt(mean(Y.resi ^ 2))
+    #(Y.resi - mean(Y.resi)) / sd(Y.resi)
   
   
   tmpY.resi.max <- rep(NA, nsim)
