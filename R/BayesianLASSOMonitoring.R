@@ -191,7 +191,7 @@ Ph1MultipleTesting.Y0 <- function(model, nsim = 1000, FAP0 = 0.2, log = FALSE, c
   }
   
   for (j in 1:nsim) {
-    tmpY.resi[, j] <- tmpY.resi[, j] / sqrt(mean(tmpY.resi ^ 2))
+    tmpY.resi[, j] <- tmpY.resi[, j] / sqrt(mean(tmpY.resi[, j] ^ 2))
       #(tmpY.resi[, j] - mean(tmpY.resi[, j])) / sd(tmpY.resi[, j])
   }
   
