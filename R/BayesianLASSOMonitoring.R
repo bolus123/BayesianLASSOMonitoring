@@ -252,6 +252,108 @@ Ph1MultipleTesting.Y0 <- function(model, nsim = 1000, FAP0 = 0.2, log = FALSE, c
 #' Bayesian LASSO Phase I Monitoring
 #' 
 #' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+#' @param model is model.
+#' @param nsim is .
+#' @param FAP0 is 
+#' @param log is model.
+#' @param const is .
+#' @param sta is 
+#' 
+#' 
+#' @export
+Ph1MultipleTesting.resi <- function(model, interval = c(1e-8, 0.5 - 1e-8), log = FALSE, const = 1, sta = FALSE, 
+                                    meanY = NULL, sdY = NULL, 
+                                    nsim = 10000, FAP0 = 0.2, side = "right-sided", tol = 1e-8) {
+  
+  root.finding <- function(adj.alpha, sim0, FAP0 = 0.2, side = "right-sided") {
+    m <- dim(sim0)[1]
+    nsim <- dim(sim0)[2]
+    
+    tmplower <- rep(-Inf, m)
+    tmpupper <- rep(Inf, m)
+    
+    sig <- matrix(NA, nrow = m, ncol = nsim)
+    
+    for (i in 1:m) {
+      if (side == "right-sided") {
+        tmpupper[i] <- quantile(sim0[i, ], 1 - adj.alpha)
+      } else if (side == "left-sided") {
+        tmplower[i] <- quantile(sim0[i, ], adj.alpha)
+      } else if (side == "two-sided") {
+        tmplower[i] <- quantile(sim0[i, ], adj.alpha/2)
+        tmpupper[i] <- quantile(sim0[i, ], 1 - adj.alpha/2)
+      }
+    }
+    
+    for (j in 1:nsim) {
+      sig[, j] <- (tmplower <= sim0[, j]) & (sim0[, j] <= tmpupper)
+    }
+    
+    tmp <- 1 - mean(colSums(sig) == m)
+    
+    cat("tmp:", tmp, "and adj.alpha:", adj.alpha, "\n")
+    
+    tmp - FAP0
+  }
+  
+  nnsim <- dim(model$Phi)[2]
+  q <- dim(model$Phi)[1]
+  n <- length(model$Y.tr)
+  
+  resi0 <- matrix(NA, n - q, nsim)
+  resi1 <- matrix(NA, n - q, nsim)
+  Y0.ma <- matrix(NA, n - q, nsim)
+  
+  max.resi0 <- rep(NA, nsim)
+  max.resi1 <- rep(NA, nsim)
+  
+  for (i in 1:nsim) {
+    tmpsel <- sample(1:nnsim, 1)
+    tmpfit <- fit.GibbsRFLSM(model$Y.tr, Phi = model$Phi[, tmpsel], muq = model$muq[tmpsel],
+                          X = model$X, Beta = model$Beta[, tmpsel], Kappa = model$Kappa[, tmpsel], 
+                          H = NULL, Gamma = NULL, Tau = NULL) 
+    
+    tmpresi0 <- model$Y.tr[-c(1:q)] - tmpfit
+    tmpsigma2 <- mean(tmpresi0 ^ 2)
+    
+    tmpY0.ma <- rnorm(n - q, tmpfit, sqrt(tmpsigma2))
+    tmpY0.ma <- backtrans(tmpY0.ma, log, const, sta, model$meanY, model$sdY)
+    tmpY0.ma[tmpY0.ma < 0] <- 0
+    Y0.ma[, i] <- tmpY0.ma
+
+  }
+  
+  adj.alpha <- uniroot(root.finding, interval = interval, 
+                       sim0 = Y0.ma, FAP0 = FAP0, side = side, tol = tol)$root
+  
+  lower <- rep(-Inf, n - q)
+  upper <- rep(Inf, n - q)
+  
+  for (i in 1:(n - q)) {
+    if (side == "right-sided") {
+      upper[i] <- quantile(Y0.ma[i, ], 1 - adj.alpha)
+    } else if (side == "left-sided") {
+      lower[i] <- quantile(Y0.ma[i, ], adj.alpha)
+    } else if (side == "two-sided") {
+      lower[i] <- quantile(Y0.ma[i, ], adj.alpha/2)
+      upper[i] <- quantile(Y0.ma[i, ], 1 - adj.alpha/2)
+    }
+  }
+  
+  cs <- model$Y.ma[-c(1:q)]
+  
+  sig <- 1 - ((lower <= cs) & (cs <= upper))
+  
+  list("cs" = cs, "sig" = sig, "lower" = lower, "upper" = upper, 
+       "adj.alpha" = adj.alpha, "Y0.ma" = Y0.ma)
+  
+}
+
+
+
+#' Bayesian LASSO Phase I Monitoring
+#' 
+#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
 #' @param Y is a vector.
 #' @param H is the design matrix for shifts.
 #' @param X is the input matrix
