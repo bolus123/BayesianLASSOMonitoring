@@ -276,12 +276,12 @@ Ph1MultipleTesting.resi <- function(model, interval = c(1e-8, 0.5 - 1e-8), log =
     
     for (i in 1:m) {
       if (side == "right-sided") {
-        tmpupper[i] <- quantile(sim0[i, ], 1 - adj.alpha)
+        tmpupper[i] <- quantile(sim0[i, ], 1 - adj.alpha, na.rm = TRUE)
       } else if (side == "left-sided") {
-        tmplower[i] <- quantile(sim0[i, ], adj.alpha)
+        tmplower[i] <- quantile(sim0[i, ], adj.alpha, na.rm = TRUE)
       } else if (side == "two-sided") {
-        tmplower[i] <- quantile(sim0[i, ], adj.alpha/2)
-        tmpupper[i] <- quantile(sim0[i, ], 1 - adj.alpha/2)
+        tmplower[i] <- quantile(sim0[i, ], adj.alpha/2, na.rm = TRUE)
+        tmpupper[i] <- quantile(sim0[i, ], 1 - adj.alpha/2, na.rm = TRUE)
       }
     }
     
@@ -289,9 +289,9 @@ Ph1MultipleTesting.resi <- function(model, interval = c(1e-8, 0.5 - 1e-8), log =
       sig[, j] <- (tmplower <= sim0[, j]) & (sim0[, j] <= tmpupper)
     }
     
-    tmp <- 1 - mean(colSums(sig) == m)
+    tmp <- 1 - mean(colSums(sig) == m, na.rm = TRUE)
     
-    cat("tmp:", tmp, "and adj.alpha:", adj.alpha, "\n")
+    #cat("tmp:", tmp, "and adj.alpha:", adj.alpha, "\n")
     
     tmp - FAP0
   }
@@ -314,7 +314,7 @@ Ph1MultipleTesting.resi <- function(model, interval = c(1e-8, 0.5 - 1e-8), log =
                           H = NULL, Gamma = NULL, Tau = NULL) 
     
     tmpresi0 <- model$Y.tr[-c(1:q)] - tmpfit
-    tmpsigma2 <- mean(tmpresi0 ^ 2)
+    tmpsigma2 <- mean(tmpresi0 ^ 2, na.rm = TRUE)
     
     tmpY0.ma <- rnorm(n - q, tmpfit, sqrt(tmpsigma2))
     tmpY0.ma <- backtrans(tmpY0.ma, log, const, sta, model$meanY, model$sdY)
@@ -331,12 +331,12 @@ Ph1MultipleTesting.resi <- function(model, interval = c(1e-8, 0.5 - 1e-8), log =
   
   for (i in 1:(n - q)) {
     if (side == "right-sided") {
-      upper[i] <- quantile(Y0.ma[i, ], 1 - adj.alpha)
+      upper[i] <- quantile(Y0.ma[i, ], 1 - adj.alpha, na.rm = TRUE)
     } else if (side == "left-sided") {
-      lower[i] <- quantile(Y0.ma[i, ], adj.alpha)
+      lower[i] <- quantile(Y0.ma[i, ], adj.alpha, na.rm = TRUE)
     } else if (side == "two-sided") {
-      lower[i] <- quantile(Y0.ma[i, ], adj.alpha/2)
-      upper[i] <- quantile(Y0.ma[i, ], 1 - adj.alpha/2)
+      lower[i] <- quantile(Y0.ma[i, ], adj.alpha/2, na.rm = TRUE)
+      upper[i] <- quantile(Y0.ma[i, ], 1 - adj.alpha/2, na.rm = TRUE)
     }
   }
   
