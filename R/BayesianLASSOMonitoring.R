@@ -429,7 +429,8 @@ Ph1MultipleTesting.Y0tr <- function(model, nsim = 10000, FAP0 = 0.2, side = "rig
   
   sig <- 1 - ((lim[, 1] <= model$Y[-c(1:q)]) & (model$Y[-c(1:q)] <= lim[, 2]))
   
-  list("grandsig" = sum(sig) > 0, "sig" = sig, "lim" = lim, "adj.alpha" = adj.alpha)
+  list("grandsig" = sum(sig) > 0, "sig" = sig, "lim" = lim, "adj.alpha" = adj.alpha, 
+       "Yph1" = ph1mat)
   
 }
 
