@@ -20,14 +20,14 @@ using namespace Rcpp;
 using namespace arma;
 
 arma::colvec rinvgaussiancpp(int n, double mu, double lambda){
- Rcpp::Environment pkg = Rcpp::Environment::namespace_env("VGAM");
- 
- // Picking up Matrix() function from Matrix package
- Rcpp::Function rinvgaussian = pkg["rinv.gaussian"];
- 
- Rcpp::NumericVector  tmp = rinvgaussian(n, mu, lambda);
- arma::colvec out = Rcpp::as<arma::colvec>(tmp); 
- return out;
+  Rcpp::Environment pkg = Rcpp::Environment::namespace_env("VGAM");
+  
+  // Picking up Matrix() function from Matrix package
+  Rcpp::Function rinvgaussian = pkg["rinv.gaussian"];
+  
+  Rcpp::NumericVector  tmp = rinvgaussian(n, mu, lambda);
+  arma::colvec out = Rcpp::as<arma::colvec>(tmp); 
+  return out;
 }
 
 // [[Rcpp::export]]
@@ -65,45 +65,45 @@ arma::colvec rmvnorm(arma::colvec Mean, arma::mat Sigma) {
 }
 
 //' Absolute-value-constrained normal distribution
-//' 
-//' gets a sample from a normal distribution whose absolute observations are constrained.
-//'
-//' @param n is sample size.
-//' @param a is the lower bound in absolute value.
-//' @param b is the upper bound in absolute value.
-//' @param mean is a mean.
-//' @param sd is a standard deviation.
-//' @export
-//' @examples
-//' rtwosegnorm(10, 1, 2, 0, 1)
-// [[Rcpp::export]]
-arma::colvec rtwosegnorm(int n, double a, double b, double mean, double sd) {
-  arma::colvec out(n);
-  arma::colvec U = arma::randu(n);
-  
-  double a1 = (-a - mean) / sd;
-  double b1 = (-b - mean) / sd;
-  double a2 = (a - mean) / sd;
-  double b2 = (b - mean) / sd;
-  
-  double p1 = arma::normcdf(a1) - arma::normcdf(b1);
-  double p2 = arma::normcdf(b2) - arma::normcdf(a2);
-  double p = p1 + p2;
-  
-  int i;
-  if (p > 0) {
-    for (i = 0; i < n; i++) {
-      if (U(i) <= p1 / p) {
-        out(i) = R::qnorm5(U(i) * p + arma::normcdf(b1), 0.0, 1.0, 1, 0) * sd + mean;
-      } else {
-        out(i) = R::qnorm5(U(i) * p + arma::normcdf(a2) - p1, 0.0, 1.0, 1, 0) * sd + mean;
-      }
-    }
-    
-  }
-  return(out);
-  
-}
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @param a is the lower bound in absolute value.
+ //' @param b is the upper bound in absolute value.
+ //' @param mean is a mean.
+ //' @param sd is a standard deviation.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
+ // [[Rcpp::export]]
+ arma::colvec rtwosegnorm(int n, double a, double b, double mean, double sd) {
+   arma::colvec out(n);
+   arma::colvec U = arma::randu(n);
+   
+   double a1 = (-a - mean) / sd;
+   double b1 = (-b - mean) / sd;
+   double a2 = (a - mean) / sd;
+   double b2 = (b - mean) / sd;
+   
+   double p1 = arma::normcdf(a1) - arma::normcdf(b1);
+   double p2 = arma::normcdf(b2) - arma::normcdf(a2);
+   double p = p1 + p2;
+   
+   int i;
+   if (p > 0) {
+     for (i = 0; i < n; i++) {
+       if (U(i) <= p1 / p) {
+         out(i) = R::qnorm5(U(i) * p + arma::normcdf(b1), 0.0, 1.0, 1, 0) * sd + mean;
+       } else {
+         out(i) = R::qnorm5(U(i) * p + arma::normcdf(a2) - p1, 0.0, 1.0, 1, 0) * sd + mean;
+       }
+     }
+     
+   }
+   return(out);
+   
+ }
 
 
 
@@ -134,165 +134,165 @@ arma::mat getPhiMat(arma::colvec Phi, int T) {
 }
 
 //' Design Matrix (MT)
-//' 
-//' gets a design matrix as that in MT
-//'
-//' @param T is length of a process.
-//' @param q is the number of lags.
-//' @export
-//' @examples
-//' getHMatMT(100, 5)
-// [[Rcpp::export]]
-arma::mat getHMatMT(int T, int q) {
-  arma::mat tmp(T, T);
-  tmp.ones();
-  arma::mat L = arma::trimatl(tmp);
-  
-  arma::mat out(T, T - q);
-  out = L.submat(0, q, T - 1, T - 1);
-  return(out);
-  
-}
+ //' 
+ //' gets a design matrix as that in MT
+ //'
+ //' @param T is length of a process.
+ //' @param q is the number of lags.
+ //' @export
+ //' @examples
+ //' getHMatMT(100, 5)
+ // [[Rcpp::export]]
+ arma::mat getHMatMT(int T, int q) {
+   arma::mat tmp(T, T);
+   tmp.ones();
+   arma::mat L = arma::trimatl(tmp);
+   
+   arma::mat out(T, T - q);
+   out = L.submat(0, q, T - 1, T - 1);
+   return(out);
+   
+ }
 
 //' Design Matrix for Sustained Shift (CM)
-//' 
-//' gets a design matrix for sustained shift as that in CM
-//'
-//' @param T is length of a process.
-//' @param q is the number of lags.
-//' @export
-//' @examples
-//' getHMatSustained(100, 5)
-// [[Rcpp::export]]
-arma::mat getHMatSustained(int T, int q) {
-  int w = 1;
-  arma::mat tmp(T, T);
-  tmp.ones();
-  arma::mat L = arma::trimatl(tmp);
-  arma::mat out = L.cols(q + w, T - 2 + 1);
-  int nn = T - 2 - w + 1 - q;
-  arma::mat out1(T, nn);
-  int rr = 0;
-  int kk = 0;
-  int i;
-  for (i = 0; i < nn; i++) {
-    
-    if (rr == 0) {
-      out1.col(kk) = out.col(i);
-      kk = kk + 1;
-      rr = rr - w;
-    }
-    rr = rr + 1;
-  }
-  int tmpn = floor(nn / w);
-  return(out1.cols(0, tmpn - 1));
-}
+ //' 
+ //' gets a design matrix for sustained shift as that in CM
+ //'
+ //' @param T is length of a process.
+ //' @param q is the number of lags.
+ //' @export
+ //' @examples
+ //' getHMatSustained(100, 5)
+ // [[Rcpp::export]]
+ arma::mat getHMatSustained(int T, int q) {
+   int w = 1;
+   arma::mat tmp(T, T);
+   tmp.ones();
+   arma::mat L = arma::trimatl(tmp);
+   arma::mat out = L.cols(q + w, T - 2 + 1);
+   int nn = T - 2 - w + 1 - q;
+   arma::mat out1(T, nn);
+   int rr = 0;
+   int kk = 0;
+   int i;
+   for (i = 0; i < nn; i++) {
+     
+     if (rr == 0) {
+       out1.col(kk) = out.col(i);
+       kk = kk + 1;
+       rr = rr - w;
+     }
+     rr = rr + 1;
+   }
+   int tmpn = floor(nn / w);
+   return(out1.cols(0, tmpn - 1));
+ }
 
 //' Design Matrix for Isolated Shift (CM)
-//' 
-//' gets a design matrix for isolated shift as that in CM
-//'
-//' @param T is length of a process.
-//' @param q is the number of lags.
-//' @export
-//' @examples
-//' getHMatIsolated(100, 5)
-// [[Rcpp::export]]
-arma::mat getHMatIsolated(int T, int q) {
-  int w = 1;
-  arma::mat tmp(T, T);
-  
-  int i;
-  for (i = 0; i < w; i++) {
-    tmp.diag(-i).ones();
-  }
-  
-  arma::mat out = tmp.cols(q, T - 1);
-  int nn = T - 1 - q + 1;
-  arma::mat out1(T, nn);
-  int rr = 0;
-  int kk = 0;
-  
-  for (i = 0; i < nn; i++) {
-    
-    if (rr == 0) {
-      out1.col(kk) = out.col(i);
-      kk = kk + 1;
-      rr = rr - w;
-    }
-    rr = rr + 1;
-  }
-  int tmpn = floor(nn / w);
-  return(out1.cols(0, tmpn - 1));
-}
+ //' 
+ //' gets a design matrix for isolated shift as that in CM
+ //'
+ //' @param T is length of a process.
+ //' @param q is the number of lags.
+ //' @export
+ //' @examples
+ //' getHMatIsolated(100, 5)
+ // [[Rcpp::export]]
+ arma::mat getHMatIsolated(int T, int q) {
+   int w = 1;
+   arma::mat tmp(T, T);
+   
+   int i;
+   for (i = 0; i < w; i++) {
+     tmp.diag(-i).ones();
+   }
+   
+   arma::mat out = tmp.cols(q, T - 1);
+   int nn = T - 1 - q + 1;
+   arma::mat out1(T, nn);
+   int rr = 0;
+   int kk = 0;
+   
+   for (i = 0; i < nn; i++) {
+     
+     if (rr == 0) {
+       out1.col(kk) = out.col(i);
+       kk = kk + 1;
+       rr = rr - w;
+     }
+     rr = rr + 1;
+   }
+   int tmpn = floor(nn / w);
+   return(out1.cols(0, tmpn - 1));
+ }
 
 //' gets a design matrix for gradual shift
-//'
-//' @param T is length of a process.
-//' @param q is the number of lags.
-//' @export
-//' @examples
-//' getHMatGradual(100, 5)
-// [[Rcpp::export]]
-arma::mat getHMatGradual(int T, int q) {
-  arma::mat tmp(T, T);
-  int w = 1;
-  int i;
-  for (i = 0; i < T; i++) {
-    tmp.diag(-i).fill(i);
-  }
-  
-  arma::mat out = tmp.cols(q, T - 2);
-  int nn = T - 2 - q + 1;
-  arma::mat out1(T, nn);
-  int rr = 0;
-  int kk = 0;
-  
-  for (i = 0; i < nn; i++) {
-    
-    if (rr == 0) {
-      out1.col(kk) = out.col(i);
-      kk = kk + 1;
-      rr = rr - w;
-    }
-    rr = rr + 1;
-  }
-  int tmpn = floor(nn / w);
-  return(out1.cols(0, tmpn - 1));
-  
-}
+ //'
+ //' @param T is length of a process.
+ //' @param q is the number of lags.
+ //' @export
+ //' @examples
+ //' getHMatGradual(100, 5)
+ // [[Rcpp::export]]
+ arma::mat getHMatGradual(int T, int q) {
+   arma::mat tmp(T, T);
+   int w = 1;
+   int i;
+   for (i = 0; i < T; i++) {
+     tmp.diag(-i).fill(i);
+   }
+   
+   arma::mat out = tmp.cols(q, T - 2);
+   int nn = T - 2 - q + 1;
+   arma::mat out1(T, nn);
+   int rr = 0;
+   int kk = 0;
+   
+   for (i = 0; i < nn; i++) {
+     
+     if (rr == 0) {
+       out1.col(kk) = out.col(i);
+       kk = kk + 1;
+       rr = rr - w;
+     }
+     rr = rr + 1;
+   }
+   int tmpn = floor(nn / w);
+   return(out1.cols(0, tmpn - 1));
+   
+ }
 
 //' gets a design matrix for Fourier series
-//'
-//' @param T is length of a process.
-//' @param s is the number of period
-//' @param n is the number of Fourier series
-//' @export
-//' @examples
-//' getXSeasonalityFS(100, 15, 10)
-// [[Rcpp::export]]
-arma::mat getXSeasonalityFS(int T, double s, int n) {
-  double pi = 3.141592653589793238462643383280;
-  
-  arma::mat X(T, 1);
-  arma::mat out(T, 2 * n);
-  
-  int i;
-  for (i = 0; i < T; i++) {
-    X(i, 0) = i + 1.0;
-  }
-  
-  int k = 0;
-  int j;
-  for (j = 0; j < n; j++) {
-    out.col(k) = arma::cos(2.0 * pi * (j + 1.0) * X / s);
-    k = k + 1;
-    
-    out.col(k) = arma::sin(2.0 * pi * (j + 1.0) * X / s);
-    k = k + 1;
-  }
-  return(out);
-}
+ //'
+ //' @param T is length of a process.
+ //' @param s is the number of period
+ //' @param n is the number of Fourier series
+ //' @export
+ //' @examples
+ //' getXSeasonalityFS(100, 15, 10)
+ // [[Rcpp::export]]
+ arma::mat getXSeasonalityFS(int T, double s, int n) {
+   double pi = 3.141592653589793238462643383280;
+   
+   arma::mat X(T, 1);
+   arma::mat out(T, 2 * n);
+   
+   int i;
+   for (i = 0; i < T; i++) {
+     X(i, 0) = i + 1.0;
+   }
+   
+   int k = 0;
+   int j;
+   for (j = 0; j < n; j++) {
+     out.col(k) = arma::cos(2.0 * pi * (j + 1.0) * X / s);
+     k = k + 1;
+     
+     out.col(k) = arma::sin(2.0 * pi * (j + 1.0) * X / s);
+     k = k + 1;
+   }
+   return(out);
+ }
 
 arma::mat getInv(arma::mat A) {
   int nn = A.n_cols;
@@ -490,7 +490,7 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
     
     Phi = rmvnorm(M, S);
   } else {
-    if ((method == "LASSO") || (method == "ALASSO")) {
+    if ((method == "MonoLASSO") || (method == "MonoALASSO")) {
       tmpSS = tVasVas + inveta2mat;
       tmpSS = checkSym(tmpSS);
       tmpS = getInv(tmpSS);
@@ -528,11 +528,8 @@ arma::colvec updatePhi(arma::mat V, arma::mat Vas,
 }
 
 
-double updateSigma2(arma::mat resi, arma::colvec Phi, arma::mat inveta2mat, int T, 
+double updateSigma2(arma::mat resi, arma::colvec Phi, arma::mat inveta2mat, int T, int q, 
                     arma::mat A, double a, double b, Rcpp::String method) {
-  
-  int q = Phi.n_rows;
-  
   double sigma2 = 0.0;
   
   arma::mat tResiResi = resi.t() * resi;
@@ -556,10 +553,7 @@ double updateSigma2(arma::mat resi, arma::colvec Phi, arma::mat inveta2mat, int 
   return(sigma2);
 }
 
-arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, double tol) {
-  
-  int q = Phi.n_rows;
-  
+arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, int q, double tol) {
   arma::mat Phim = arma::conv_to<arma::mat>::from(Phi); 
   arma::mat inveta2(q, 1);
   arma::mat muPrime = arma::sqrt(sigma2 * (lambda2 % arma::pow(Phim, -2)));
@@ -588,8 +582,7 @@ arma::mat updateinveta2(arma::colvec Phi, double sigma2, arma::mat lambda2, doub
   return(inveta2);
 }
 
-arma::mat updatelambda2(arma::mat eta2, double alpha, double beta, Rcpp::String method){
-  int q = eta2.n_rows;
+arma::mat updatelambda2(arma::mat eta2, int q, double alpha, double beta, Rcpp::String method){
   arma::mat lambda2(q, 1); 
   double shape;
   double scale;
@@ -611,7 +604,7 @@ arma::mat updatelambda2(arma::mat eta2, double alpha, double beta, Rcpp::String 
   return(lambda2);
 }
 
-Rcpp::List updateTauGamma(arma::colvec Y, arma::mat Phi, arma::mat Tau, arma::mat Gamma, 
+Rcpp::List updateTauGamma(arma::colvec Y, arma::colvec Phi, arma::mat Tau, arma::mat Gamma, 
                           double muq, double sigma2, double pho, double xi2,
                           int T, int q, arma::mat D, arma::mat H_, int Hflg, int m){
   
@@ -769,51 +762,13 @@ Rcpp::List updateMuqMu(arma::colvec Y, arma::mat Tau, arma::mat Gamma, double si
   return(out);
 }
 
-double updateSigma2X(arma::mat resi, arma::mat Phi, arma::mat Beta, 
-                     arma::mat inveta2Phimat, arma::mat inveta2Betamat, 
-                     int T, arma::mat APhi, arma::mat ABeta, 
-                     double a, double b, Rcpp::String method) {
-  
-  int q = Phi.n_rows + Beta.n_rows;
-  
-  double sigma2 = 0.0;
-  
-  arma::mat tResiResi = resi.t() * resi;
-  double tmptResiResi = tResiResi(0);
-  
-  arma::mat tPhiVarPhi; 
-  double tmptPhiVarPhi;
-  
-  arma::mat tBetaVarBeta; 
-  double tmptBetaVarBeta;
-  // update sigma2
-  if (method == "MT") {
-    sigma2 = 1.0 / R::rgamma((T - q) / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + b));
-  } else if (method == "regression") {
-    tPhiVarPhi = Phi.t() * getInv(APhi) * Phi;
-    tmptPhiVarPhi = tPhiVarPhi(0);
-    tBetaVarBeta = Beta.t() * getInv(ABeta) * Beta;
-    tmptBetaVarBeta = tBetaVarBeta(0);
-    sigma2 = 1.0 / R::rgamma(T / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + tmptPhiVarPhi / 2.0 + tmptBetaVarBeta / 2.0 + b));
-  } else if ((method == "LASSO") || (method == "ALASSO") || (method == "MonoLASSO") || (method == "MonoALASSO")) {
-    tPhiVarPhi = Phi.t() * inveta2Phimat * Phi;
-    tmptPhiVarPhi = tPhiVarPhi(0);
-    tBetaVarBeta = Beta.t() * inveta2Betamat * Beta;
-    tmptBetaVarBeta = tBetaVarBeta(0);
-    sigma2 = 1.0 / R::rgamma(T / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + tmptPhiVarPhi / 2.0 + tmptBetaVarBeta / 2.0 + b));
-  }
-  
-  return(sigma2);
-}
-
-
 // [[Rcpp::export]]
 Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q, 
-                      arma::mat& A, double& a, double& b, double& alpha, double& beta, 
-                      double& theta1, double& theta2, double& xi2,
-                      Rcpp::String& method, double& bound0, double& boundqplus1,
-                      int& nsim, int& by, int& burnin,
-                      double& tol, Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
+                         arma::mat& A, double& a, double& b, double& alpha, double& beta, 
+                         double& theta1, double& theta2, double& xi2,
+                         Rcpp::String& method, double& bound0, double& boundqplus1,
+                         int& nsim, int& by, int& burnin,
+                         double& tol, Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
   
   auto start = std::chrono::system_clock::now();
   std::time_t start_time = std::chrono::system_clock::to_time_t(start);
@@ -1039,16 +994,16 @@ Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q,
     resi = V - VasPhi;
     
     // update sigma2
-    sigma2 = updateSigma2(resi, Phi, inveta2mat, T, 
+    sigma2 = updateSigma2(resi, Phi, inveta2mat, T, q, 
                           A, a, b, method);
     
     // update eta2
-    inveta2 = updateinveta2(Phi, sigma2, lambda2, tol);
+    inveta2 = updateinveta2(Phi, sigma2, lambda2, q, tol);
     eta2 = arma::pow(inveta2, -1);
     inveta2mat.diag() = inveta2;
     
     // update lambda2
-    lambda2 = updatelambda2(eta2, alpha, beta, method);
+    lambda2 = updatelambda2(eta2, q, alpha, beta, method);
     
     ///////////////////////////////////////////////////
     //update the random level shift model
@@ -1145,102 +1100,21 @@ Rcpp::List GibbsRFLSMcpp(arma::colvec& Y,int& q,
 }
 
 
-
-
-arma::mat updateBeta(arma::colvec& Y, arma::mat X_, 
-                       arma::mat A, arma::colvec oldBeta, 
-                       double sigma2, arma::mat inveta2mat, 
-                       Rcpp::String method) {
-  
-  //int n = V.n_rows;
-  int p = X_.n_cols;
-  
-  // Initialize 
-  arma::mat tXX(p, p);
-  arma::mat invtXX(p, p);
-  arma::mat Betahat(p, 1);
-  arma::mat Beta = oldBeta;
-  arma::mat S(p, p);
-  arma::mat tmpS(p, p);
-  arma::colvec M(p);
-  
-  arma::mat Sgg(1, p);
-  arma::mat Snotgg(p - 1, p);
-  arma::mat Snotnot(p - 1, p - 1);
-  arma::mat invSnotgg(p - 1, p - 1);
-  
-  arma::mat tmpMat(1, 1); 
-  arma::mat tmpSS(p, p);
-  int gg;
-  
-  double mj;
-  double sj;
-  
-  double bound1;
-  double bound2;
-  
-  arma::colvec tmp; 
-  
-  //Rcpp::Rcout << X << std::endl;
-  
-  // Get tX X
-  tXX = X_.t() * X_;
-  //Rcpp::Rcout << tXX << std::endl;
-  
-  // Get Beta hat
-  invtXX = getInv(tXX);
-  Betahat = invtXX* X_.t() * Y;
-  
-  // update Beta
-
-    if (method == "MT") {
-      tmpSS = tXX / sigma2 + A;
-      tmpSS = checkSym(tmpSS);
-      S = getInv(tmpSS);
-      S = checkSym(S);
-      M = S * ((tXX / sigma2) * Betahat);
-    } else if (method == "regression") {
-      tmpSS = tXX + A;
-      tmpSS = checkSym(tmpSS);
-      tmpS = getInv(tmpSS);
-      S = tmpS * sigma2;
-      S = checkSym(S);
-      M = tmpS * (tXX * Betahat);
-      
-    } else if ((method == "LASSO") || (method == "ALASSO")) {
-      tmpSS = tXX + inveta2mat;
-      tmpSS = checkSym(tmpSS);
-      tmpS = getInv(tmpSS);
-      S = tmpS * sigma2;
-      S = checkSym(S);
-      M = tmpS * (tXX * Betahat);
-    }
-    
-    Beta = rmvnorm(M, S);
-  
-  
-  return(Beta);
-}
-
-
-Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q, 
-                         arma::mat& APhi, arma::mat& ABeta, 
-                         double& a, double& b, double& alpha, double& beta, 
-                         double& theta1, double& theta2, double& xi2,
-                         Rcpp::String& method, double& bound0, double& boundqplus1,
-                         int MonoFlg,
-                         int& nsim, int& by, int& burnin, double& tol, 
-                         Rcpp::List oldpars,
-                         arma::mat G,
-                         arma::mat One, 
-                         Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue, 
-                         Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue) {
+// [[Rcpp::export]]
+Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q, 
+                         arma::mat A, double a, double b, double alpha, double beta, 
+                         double theta1, double theta2, double xi2,
+                         Rcpp::String method, double bound0, double boundqplus1,
+                         int nsim, int by, int burnin,
+                         double tol, 
+                         Rcpp::Nullable<Rcpp::NumericMatrix> G = R_NilValue,
+                         Rcpp::Nullable<Rcpp::List> oldpars = R_NilValue,
+                         Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
   
   auto start = std::chrono::system_clock::now();
   std::time_t start_time = std::chrono::system_clock::to_time_t(start);
   
-  Rcpp::Rcout << "Start training: coefficient -" << method.get_cstring()  << 
-    " at " << std::ctime(&start_time) <<  std::endl;
+  //Rcpp::Rcout << "Start training using " << method.get_cstring() << " at " << std::ctime(&start_time) <<  std::endl;
   
   /////////////////////////////////
   arma::mat H_;
@@ -1255,142 +1129,189 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q,
     Hflg = 0;
   }
   
-  arma::mat X_;
-  
-  // calculate X
-  int Xflg = 1;
-  int k = 1;
-  if (X.isNotNull()) {
-    X_ = Rcpp::as<arma::mat>(X);
-    m = X_.n_cols;
-  } else {
-    Xflg = 0;
-  }
-  
-  
   int T = Y.n_elem;
   
   // Calculate G
-  //arma::mat G = getGMat(T, q);
+  arma::mat G_;
   
-  // Initialize ones
-  //arma::mat One(T, 1);
-  //One.ones();
-  
-  // Initialize the output
-  arma::mat Phiout(q, 1);
-  Phiout.zeros();
-  
-  arma::mat Betaout(k, 1);
-  Betaout.zeros();
-  
-  arma::mat sigma2out(1, 1);
-  sigma2out.zeros();
-  
-  arma::mat Tauout(m, 1);
-  Tauout.zeros();
-  
-  arma::mat Gammaout(m, 1);
-  Gammaout.zeros();
-  
-  arma::mat muGammaout(m, 1);
-  muGammaout.zeros();
-  arma::mat sigma2Gammaout(m, 1);
-  sigma2Gammaout.zeros();
-  
-  arma::mat pout(m, 1);
-  pout.zeros();
-  
-  arma::mat muqout(1, 1);
-  muqout.zeros();
-  
-  arma::mat Muout(T, 1);
-  Muout.zeros();
-  
-  arma::mat phoout(1, 1);
-  phoout.zeros();
-  
-  arma::mat eta2Phiout;
-  arma::mat eta2Betaout;
-  arma::mat lambda2out;
-  
-  if (X.isNotNull()) {
-    eta2Phiout.set_size(q, 1);
-    eta2Betaout.set_size(k, 1);
-    lambda2out.set_size(q + k, 1);
-    eta2Betaout.zeros();
+  if (G.isNotNull()) {
+    G_ = Rcpp::as<arma::mat>(G);
   } else {
-    eta2Phiout.set_size(q, 1);
-    lambda2out.set_size(q, 1);
+    G_ = getGMat(T, q);
   }
   
-  eta2Phiout.zeros();
+  // Initialize ones
+  arma::mat One(T, 1);
+  One.ones();
+  
+  // Initialize the output
+  arma::mat Phiout(q, nsim);
+  Phiout.zeros();
+  
+  arma::mat sigma2out(1, nsim);
+  sigma2out.zeros();
+  
+  arma::mat Tauout(m, nsim);
+  Tauout.zeros();
+  
+  arma::mat Gammaout(m, nsim);
+  Gammaout.zeros();
+  
+  arma::mat muGammaout(m, nsim);
+  muGammaout.zeros();
+  arma::mat sigma2Gammaout(m, nsim);
+  sigma2Gammaout.zeros();
+  
+  arma::mat pout(m, nsim);
+  pout.zeros();
+  
+  arma::mat muqout(1, nsim);
+  muqout.zeros();
+  
+  arma::mat Muout(T, nsim);
+  Muout.zeros();
+  
+  arma::mat phoout(1, nsim);
+  phoout.zeros();
+  
+  arma::mat eta2out(q, nsim);
+  eta2out.zeros();
+  
+  arma::mat lambda2out(q, nsim);
   lambda2out.zeros();
   
   // Is it mono?
+  int MonoFlg = 0;
+  if ((method == "MonoLASSO") || (method == "MonoALASSO")) {
+    MonoFlg = 1;
+  }
   
   // Initialize the learning
   
-  arma::mat Phi;
-  arma::mat eta2Phi; 
-  arma::mat inveta2Phi; 
-  arma::mat inveta2Phimat; 
-  arma::mat Beta;
-  arma::mat eta2Beta; 
-  arma::mat eta2; 
-  arma::mat inveta2Beta; 
-  arma::mat inveta2Betamat; 
-  arma::mat inveta2mat;
-  arma::mat inveta2;
-  arma::mat PhiBeta;
+  Rcpp::List model0;
+  Rcpp::NumericVector coef;
   double muq;
-  arma::mat Gamma;
-  arma::mat Tau;
-  arma::mat lambdaPhi2; 
-  arma::mat lambdaBeta2; 
-  arma::mat lambda2; 
-  double sigma2;
-  double pho; 
+  arma::mat Phihat(q, 1);
+  Rcpp::NumericMatrix varcoef;
+  double tmpphi;
+  int ii;
+  arma::mat Phi;
+  double bound1;
+  double bound2;
   
-  Phi = Rcpp::as<arma::mat>(oldpars["Phi"]);
-  eta2Phi = Rcpp::as<arma::mat>(oldpars["eta2Phi"]);
-  Beta = Rcpp::as<arma::mat>(oldpars["Beta"]);
-  eta2Beta = Rcpp::as<arma::mat>(oldpars["eta2Beta"]);
-  muq = oldpars["muq"];
-  Gamma = Rcpp::as<arma::mat>(oldpars["Gamma"]);
-  Tau = Rcpp::as<arma::mat>(oldpars["Tau"]);
-  lambdaPhi2 = Rcpp::as<arma::mat>(oldpars["lambdaPhi2"]);
-  lambdaBeta2 = Rcpp::as<arma::mat>(oldpars["lambdaBeta2"]);
-  sigma2 = oldpars["sigma2"];
-  pho = oldpars["pho"];
+  double tmpPhi;
+  double tmpPhiVar;
+  
+  arma::colvec tmp;
+  int gg;
   
   arma::mat Mu(T, 1);
-  Mu.fill(muq);
+  double sigma2;
   
-  if (Hflg != 0) {
-    Mu = Mu + H_ * (Gamma % Tau);
+  arma::mat Tau(m, 1);
+  Tau.zeros();
+  
+  arma::mat Gamma(m, 1);
+  Gamma.zeros();
+  
+  arma::mat muGamma(m, 1);
+  muGamma.zeros();
+  arma::mat sigma2Gamma(m, 1);
+  sigma2Gamma.zeros();
+  
+  arma::mat pvec(m, 1);
+  pvec.zeros();
+  
+  double pho;
+  
+  arma::mat eta2(q, 1);
+  eta2.zeros();
+  
+  arma::mat lambda2(q, 1);
+  lambda2.zeros();
+  
+  arma::mat inveta2(q, 1);
+  arma::mat inveta2mat(q, q);
+  
+  Rcpp::List oldpars_ = Rcpp::as<Rcpp::List>(oldpars);
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  if (oldpars.isNotNull()) {
+    Phi = Rcpp::as<arma::mat>(oldpars_["Phi"]);
+    Mu = Rcpp::as<arma::mat>(oldpars_["Mu"]);
+    sigma2 = oldpars_["sigma2"];
+    Tau = Rcpp::as<arma::mat>(oldpars_["Tau"]);
+    Gamma = Rcpp::as<arma::mat>(oldpars_["Gamma"]);
+    pho = oldpars_["pho"];
+    
+    //Rcpp::Rcout << 2 << std::endl;
+    
+    if ((method == "LASSO") || (method == "ALASSO") || (method == "MonoLASSO") || (method == "MonoALASSO")) {
+      eta2 = Rcpp::as<arma::mat>(oldpars_["eta2"]);
+      inveta2 = arma::pow(eta2, -1);
+      inveta2mat.diag() = inveta2;
+      lambda2 = Rcpp::as<arma::mat>(oldpars_["lambda2"]);
+    }
+    
+    muq = oldpars_["muq"];
+  } else {
+    model0 = arimacpp(Y, q);
+    
+    coef = model0["coef"];
+    
+    muq = coef[q];
+    
+    varcoef = Rcpp::as<Rcpp::NumericMatrix>(model0["var.coef"]);
+    for (ii = 0; ii < q; ii++) {
+      tmpphi = coef[ii];
+      Phihat(ii) = tmpphi;
+    }
+    
+    Phi = Phihat;
+    
+    if (MonoFlg == 1) {
+      for (gg = 0; gg < q; gg++) {
+        if (gg == 0) {
+          bound1 = abs(bound0);
+          bound2 = abs(Phi(1));
+        } else if (gg == q - 1) {
+          bound1 = abs(Phi(q - 2));
+          bound2 = abs(boundqplus1);
+        } else {
+          bound1 = abs(Phi(gg - 1));
+          bound2 = abs(Phi(gg + 1));
+        }
+        tmpPhi = Phi(gg);
+        tmpPhiVar = varcoef(gg, gg);
+        if (!((bound2 <= abs(tmpPhi)) && 
+            (abs(tmpPhi) <= bound1))) {
+          tmp = rtwosegnorm(1, boundqplus1, bound1, 
+                            tmpPhi, sqrt(tmpPhiVar));
+          Phi(gg) = tmp(0);
+        }
+      }
+    }
+    
+    Mu.fill(muq);
+    sigma2 = model0["sigma2"];
+    
+    pho = R::rbeta(theta1, theta2);
+    
+    eta2 = arma::pow(Phi, 2);
+    inveta2 = arma::pow(eta2, -1);
+    
+    inveta2mat.diag() = inveta2;
+    
+    if ((method == "LASSO") || (method == "MonoLASSO")) {
+      lambda2.fill(pow(q * sqrt(sigma2) / arma::accu(arma::abs(Phi)), 2));
+    } else if ((method == "ALASSO") || (method == "MonoALASSO")) {
+      for (gg = 0; gg < q; gg++) {
+        lambda2(gg) = pow((sqrt(sigma2) / abs(Phi(gg))), 2);
+      }
+    }
+    
   }
-  
-  if (Xflg != 0) {
-    Mu = Mu + X_ * Beta;
-  }
-  
-  inveta2Phi = updateinveta2(Phi, sigma2, lambdaPhi2, tol);
-  eta2Phi = arma::pow(inveta2Phi, -1);
-  inveta2Phimat.diag() = inveta2Phi;
-  
-  inveta2Beta = updateinveta2(Beta, sigma2, lambdaBeta2, tol);
-  eta2Beta = arma::pow(inveta2Beta, -1);
-  inveta2Betamat.diag() = inveta2Beta;
-  
-  inveta2 = arma::join_cols(inveta2Phi, inveta2Beta);
-  inveta2mat.diag() = inveta2;
-  
-  lambda2 = arma::join_cols(lambdaPhi2, lambdaBeta2);
-  
-  PhiBeta = arma::join_cols(Phi, Beta);
-  
-  eta2 = arma::join_cols(eta2Phi, eta2Beta);
   
   arma::mat DHt(T, T);
   DHt.zeros();
@@ -1427,11 +1348,12 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q,
   Rcpp::List MuqMu; 
   
   arma::mat tmpSumTau; 
-  arma::colvec resiX;
   
-    ///////////////////////////////////////////////////
-    //update Phi
-    ///////////////////////////////////////////////////
+  for (ii = 0; ii < TotalSim; ii++) {
+    
+    //if (ii % 100 == 0) {
+    //  Rcpp::Rcout <<"Training: " << ((ii + 0.0) / (TotalSim + 0.0) * 100.0) << '%' << std::endl;
+    //}
     
     //update V
     V_ = Y - Mu;
@@ -1443,93 +1365,26 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q,
     //Rcpp::Rcout << V << std::endl;
     
     // update Phi
-    Phi = updatePhi(V, Vas, APhi, 
-                    Phi, sigma2, inveta2Phimat, 
+    Phi = updatePhi(V, Vas, A, 
+                    Phi, sigma2, inveta2mat, 
                     bound0, boundqplus1,
                     MonoFlg, method);
     
-    
-    
-    ///////////////////////////////////////////////////
-    //update Beta
-    ///////////////////////////////////////////////////
-    
-    Mu.fill(muq);
-    
-    if (Hflg != 0) {
-      Mu = Mu + H_ * (Gamma % Tau);
-    }
-    
-    if (Xflg != 0) {
-      // update V
-      V_ = Y - Mu;
-      V = V_.rows(q, T - 1);
-      Vas_ = getV(V_, q);
-      Vas = Vas_.rows(q, T - 1);
-      
-      resiX = V - Vas * Phi;
-      
-      Beta = updateBeta(resiX, X_, ABeta, Beta, 
-                        sigma2, inveta2Betamat, method);
-      
-      PhiBeta = arma::join_cols(Phi, Beta);
-    } else {
-      PhiBeta = Phi;
-    }
-    
-    ///////////////////////////////////////////////////
-    //update sigma2
-    ///////////////////////////////////////////////////
-    
     // Get residuals
-    if (Xflg != 0) {
-      Mu = Mu + X_ * Beta;
-      V_ = Y - Mu;
-      V = V_.rows(q, T - 1);
-      Vas_ = getV(V_, q);
-      Vas = Vas_.rows(q, T - 1);
-    } 
-    
     VasPhi = Vas * Phi;
     resi = V - VasPhi;
     
     // update sigma2
-    sigma2 = updateSigma2X(resi, Phi, Beta, 
-                          inveta2Phimat, inveta2Betamat, 
-                          T, APhi, ABeta, 
-                          a, b, method);
-    
-    ///////////////////////////////////////////////////
-    //update eta2
-    ///////////////////////////////////////////////////
+    sigma2 = updateSigma2(resi, Phi, inveta2mat, T, q, 
+                          A, a, b, method);
     
     // update eta2
-    
-    inveta2 = updateinveta2(PhiBeta, sigma2, lambda2, tol);
+    inveta2 = updateinveta2(Phi, sigma2, lambda2, q, tol);
     eta2 = arma::pow(inveta2, -1);
-    
-    inveta2Phi = inveta2.rows(0, q - 1);
-    eta2Phi = eta2.rows(0, q - 1);
-    inveta2Phimat.diag() = inveta2Phi;
-    
-    if (Xflg != 0) {
-      inveta2Beta = inveta2.rows(q, k + q - 1);
-      eta2Beta = eta2.rows(q, k + q - 1);
-      inveta2Betamat.diag() = inveta2Beta;
-    }
-    
-    ///////////////////////////////////////////////////
-    //update lambda2
-    ///////////////////////////////////////////////////
+    inveta2mat.diag() = inveta2;
     
     // update lambda2
-    lambda2 = updatelambda2(eta2, alpha, beta, method);
-    
-    lambdaPhi2 = lambda2.rows(0, q - 1);
-    
-    if (Xflg != 0) {
-      lambdaBeta2 = lambda2.rows(q, q + k - 1);
-    }
+    lambda2 = updatelambda2(eta2, q, alpha, beta, method);
     
     ///////////////////////////////////////////////////
     //update the random level shift model
@@ -1539,7 +1394,7 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q,
     PhiMat = getPhiMat(Phi, T);
     
     //Calculate C Matrix
-    C = G - PhiMat;
+    C = G_ - PhiMat;
     
     //Calculate D Matrix
     D = C.t() * C;
@@ -1552,9 +1407,9 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q,
     
     Tau = Rcpp::as<arma::mat>(TauGamma["Tau"]);
     Gamma = Rcpp::as<arma::mat>(TauGamma["Gamma"]);
-    //pvec = Rcpp::as<arma::mat>(TauGamma["p"]);
-    //muGamma = Rcpp::as<arma::mat>(TauGamma["muGamma"]);
-    //sigma2Gamma = Rcpp::as<arma::mat>(TauGamma["sigma2Gamma"]);
+    pvec = Rcpp::as<arma::mat>(TauGamma["p"]);
+    muGamma = Rcpp::as<arma::mat>(TauGamma["muGamma"]);
+    sigma2Gamma = Rcpp::as<arma::mat>(TauGamma["sigma2Gamma"]);
     
     //#update muq and Mu
     
@@ -1590,18 +1445,19 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q,
       }
     }
     
+  }
   
   /////////////////////////////////
   
-  Rcpp::Rcout <<"Training: 100%" << std::endl;
-  
-  auto end = std::chrono::system_clock::now();
-  std::chrono::duration<double> elapsed_seconds = end-start;
-  std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-  
-  Rcpp::Rcout << "Finished training at " << std::ctime(&end_time)
-              << "Elapsed time: " << elapsed_seconds.count() << "s"
-              << std::endl;
+  //Rcpp::Rcout <<"Training: 100%" << std::endl;
+  //
+  //auto end = std::chrono::system_clock::now();
+  //std::chrono::duration<double> elapsed_seconds = end-start;
+  //std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+  //
+  //Rcpp::Rcout << "Finished training at " << std::ctime(&end_time)
+  //            << "Elapsed time: " << elapsed_seconds.count() << "s"
+  //            << std::endl;
   
   /////////////////////////////////
   
@@ -1610,17 +1466,312 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec& Y,int& q,
     _["sigma2"] = sigma2out,
     _["Tau"] = Tauout,
     _["Gamma"] = Gammaout,
-    _["muGamma"] = muGammaout,
-    _["sigma2Gamma"] = sigma2Gammaout,
-    _["p"] = pout,
+    //_["muGamma"] = muGammaout,
+    //_["sigma2Gamma"] = sigma2Gammaout,
+    //_["p"] = pout,
     _["muq"] = muqout,
     _["Mu"] = Muout,
-    //_["pho"] = phoout,
-    //_["eta2"] = eta2out,
+    _["pho"] = phoout,
+    _["eta2"] = eta2out,
     _["lambda2"] = lambda2out
   );
   
   return(out);
   
 }
- 
+
+
+
+
+
+// [[Rcpp::export]]
+arma::mat lhf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
+  
+  double pi = 3.14159265359;
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Y.n_elem;
+  //Rcpp::Rcout << T << std::endl;
+  arma::mat V_;
+  arma::mat V; 
+  arma::mat Vas_;
+  arma::mat Vas;
+  arma::mat VasPhi;
+  arma::mat resi; 
+  
+  V_ = Y - Mu;
+  V = V_.rows(q, T - 1);
+  Vas_ = getV(V_, q);
+  Vas = Vas_.rows(q, T - 1);
+  
+  //Rcpp::Rcout << V << std::endl;
+  //Rcpp::Rcout << Vas << std::endl;
+  
+  VasPhi = Vas * Phi;
+  
+  //Rcpp::Rcout << VasPhi << std::endl;
+  
+  resi = V - VasPhi;
+  
+  //Rcpp::Rcout << resi << std::endl;
+  
+  arma::mat lh = sqrt(1.0 / 2.0 / pi / sigma2) * exp(- 1.0 / 2.0 * arma::pow(resi, 2.0) / sigma2);
+  return(lh);
+  
+}
+
+// [[Rcpp::export]]
+arma::colvec boxcoxtr(arma::colvec Y, double theta) {
+  
+  arma::colvec Ybc = (arma::pow(Y, theta) - 1.0) / theta;
+  return(Ybc);
+  
+}
+
+// [[Rcpp::export]]
+arma::colvec invboxcoxtr(arma::colvec Ybc, double theta) {
+  
+  arma::colvec Y = arma::pow(Ybc * theta + 1.0, 1.0 / theta);
+  return(Y);
+  
+}
+
+// [[Rcpp::export]]
+arma::mat lhBCf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta) {
+  
+  int T = Y.n_elem;
+  int q = Phi.n_rows;
+  
+  arma::colvec Ybc = boxcoxtr(Y, theta);
+  arma::mat lh = lhf(Ybc, Phi, Mu, sigma2);
+  arma::mat lhBC = lh % arma::pow(Y.rows(q, T - 1), theta - 1.0);
+  
+  return(lhBC);
+  
+}
+
+
+
+// [[Rcpp::export]]
+arma::mat thetaMH(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, 
+                  double oldtheta, int burnin, int nsim, double tol) {
+  
+  double pi = 3.14159265359;
+  
+  int T = Y.n_elem;
+  int q = Phi.n_rows;
+  
+  double u;
+  double oldtheta_ = oldtheta;
+  double thetaas;
+  double A;
+  
+  arma::mat thetaout(nsim, 1); 
+  
+  arma::mat oldlhBC = lhBCf(Y, Phi, Mu, sigma2, oldtheta_);
+  //double sumoldllhBC = arma::accu(oldllhBC);
+  arma::uvec ind0 = arma::find(oldlhBC <= tol); 
+  oldlhBC(ind0).fill(tol);
+  
+  arma::uvec ind1; 
+  
+  arma::mat newlhBC; 
+  //double sumnewllhBC;
+  
+  arma::mat tmp; 
+  double pd;
+  
+  int i;
+  int j = 0;
+  
+  for (i = 0; i < (nsim + burnin); i++) {
+    u = R::runif(0.0, 1.0);
+    thetaas = R::rnorm(oldtheta_, 0.1);
+    newlhBC = lhBCf(Y, Phi, Mu, sigma2, thetaas);
+    ind1 = arma::find(newlhBC <= tol);
+    newlhBC(ind1).fill(tol);
+    
+    tmp = arma::cumprod(newlhBC % arma::pow(oldlhBC, -1));
+    tmp = tmp * (1 / sqrt(1.0 / 2.0 / pi) * exp(- 1.0 / 2.0 * thetaas * thetaas)) /
+      (1 / sqrt(1.0 / 2.0 / pi) * exp(- 1.0 / 2.0 * oldtheta_ * oldtheta_));
+      
+    //Rcpp::Rcout << tmp << std::endl;
+    pd = tmp(T - q - 1);
+    //Rcpp::Rcout << pd << std::endl;
+    A = std::min(1.0, pd);
+    //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
+    //Rcpp::Rcout << A << std::endl;
+    
+    if (u < A) {
+      oldtheta_ = thetaas;
+      oldlhBC = newlhBC;
+    } 
+    
+    //Rcpp::Rcout << oldtheta_ << std::endl;
+    
+    if (i >= burnin) {
+      thetaout(j, 0) = oldtheta_;
+      j = j + 1;
+    }
+  }
+  
+  return(thetaout);
+  
+}
+
+
+
+// [[Rcpp::export]]
+Rcpp::List GibbsRFLSMBoxCoxcpp(arma::colvec& Y,int& q, 
+                         arma::mat& A, double& a, double& b, double& alpha, double& beta, 
+                         double& theta1, double& theta2, double& xi2,
+                         Rcpp::String& method, double& bound0, double& boundqplus1,
+                         int updateBC, double& theta,
+                         int& nsim, int& by, int& burnin,
+                         double& tol, 
+                         Rcpp::Nullable<Rcpp::NumericMatrix> G = R_NilValue,
+                         Rcpp::Nullable<Rcpp::List> oldpars = R_NilValue,
+                         Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
+  
+  arma::mat H_;
+  
+  // Calculate H
+  int m = 1;
+  if (H.isNotNull()) {
+    m = H_.n_cols;
+  } 
+  
+  int T = Y.n_elem;
+  
+  int TotalSim = nsim * by + burnin;
+  
+  Rcpp::List GibbsRFLSMModel; 
+  arma::colvec Ybc;
+  
+  Rcpp::List oldpars_;
+  
+  arma::mat Phi(q, 1);
+  Phi.zeros();
+  
+  arma::mat Mu(T - q, 1);
+  Mu.zeros();
+  
+  double sigma2 = 1.0;
+  double theta_ = theta;
+  arma::mat tmp; 
+  
+  Ybc = boxcoxtr(Y, theta_);
+  
+  if (oldpars.isNotNull()) {
+    oldpars_ = Rcpp::as<Rcpp::List>(oldpars);
+    Phi = Rcpp::as<arma::mat>(oldpars_["Phi"]);
+    Mu = Rcpp::as<arma::mat>(oldpars_["Mu"]);
+    sigma2 = oldpars_["sigma2"];
+  } else {
+    
+    oldpars_ = GibbsRFLSMUpdatecpp(Ybc, q, 
+                             A, a, b, alpha, beta, 
+                             theta1, theta2, xi2, 
+                             method, bound0, boundqplus1, 
+                             1, 1, TotalSim / 10, tol,
+                             G, oldpars, H);
+    Phi = Rcpp::as<arma::mat>(oldpars_["Phi"]);
+    Mu = Rcpp::as<arma::mat>(oldpars_["Mu"]);
+    sigma2 = oldpars_["sigma2"];
+  }
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  Rcpp::NumericMatrix GG;
+  arma::mat G_;
+  
+  if (G.isNotNull()) {
+    GG = Rcpp::as<Rcpp::NumericMatrix>(G);
+  } else {
+    G_ = getGMat(T, q);
+    GG = Rcpp::as<Rcpp::NumericMatrix>(Rcpp::wrap(G_));
+  }
+  
+  //Rcpp::Rcout << 2 << std::endl;
+  
+  
+  
+  //////////////////////////
+  
+  arma::mat Phiout(q, nsim); 
+  arma::mat sigma2out(1, nsim);
+  arma::mat Tauout(m, nsim);
+  arma::mat Gammaout(m, nsim);
+  arma::mat muqout(1, nsim);
+  arma::mat Muout(T, nsim);
+  arma::mat phoout(1, nsim);
+  arma::mat eta2out(q, nsim);
+  arma::mat lambda2out(q, nsim);
+  arma::mat thetaout(1, nsim);
+  
+  //////////////////////////
+  
+  int i;
+  int rr = 0;
+  
+  for (i = 0; i < TotalSim; i++) {
+    
+    if (i % 100 == 0) {
+      Rcpp::Rcout <<"Training: " << ((i + 0.0) / (TotalSim + 0.0) * 100.0) << '%' << std::endl;
+    }
+    
+    if (updateBC == 1) {
+      tmp = thetaMH(Y, Phi, Mu, sigma2, 
+                    theta_, 1, 1, tol);
+      theta_ = tmp(0);
+      Rcpp::Rcout << theta_ << std::endl;
+      Ybc = boxcoxtr(Y, theta_);
+    }
+    
+  //  Rcpp::Rcout << 4 << std::endl;
+  //  
+    oldpars_ = GibbsRFLSMUpdatecpp(Ybc, q, 
+                             A, a, b, alpha, beta, 
+                             theta1, theta2, xi2, 
+                             method, bound0, boundqplus1, 
+                             1, 1, 0, tol,
+                             GG, oldpars_, H);
+  //  
+  //  Rcpp::Rcout << 5 << std::endl;
+    
+    if (i >= burnin) {
+      if (i % by == 0) {
+        Phiout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Phi"]);
+        sigma2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["sigma2"]);
+        Tauout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Tau"]);
+        Gammaout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Gamma"]);
+        muqout.col(rr) = Rcpp::as<arma::mat>(oldpars_["muq"]);
+        Muout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Mu"]);
+        phoout.col(rr) = Rcpp::as<arma::mat>(oldpars_["pho"]);
+        eta2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["eta2"]);
+        lambda2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["lambda2"]);
+        thetaout.col(rr) = theta_;
+        rr = rr + 1;
+      }
+    }
+    
+  }
+  
+  Rcpp::List out; 
+  out = Rcpp::List::create(
+    _["Phi"] = Phiout,
+    _["sigma2"] = sigma2out,
+    _["Tau"] = Tauout,
+    _["Gamma"] = Gammaout,
+    _["muq"] = muqout,
+    _["Mu"] = Muout,
+    _["pho"] = phoout,
+    _["eta2"] = eta2out,
+    _["lambda2"] = lambda2out,
+    _["theta"] = thetaout
+  );
+  
+  return(out);
+  
+}
