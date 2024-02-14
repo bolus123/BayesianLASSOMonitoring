@@ -364,103 +364,74 @@ Ph1MultipleTesting.resi <- function(model, interval = c(1e-8, 0.5 - 1e-8), log =
 #' @export
 Ph1MultipleTesting.Y0tr <- function(model, nsim = 10000, FAP0 = 0.2, side = "right-sided") {
   
-  
+  root.finding <- function(adj.alpha, ph1mat, FAP0, n, nsim, side = "right-sided") {
+    
+    lim <- matrix(NA, nrow = n, ncol = 2)
+    sig <- matrix(NA, nrow = n, ncol = nsim)
+    
+    for (i in 1:n) {
+      if (side == "right-sided") {
+        lim[i, 1] <- -Inf
+        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha)
+      } else if (side == "left-sided") {
+        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha)
+        lim[i, 2] <- infert
+      } else if (side == "two-sided") {
+        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2)
+        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2)
+      }
+    }
+    
+    for (i in 1:nsim) {
+      sig[, i] <- (lim[, 1] <= ph1mat[, i]) & (ph1mat[, i] <= lim[, 2])
+    }
+    
+    tmp <- mean(colSums(sig) == n)
+    dif <- tmp - (1 - FAP0)
+    cat("dif:", dif, "\n")
+    return(dif)
+  }
   
   q <- dim(model$Phi)[1]
-  n <- length(model$Y.tr) - q
-  m <- dim(model$Phi)[2]
+  n <- length(model$Y)
+  nnsim <- dim(model$Phi)[2]
   
-  tmpY.sim <- matrix(NA, nrow = n, ncol = nsim)
-  tmpY.resi <- matrix(NA, nrow = n, ncol = nsim)
+  ph1mat <- matrix(NA, nrow = n - q, ncol = nsim)
   
-  Y.resi <- rep(NA, n)
-  
-  for (j in 1:nsim) {
-    
-    tmpsel <- sample(1:m, 1)
-    Y0fit <- fit.GibbsRFLSM(model$Y.tr, 
-                            model$Phi[, tmpsel], model$muq[tmpsel], 
-                            X = model$X, Beta = model$Beta[, tmpsel], 
-                            Kappa = model$Kappa[, tmpsel], 
-                            H = NULL, Gamma = NULL, Tau = NULL)
-    
-    Y0.sim <- rnorm(n, Y0fit, sqrt(model$sigma2[tmpsel]))
-    
-    Y0.sim <- backtrans(Y0.sim, log, const, sta, model$meanY, model$sdY)
-    
-    Y0.sim[Y0.sim < lowerbound] <- lowerbound
-    
-    tmpY.sim[, j] <- Y0.sim
-    
+  for (i in 1:nsim) {
+    tmpsel <- sample(1:nnsim, 1)
+    Mu0 <- matrix(rep(model$muq[tmpsel], n))
+    if (!is.null(model$X)) {
+      Mu0 <- Mu0 + model$X %*% (model$Beta[, tmpsel] * model$Kappa[, tmpsel])
+    }
+    ph1mat[, i] <- simYph1(matrix(model$Yyj[, tmpsel]), matrix(model$Phi[, tmpsel]), matrix(Mu0), 
+                            matrix(model$sigma2[tmpsel]), matrix(model$theta[tmpsel]), 1e-32)
   }
   
-  tmpY.sim.median <- rep(NA, n)
+  adj.alpha <- uniroot(root.finding, c(0.000001, 0.499999), ph1mat = ph1mat, FAP0 = FAP0, n = n - q, nsim = nsim, side = side, 
+          tol = 1e-6)$root
   
-  for (i in 1:n) {
-    tmpY.sim.median[i] <- median(tmpY.sim[i, ], na.rm = TRUE)
-    tmpY.resi[i, ] <- tmpY.sim[i, ] - tmpY.sim.median[i]
-    Y.resi[i] <- model$Y.ma[i + q] - tmpY.sim.median[i]
+  lim <- matrix(NA, nrow = n - q, ncol = 2)
+  sig <- matrix(NA, nrow = n - q, ncol = 1)
+  
+  for (i in 1:(n - q)) {
+    if (side == "right-sided") {
+      lim[i, 1] <- -Inf
+      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha)
+    } else if (side == "left-sided") {
+      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha)
+      lim[i, 2] <- infert
+    } else if (side == "two-sided") {
+      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2)
+      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2)
+    }
   }
   
-  for (j in 1:nsim) {
-    tmpY.resi[, j] <- tmpY.resi[, j] / sqrt(mean(tmpY.resi[, j] ^ 2))
-    #(tmpY.resi[, j] - mean(tmpY.resi[, j])) / sd(tmpY.resi[, j])
-  }
+  sig <- 1 - ((lim[, 1] <= model$Y[-c(1:q)]) & (model$Y[-c(1:q)] <= lim[, 2]))
   
-  Y.resi <- Y.resi / sqrt(mean(Y.resi ^ 2))
-  #(Y.resi - mean(Y.resi)) / sd(Y.resi)
-  
-  
-  tmpY.resi.max <- rep(NA, nsim)
-  tmpY.resi.min <- rep(NA, nsim)
-  
-  for (j in 1:nsim) {
-    tmpY.resi.max[j] <- max(tmpY.resi[, j], na.rm = TRUE)
-    tmpY.resi.min[j] <- min(tmpY.resi[, j], na.rm = TRUE)
-  }
-  
-  p.value.right <- mean(tmpY.resi.max >= max(Y.resi), na.rm = TRUE)
-  p.value.left <- mean(tmpY.resi.min <= min(Y.resi), na.rm = TRUE)
-  p.value.two <- mean((tmpY.resi.min <= min(Y.resi)) | (max(Y.resi) <= tmpY.resi.max), na.rm = TRUE)
-  
-  lower <- NA
-  upper <- NA
-  
-  if (side == "right-sided") {
-    p.value <- p.value.right
-    lower <- NA
-    upper <- quantile(tmpY.resi.max, 1 - FAP0)
-    sig.ind <- Y.resi >= upper
-  } else if (side == "left-sided") {
-    p.value <- p.value.left
-    lower <- quantile(tmpY.resi.min, FAP0)
-    upper <- NA
-    sig.ind <- Y.resi <= lower
-  } else {
-    p.value <- p.value.two
-    lower <- quantile(tmpY.resi.min, FAP0 / 2)
-    upper <- quantile(tmpY.resi.max, 1 - FAP0 / 2)
-    sig.ind <- (Y.resi <= lower) | (Y.resi >= upper)
-  }
-  
-  sig <- p.value <= FAP0
-  
-  if (side == "right-sided")
-    
-    list(sig = sig,
-         p.value = p.value,
-         sig.ind = sig.ind,
-         cs = Y.resi,
-         lower = lower,
-         upper = upper,
-         Y0.median = tmpY.sim.median,
-         p.value.right = p.value.right, 
-         p.value.left = p.value.left,
-         p.value.two = p.value.two)
+  list("grandsig" = sum(sig) > 0, "sig" = sig, "lim" = lim, "adj.alpha" = adj.alpha)
   
 }
-
-
 
 #' Bayesian LASSO Phase I Monitoring
 #' 
