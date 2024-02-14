@@ -1482,8 +1482,6 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
 
 
 
-
-
 // [[Rcpp::export]]
 arma::mat lhf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
   
@@ -1538,6 +1536,52 @@ arma::colvec invboxcoxtr(arma::colvec Ybc, double theta) {
 }
 
 // [[Rcpp::export]]
+arma::colvec invyeojohnsontr(arma::colvec Yyj, double theta, double eps) {
+  int T = Yyj.n_elem;
+  arma::colvec ans(T);
+  
+  for (int i = 0; i < T; i++) {
+    if (Yyj(i) >= 0.0 && abs(theta) > eps) {
+      ans(i) = pow(Yyj(i) * theta + 1.0, 1.0 / theta) - 1.0;
+    }
+    else if (Yyj(i) >= 0.0 && abs(theta) <= eps) {
+      ans(i) = exp(Yyj(i));
+    }
+    else if (Yyj(i) < 0.0 && abs(theta - 2.0) > eps) {
+      ans(i) = 1.0 - pow(-(2.0 - theta) * Yyj(i) + 1.0, 1.0 / (2.0 - theta));
+    }
+    else if (Yyj(i) < 0.0 && abs(theta - 2.0) <= eps) {
+      ans(i) = -exp(-Yyj(i));
+    }
+  }
+  return(ans);
+} 
+
+// [[Rcpp::export]]
+arma::colvec yeojohnsontr(arma::colvec Y, double theta, double eps) {
+  int T = Y.n_elem;
+  arma::colvec ans(T);
+  
+  for (int i = 0; i < T; i++) {
+    if (Y(i) >= 0 && abs(theta) > eps) {
+      ans(i) = (pow(Y(i) + 1, theta) - 1) / theta;
+    }
+    else if (Y(i) >= 0 && abs(theta) <= eps) {
+      ans(i) = log(Y(i));
+    }
+    else if (Y(i) < 0 && abs(theta - 2) > eps) {
+      ans(i) = -((pow(-Y(i) + 1, 2 - theta) - 1) / (2 - theta));
+    }
+    else if (Y(i) < 0 && abs(theta - 2) <= eps) {
+      ans(i) = -log(-Y(i));
+    }
+  }
+  
+  return(ans);
+} 
+
+
+// [[Rcpp::export]]
 arma::mat lhBCf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta) {
   
   int T = Y.n_elem;
@@ -1551,10 +1595,29 @@ arma::mat lhBCf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, doub
   
 }
 
+// [[Rcpp::export]]
+arma::mat lhYJf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta) {
+  
+  int T = Y.n_elem;
+  int q = Phi.n_rows;
+  
+  arma::colvec Yyj = yeojohnsontr(Y, theta, 0.000001);
+  arma::mat lh = lhf(Yyj, Phi, Mu, sigma2);
+  
+  arma::mat lhYJ = lh;
+  
+  for (int i = 0; i < (T - q); i++) {
+    lhYJ(i) = lhYJ(i) * pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i)));
+  }
+  
+  return(lhYJ);
+  
+}
+
 
 
 // [[Rcpp::export]]
-arma::mat thetaMH(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, 
+arma::mat thetaBoxCoxMH(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, 
                   double oldtheta, int burnin, int nsim, double tol) {
   
   double pi = 3.14159265359;
@@ -1620,7 +1683,72 @@ arma::mat thetaMH(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2,
   
 }
 
-
+// [[Rcpp::export]]
+arma::mat thetaYeoJohnsonMH(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, 
+                        double oldtheta, int burnin, int nsim, double tol) {
+  
+  double pi = 3.14159265359;
+  
+  int T = Y.n_elem;
+  int q = Phi.n_rows;
+  
+  double u;
+  double oldtheta_ = oldtheta;
+  double thetaas;
+  double A;
+  
+  arma::mat thetaout(nsim, 1); 
+  
+  arma::mat oldlhYJ = lhYJf(Y, Phi, Mu, sigma2, oldtheta_);
+  //double sumoldllhBC = arma::accu(oldllhBC);
+  arma::uvec ind0 = arma::find(oldlhYJ <= tol); 
+  oldlhYJ(ind0).fill(tol);
+  
+  arma::uvec ind1; 
+  
+  arma::mat newlhYJ; 
+  //double sumnewllhBC;
+  
+  arma::mat tmp; 
+  double pd;
+  
+  int i;
+  int j = 0;
+  
+  for (i = 0; i < (nsim + burnin); i++) {
+    u = R::runif(0.0, 1.0);
+    thetaas = R::rnorm(oldtheta_, 0.1);
+    newlhYJ = lhYJf(Y, Phi, Mu, sigma2, thetaas);
+    ind1 = arma::find(newlhYJ <= tol);
+    newlhYJ(ind1).fill(tol);
+    
+    tmp = arma::cumprod(newlhYJ % arma::pow(oldlhYJ, -1));
+    tmp = tmp * (1 / sqrt(1.0 / 2.0 / pi) * exp(- 1.0 / 2.0 * thetaas * thetaas)) /
+      (1 / sqrt(1.0 / 2.0 / pi) * exp(- 1.0 / 2.0 * oldtheta_ * oldtheta_));
+    
+    //Rcpp::Rcout << tmp << std::endl;
+    pd = tmp(T - q - 1);
+    //Rcpp::Rcout << pd << std::endl;
+    A = std::min(1.0, pd);
+    //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
+    //Rcpp::Rcout << A << std::endl;
+    
+    if (u < A) {
+      oldtheta_ = thetaas;
+      oldlhYJ = newlhYJ;
+    } 
+    
+    //Rcpp::Rcout << oldtheta_ << std::endl;
+    
+    if (i >= burnin) {
+      thetaout(j, 0) = oldtheta_;
+      j = j + 1;
+    }
+  }
+  
+  return(thetaout);
+  
+}
 
 // [[Rcpp::export]]
 Rcpp::List GibbsRFLSMBoxCoxcpp(arma::colvec& Y,int& q, 
@@ -1722,10 +1850,10 @@ Rcpp::List GibbsRFLSMBoxCoxcpp(arma::colvec& Y,int& q,
     }
     
     if (updateBC == 1) {
-      tmp = thetaMH(Y, Phi, Mu, sigma2, 
+      tmp = thetaBoxCoxMH(Y, Phi, Mu, sigma2, 
                     theta_, 1, 1, tol);
       theta_ = tmp(0);
-      Rcpp::Rcout << theta_ << std::endl;
+      //Rcpp::Rcout << theta_ << std::endl;
       Ybc = boxcoxtr(Y, theta_);
     }
     
@@ -1773,5 +1901,232 @@ Rcpp::List GibbsRFLSMBoxCoxcpp(arma::colvec& Y,int& q,
   );
   
   return(out);
+  
+}
+
+
+
+// [[Rcpp::export]]
+Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q, 
+                               arma::mat& A, double& a, double& b, double& alpha, double& beta, 
+                               double& theta1, double& theta2, double& xi2,
+                               Rcpp::String& method, double& bound0, double& boundqplus1,
+                               int updateYJ, double& theta,
+                               int& nsim, int& by, int& burnin,
+                               double& tol, 
+                               Rcpp::Nullable<Rcpp::NumericMatrix> G = R_NilValue,
+                               Rcpp::Nullable<Rcpp::List> oldpars = R_NilValue,
+                               Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
+  
+  arma::mat H_;
+  
+  // Calculate H
+  int m = 1;
+  if (H.isNotNull()) {
+    m = H_.n_cols;
+  } 
+  
+  int T = Y.n_elem;
+  
+  int TotalSim = nsim * by + burnin;
+  
+  Rcpp::List GibbsRFLSMModel; 
+  arma::colvec Yyj;
+  
+  Rcpp::List oldpars_;
+  
+  arma::mat Phi(q, 1);
+  Phi.zeros();
+  
+  arma::mat Mu(T - q, 1);
+  Mu.zeros();
+  
+  double sigma2 = 1.0;
+  double theta_ = theta;
+  arma::mat tmp; 
+  
+  Yyj = yeojohnsontr(Y, theta_, 0.000001);
+  
+  if (oldpars.isNotNull()) {
+    oldpars_ = Rcpp::as<Rcpp::List>(oldpars);
+    Phi = Rcpp::as<arma::mat>(oldpars_["Phi"]);
+    Mu = Rcpp::as<arma::mat>(oldpars_["Mu"]);
+    sigma2 = oldpars_["sigma2"];
+  } else {
+    
+    oldpars_ = GibbsRFLSMUpdatecpp(Yyj, q, 
+                                   A, a, b, alpha, beta, 
+                                   theta1, theta2, xi2, 
+                                   method, bound0, boundqplus1, 
+                                   1, 1, TotalSim / 10, tol,
+                                   G, oldpars, H);
+    Phi = Rcpp::as<arma::mat>(oldpars_["Phi"]);
+    Mu = Rcpp::as<arma::mat>(oldpars_["Mu"]);
+    sigma2 = oldpars_["sigma2"];
+  }
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  Rcpp::NumericMatrix GG;
+  arma::mat G_;
+  
+  if (G.isNotNull()) {
+    GG = Rcpp::as<Rcpp::NumericMatrix>(G);
+  } else {
+    G_ = getGMat(T, q);
+    GG = Rcpp::as<Rcpp::NumericMatrix>(Rcpp::wrap(G_));
+  }
+  
+  //Rcpp::Rcout << 2 << std::endl;
+  
+  
+  
+  //////////////////////////
+  
+  arma::mat Phiout(q, nsim); 
+  arma::mat sigma2out(1, nsim);
+  arma::mat Tauout(m, nsim);
+  arma::mat Gammaout(m, nsim);
+  arma::mat muqout(1, nsim);
+  arma::mat Muout(T, nsim);
+  arma::mat phoout(1, nsim);
+  arma::mat eta2out(q, nsim);
+  arma::mat lambda2out(q, nsim);
+  arma::mat thetaout(1, nsim);
+  
+  //////////////////////////
+  
+  int i;
+  int rr = 0;
+  
+  for (i = 0; i < TotalSim; i++) {
+    
+    if (i % 100 == 0) {
+      Rcpp::Rcout <<"Training: " << ((i + 0.0) / (TotalSim + 0.0) * 100.0) << '%' << std::endl;
+    }
+    
+    if (updateYJ == 1) {
+      tmp = thetaYeoJohnsonMH(Y, Phi, Mu, sigma2, 
+                          theta_, 1, 1, tol);
+      theta_ = tmp(0);
+      //Rcpp::Rcout << theta_ << std::endl;
+      Yyj = yeojohnsontr(Y, theta_, 0.000001);
+    }
+    
+    //  Rcpp::Rcout << 4 << std::endl;
+    //  
+    oldpars_ = GibbsRFLSMUpdatecpp(Yyj, q, 
+                                   A, a, b, alpha, beta, 
+                                   theta1, theta2, xi2, 
+                                   method, bound0, boundqplus1, 
+                                   1, 1, 0, tol,
+                                   GG, oldpars_, H);
+    //  
+    //  Rcpp::Rcout << 5 << std::endl;
+    
+    if (i >= burnin) {
+      if (i % by == 0) {
+        Phiout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Phi"]);
+        sigma2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["sigma2"]);
+        Tauout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Tau"]);
+        Gammaout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Gamma"]);
+        muqout.col(rr) = Rcpp::as<arma::mat>(oldpars_["muq"]);
+        Muout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Mu"]);
+        phoout.col(rr) = Rcpp::as<arma::mat>(oldpars_["pho"]);
+        eta2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["eta2"]);
+        lambda2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["lambda2"]);
+        thetaout.col(rr) = theta_;
+        rr = rr + 1;
+      }
+    }
+    
+  }
+  
+  Rcpp::List out; 
+  out = Rcpp::List::create(
+    _["Phi"] = Phiout,
+    _["sigma2"] = sigma2out,
+    _["Tau"] = Tauout,
+    _["Gamma"] = Gammaout,
+    _["muq"] = muqout,
+    _["Mu"] = Muout,
+    _["pho"] = phoout,
+    _["eta2"] = eta2out,
+    _["lambda2"] = lambda2out,
+    _["theta"] = thetaout
+  );
+  
+  return(out);
+  
+}
+
+// [[Rcpp::export]]
+arma::colvec rtrnorm(int n, double mean, double sd, double lower, double upper) {
+  arma::colvec out(n);
+  arma::colvec U = arma::randu(n);
+  
+  double slower = (lower - mean) / sd;
+  double supper = (upper - mean) / sd;
+   
+  double Z = R::pnorm5(supper, 0.0, 1.0, 1, 0) - R::pnorm5(slower, 0.0, 1.0, 1, 0);
+  
+  int i;
+
+  for (i = 0; i < n; i++) {
+    out(i) = R::qnorm5(U(i) * Z + R::pnorm5(slower, 0.0, 1.0, 1, 0), 0.0, 1.0, 1, 0) * sd + mean;
+  }
+    
+  return(out);
+  
+}
+
+
+// [[Rcpp::export]]
+arma::mat ucY(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
+  
+  double pi = 3.14159265359;
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Y.n_elem;
+  //Rcpp::Rcout << T << std::endl;
+  arma::mat V_;
+  arma::mat V(q, 1); 
+  arma::mat Vas_;
+  arma::mat Vas;
+  arma::mat VasPhi;
+  arma::mat resi; 
+  arma::colvec ucY = Y;
+  
+  V_ = Y - Mu;
+  V = V_.rows(q, T - 1);
+  Vas_ = getV(V_, q);
+  Vas = Vas_.rows(q, T - 1);
+  
+  VasPhi = Vas * Phi;
+  arma::mat fit;
+  
+  for (int i = q; i < T; i++) {
+      for (int j = 0; j < q; j++) {
+        V(i - j, 0)
+      }
+  }
+  
+  
+  
+  
+  //Rcpp::Rcout << V << std::endl;
+  //Rcpp::Rcout << Vas << std::endl;
+  
+  
+  
+  //Rcpp::Rcout << VasPhi << std::endl;
+  
+  resi = V - VasPhi;
+  
+  //Rcpp::Rcout << resi << std::endl;
+  
+  arma::mat lh = sqrt(1.0 / 2.0 / pi / sigma2) * exp(- 1.0 / 2.0 * arma::pow(resi, 2.0) / sigma2);
+  return(lh);
   
 }
