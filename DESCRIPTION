@@ -1,7 +1,7 @@
 Package: BayesianLASSOMonitoring
 Type: Package
 Title: Bayesian LASSO Random Flexible Level Shift Model Based Phase I Monitoring 
-Version: 0.9.11
+Version: 0.9.12
 Date: 2023-11-13
 Author: (
 				person("Yuhui", "Yao", role = c("aut", "cre"), email = "yyao17@ua.edu")
