@@ -1481,7 +1481,14 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
 }
 
 
-
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
 arma::mat lhf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
   
@@ -1595,6 +1602,14 @@ arma::mat lhBCf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, doub
   
 }
 
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
 arma::mat lhYJf(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta) {
   
@@ -1905,13 +1920,101 @@ Rcpp::List GibbsRFLSMBoxCoxcpp(arma::colvec& Y,int& q,
 }
 
 
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec rtrnorm(int n, double mean, double sd, double lower, double upper) {
+  arma::colvec out(n);
+  arma::colvec U = arma::randu(n);
+  
+  double slower = (lower - mean) / sd;
+  double supper = (upper - mean) / sd;
+  
+  double Z = R::pnorm5(supper, 0.0, 1.0, 1, 0) - R::pnorm5(slower, 0.0, 1.0, 1, 0);
+  
+  int i;
+  
+  for (i = 0; i < n; i++) {
+    out(i) = R::qnorm5(U(i) * Z + R::pnorm5(slower, 0.0, 1.0, 1, 0), 0.0, 1.0, 1, 0) * sd + mean;
+  }
+  
+  return(out);
+  
+}
+
+
+arma::colvec getucY(arma::colvec Yyj, arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps) {
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Y.n_elem;
+  //Rcpp::Rcout << T << std::endl;
+  arma::mat V(T, 1); 
+  arma::mat Vas(q, 1);
+  arma::mat VasPhi;
+  
+  arma::colvec ucY = Y;
+  arma::colvec ucYyj = Yyj; 
+  
+  arma::mat fit(T - q, 1);
+  arma::colvec tmp;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  for (int i = 0; i < T; i++) {
+    V(i, 0) = ucYyj(i) - Mu(i, 0);
+    
+    //Rcpp::Rcout << i << std::endl;
+    
+    if (i >= q) {
+      for (int j = 0; j < q; j++) {
+        Vas(j, 0) = V(i - 1 - j, 0);
+      }
+      VasPhi = Vas.t() * Phi;
+      fit(i - q, 0) = Mu(i, 0) + VasPhi(0);
+      
+      if (Y(i) == 0) { 
+        //Rcpp::Rcout << 3.01 << std::endl;
+        tmp = rtrnorm(1, fit(i - q, 0), sqrt(sigma2), (-1.0) * arma::math::inf(), 0.0);
+        //Rcpp::Rcout << 3.1 << std::endl;
+        ucYyj(i) = tmp(0); 
+        //Rcpp::Rcout << 3.2 << std::endl;
+      }
+      //Rcpp::Rcout << ucYyj(i)  << std::endl;
+    }
+    
+    //Rcpp::Rcout << 3 << std::endl;
+    //Rcpp::Rcout << ucYyj(i)  << std::endl;
+    
+    
+    //Rcpp::Rcout << 4 << std::endl;
+  }
+  
+  //Rcpp::Rcout << ucYyj << std::endl;
+  
+  //ucY = invyeojohnsontr(ucYyj, theta, eps);
+  
+  //Rcpp::Rcout << 5 << std::endl;
+  
+  return(ucYyj);
+  
+}
+
+
 
 // [[Rcpp::export]]
-Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q, 
+Rcpp::List GibbsRFLSMYeoJohnsonZcpp(arma::colvec& Y,int& q, 
                                arma::mat& A, double& a, double& b, double& alpha, double& beta, 
                                double& theta1, double& theta2, double& xi2,
                                Rcpp::String& method, double& bound0, double& boundqplus1,
                                int updateYJ, double& theta,
+                               int updateZ, double eps,
                                int& nsim, int& by, int& burnin,
                                double& tol, 
                                Rcpp::Nullable<Rcpp::NumericMatrix> G = R_NilValue,
@@ -1931,7 +2034,7 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
   int TotalSim = nsim * by + burnin;
   
   Rcpp::List GibbsRFLSMModel; 
-  arma::colvec Yyj;
+  arma::colvec Yyj = Y;
   
   Rcpp::List oldpars_;
   
@@ -1945,7 +2048,10 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
   double theta_ = theta;
   arma::mat tmp; 
   
-  Yyj = yeojohnsontr(Y, theta_, 0.000001);
+  if (updateYJ == 1) {
+    Yyj = yeojohnsontr(Y, theta_, eps);
+  }
+  
   
   if (oldpars.isNotNull()) {
     oldpars_ = Rcpp::as<Rcpp::List>(oldpars);
@@ -1965,7 +2071,9 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
     sigma2 = oldpars_["sigma2"];
   }
   
-  //Rcpp::Rcout << 1 << std::endl;
+  if (updateZ == 1) {
+    Yyj = getucY(Yyj, Y, Phi, Mu, sigma2, theta_, eps);
+  }
   
   Rcpp::NumericMatrix GG;
   arma::mat G_;
@@ -1993,6 +2101,10 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
   arma::mat eta2out(q, nsim);
   arma::mat lambda2out(q, nsim);
   arma::mat thetaout(1, nsim);
+  arma::mat Yyjout(T, nsim);
+  
+  //////////////////////////
+  
   
   //////////////////////////
   
@@ -2003,14 +2115,6 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
     
     if (i % 100 == 0) {
       Rcpp::Rcout <<"Training: " << ((i + 0.0) / (TotalSim + 0.0) * 100.0) << '%' << std::endl;
-    }
-    
-    if (updateYJ == 1) {
-      tmp = thetaYeoJohnsonMH(Y, Phi, Mu, sigma2, 
-                          theta_, 1, 1, tol);
-      theta_ = tmp(0);
-      //Rcpp::Rcout << theta_ << std::endl;
-      Yyj = yeojohnsontr(Y, theta_, 0.000001);
     }
     
     //  Rcpp::Rcout << 4 << std::endl;
@@ -2024,6 +2128,18 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
     //  
     //  Rcpp::Rcout << 5 << std::endl;
     
+    if (updateYJ == 1) {
+      tmp = thetaYeoJohnsonMH(Y, Phi, Mu, sigma2, 
+                              theta_, 1, 1, tol);
+      theta_ = tmp(0);
+      //Rcpp::Rcout << theta_ << std::endl;
+      Yyj = yeojohnsontr(Y, theta_, eps);
+    }
+    
+    if (updateZ == 1) {
+      Yyj = getucY(Yyj, Y, Phi, Mu, sigma2, theta_, eps);
+    }
+    
     if (i >= burnin) {
       if (i % by == 0) {
         Phiout.col(rr) = Rcpp::as<arma::mat>(oldpars_["Phi"]);
@@ -2036,6 +2152,7 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
         eta2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["eta2"]);
         lambda2out.col(rr) = Rcpp::as<arma::mat>(oldpars_["lambda2"]);
         thetaout.col(rr) = theta_;
+        Yyjout.col(rr) = Yyj;
         rr = rr + 1;
       }
     }
@@ -2053,80 +2170,245 @@ Rcpp::List GibbsRFLSMYeoJohnsoncpp(arma::colvec& Y,int& q,
     _["pho"] = phoout,
     _["eta2"] = eta2out,
     _["lambda2"] = lambda2out,
-    _["theta"] = thetaout
+    _["theta"] = thetaout,
+    _["Yyj"] = Yyjout
   );
   
   return(out);
   
 }
 
+
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
-arma::colvec rtrnorm(int n, double mean, double sd, double lower, double upper) {
-  arma::colvec out(n);
-  arma::colvec U = arma::randu(n);
-  
-  double slower = (lower - mean) / sd;
-  double supper = (upper - mean) / sd;
-   
-  double Z = R::pnorm5(supper, 0.0, 1.0, 1, 0) - R::pnorm5(slower, 0.0, 1.0, 1, 0);
-  
-  int i;
-
-  for (i = 0; i < n; i++) {
-    out(i) = R::qnorm5(U(i) * Z + R::pnorm5(slower, 0.0, 1.0, 1, 0), 0.0, 1.0, 1, 0) * sd + mean;
-  }
-    
-  return(out);
-  
-}
-
-
-// [[Rcpp::export]]
-arma::mat ucY(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
-  
-  double pi = 3.14159265359;
+arma::colvec getfityj(arma::colvec Yyj, arma::mat Phi, arma::mat Mu, double eps) {
   
   int q = Phi.n_rows;
   //Rcpp::Rcout << q << std::endl;
-  int T = Y.n_elem;
+  int T = Yyj.n_elem;
   //Rcpp::Rcout << T << std::endl;
-  arma::mat V_;
-  arma::mat V(q, 1); 
-  arma::mat Vas_;
-  arma::mat Vas;
+  arma::mat V(T, 1); 
+  arma::mat Vas(q, 1);
   arma::mat VasPhi;
-  arma::mat resi; 
-  arma::colvec ucY = Y;
   
-  V_ = Y - Mu;
-  V = V_.rows(q, T - 1);
-  Vas_ = getV(V_, q);
-  Vas = Vas_.rows(q, T - 1);
+  arma::mat fit(T - q, 1);
+  arma::colvec tmp;
   
-  VasPhi = Vas * Phi;
-  arma::mat fit;
+  //Rcpp::Rcout << 1 << std::endl;
   
-  for (int i = q; i < T; i++) {
+  for (int i = 0; i < T; i++) {
+    V(i, 0) = Yyj(i) - Mu(i, 0);
+    
+    //Rcpp::Rcout << i << std::endl;
+    
+    if (i >= q) {
       for (int j = 0; j < q; j++) {
-        V(i - j, 0)
+        Vas(j, 0) = V(i - 1 - j, 0);
       }
+      VasPhi = Vas.t() * Phi;
+      fit(i - q, 0) = Mu(i, 0) + VasPhi(0);
+    }
+    //Rcpp::Rcout << 3 << std::endl;
+    //Rcpp::Rcout << ucYyj(i)  << std::endl;
+    
+    
+    //Rcpp::Rcout << 4 << std::endl;
   }
   
+  //Rcpp::Rcout << ucYyj << std::endl;
   
+  //ucY = invyeojohnsontr(ucYyj, theta, eps);
   
+  //Rcpp::Rcout << 5 << std::endl;
   
-  //Rcpp::Rcout << V << std::endl;
-  //Rcpp::Rcout << Vas << std::endl;
-  
-  
-  
-  //Rcpp::Rcout << VasPhi << std::endl;
-  
-  resi = V - VasPhi;
-  
-  //Rcpp::Rcout << resi << std::endl;
-  
-  arma::mat lh = sqrt(1.0 / 2.0 / pi / sigma2) * exp(- 1.0 / 2.0 * arma::pow(resi, 2.0) / sigma2);
-  return(lh);
+  return(fit);
   
 }
+
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec getfit(arma::colvec Yyj, arma::mat Phi, arma::mat Mu, double theta, double eps) {
+  
+  arma::colvec fittr = getfityj(Yyj, Phi, Mu, eps);
+  arma::colvec fit = invyeojohnsontr(fittr, theta, eps);
+  return(fit);
+  
+}
+
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYyjph1(arma::colvec Yyj, arma::mat Phi, arma::mat Mu, double sigma2) {
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Yyj.n_elem;
+  //Rcpp::Rcout << T << std::endl;
+  arma::mat V(T, 1); 
+  arma::mat Vas(q, 1);
+  arma::mat VasPhi;
+  
+  arma::mat fit(T - q, 1);
+  arma::mat simYyjph1(T - q, 1);
+  arma::colvec tmp;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  for (int i = 0; i < T; i++) {
+    V(i, 0) = Yyj(i) - Mu(i, 0);
+    
+    //Rcpp::Rcout << i << std::endl;
+    
+    if (i >= q) {
+      for (int j = 0; j < q; j++) {
+        Vas(j, 0) = V(i - 1 - j, 0);
+      }
+      VasPhi = Vas.t() * Phi;
+      fit(i - q, 0) = Mu(i, 0) + VasPhi(0);
+      simYyjph1(i - q, 0) = R::rnorm(fit(i - q, 0), sqrt(sigma2));
+    }
+    
+    //Rcpp::Rcout << 3 << std::endl;
+    //Rcpp::Rcout << ucYyj(i)  << std::endl;
+    
+    
+    //Rcpp::Rcout << 4 << std::endl;
+  }
+  
+  //Rcpp::Rcout << ucYyj << std::endl;
+  
+  //ucY = invyeojohnsontr(ucYyj, theta, eps);
+  
+  //Rcpp::Rcout << 5 << std::endl;
+  
+  return(simYyjph1);
+  
+}
+
+
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYph1(arma::colvec Yyj, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps) {
+  
+  arma::colvec Yyjph1 = simYyjph1(Yyj, Phi, Mu, sigma2); 
+  arma::colvec Yph1 = invyeojohnsontr(Yyjph1, theta, eps); 
+  arma::uvec ind0 = arma::find(Yph1 <= 0.0); 
+  Yph1(ind0).fill(0.0);
+  
+  
+  return(Yph1);
+  
+}
+
+
+//' Absolute-value-constrained normal distribution
+ //' 
+ //' gets a sample from a normal distribution whose absolute observations are constrained.
+ //'
+ //' @param n is sample size.
+ //' @export
+ //' @examples
+ //' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYyjph2(int h, arma::colvec Yyjph1, arma::mat Phi, arma::mat Mu, double sigma2) {
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Yyjph1.n_elem;
+  //Rcpp::Rcout << T << std::endl;
+  arma::mat V(T + h, 1); 
+  arma::mat Vas(q, 1);
+  arma::mat VasPhi;
+  
+  arma::mat fit(T - q + h, 1);
+  arma::mat simYyjph2(T - q + h, 1);
+  arma::colvec tmp;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  //for (int i = 0; i < (T + h); i++) {
+  for (int i = 0; i < (T + h); i++) {
+    
+    
+    //Rcpp::Rcout << i << std::endl;
+    
+    if (i >= q) {
+      for (int j = 0; j < q; j++) {
+        Vas(j, 0) = V(i - 1 - j, 0);
+      }
+      VasPhi = Vas.t() * Phi;
+      fit(i - q, 0) = Mu(i, 0) + VasPhi(0);
+      simYyjph2(i - q, 0) = R::rnorm(fit(i - q, 0), sqrt(sigma2));
+    }
+    
+    if (i < T) {
+      V(i, 0) = Yyjph1(i) - Mu(i, 0);
+    } else if (i >= T) {
+      V(i, 0) = simYyjph2(i - q, 0) - Mu(i, 0);
+    }
+    
+    //Rcpp::Rcout << 3 << std::endl;
+    //Rcpp::Rcout << ucYyj(i)  << std::endl;
+    
+    
+    //Rcpp::Rcout << 4 << std::endl;
+  }
+  
+  //Rcpp::Rcout << ucYyj << std::endl;
+  
+  //ucY = invyeojohnsontr(ucYyj, theta, eps);
+  
+  //Rcpp::Rcout << 5 << std::endl;
+  
+  return(simYyjph2);
+
+}
+
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYph2(int h, arma::colvec Yyjph1, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps) {
+  
+  arma::colvec Yyjph2 = simYyjph2(h, Yyjph1, Phi, Mu, sigma2); 
+  arma::colvec Yph2 = invyeojohnsontr(Yyjph2, theta, eps); 
+  arma::uvec ind0 = arma::find(Yph2 <= 0.0); 
+  Yph2(ind0).fill(0.0);
+  
+  
+  return(Yph2);
+  
+}
+
