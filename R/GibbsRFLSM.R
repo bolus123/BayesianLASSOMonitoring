@@ -336,7 +336,10 @@ GibbsRFLSMYJZ <- function(Y, H = NULL, X = NULL, q = 5,
     "muq" = model$muq,
     "Mu" = model$Mu,
     "theta" = model$theta,
-    "Yyj" = model$Yyj
+    "Yyj" = model$Yyj,
+    "H" = H,
+    "X" = X,
+    "Y" = Y
   )
   
   return(out)
