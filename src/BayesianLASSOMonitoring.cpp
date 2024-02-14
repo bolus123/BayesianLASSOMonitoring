@@ -1111,8 +1111,8 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
                          Rcpp::Nullable<Rcpp::List> oldpars = R_NilValue,
                          Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
   
-  auto start = std::chrono::system_clock::now();
-  std::time_t start_time = std::chrono::system_clock::to_time_t(start);
+  //auto start = std::chrono::system_clock::now();
+  //std::time_t start_time = std::chrono::system_clock::to_time_t(start);
   
   //Rcpp::Rcout << "Start training using " << method.get_cstring() << " at " << std::ctime(&start_time) <<  std::endl;
   
@@ -2021,6 +2021,14 @@ Rcpp::List GibbsRFLSMYeoJohnsonZcpp(arma::colvec& Y,int& q,
                                Rcpp::Nullable<Rcpp::List> oldpars = R_NilValue,
                                Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
   
+  
+  auto start = std::chrono::system_clock::now();
+  std::time_t start_time = std::chrono::system_clock::to_time_t(start);
+  
+  Rcpp::Rcout << "Start training using " << method.get_cstring() << " at " << std::ctime(&start_time) <<  std::endl;
+  
+  ///////////////////////////////////
+  
   arma::mat H_;
   
   // Calculate H
@@ -2158,6 +2166,17 @@ Rcpp::List GibbsRFLSMYeoJohnsonZcpp(arma::colvec& Y,int& q,
     }
     
   }
+  
+  Rcpp::Rcout <<"Training: 100%" << std::endl;
+  
+  auto end = std::chrono::system_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+  
+  Rcpp::Rcout << "Finished training at " << std::ctime(&end_time)
+              << "Elapsed time: " << elapsed_seconds.count() << "s"
+              << std::endl;
+  
   
   Rcpp::List out; 
   out = Rcpp::List::create(
