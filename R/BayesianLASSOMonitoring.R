@@ -417,13 +417,13 @@ Ph1MultipleTesting.Y0tr <- function(model, nsim = 10000, FAP0 = 0.2, side = "rig
   for (i in 1:(n - q)) {
     if (side == "right-sided") {
       lim[i, 1] <- -Inf
-      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha)
+      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha, na.rm = TRUE)
     } else if (side == "left-sided") {
-      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha)
+      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha, na.rm = TRUE)
       lim[i, 2] <- infert
     } else if (side == "two-sided") {
-      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2)
-      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2)
+      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2, na.rm = TRUE)
+      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2, na.rm = TRUE)
     }
   }
   
