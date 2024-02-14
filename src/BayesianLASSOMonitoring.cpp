@@ -2034,6 +2034,7 @@ Rcpp::List GibbsRFLSMYeoJohnsonZcpp(arma::colvec& Y,int& q,
  // Calculate H
   int m = 1;
   if (H.isNotNull()) {
+    H_ = Rcpp::as<arma::mat>(H);
     m = H_.n_cols;
   } 
   
