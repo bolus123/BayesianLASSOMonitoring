@@ -276,7 +276,7 @@ GibbsRFLSMYJZ <- function(Y, H = NULL, X = NULL, q = 5,
   TT <- length(Y)
   
   if (is.null(H) && is.null(X)) {
-    model <- GibbsRFLSMYeoJohnsoncpp(Y, q, 
+    model <- GibbsRFLSMYeoJohnsonZcpp(Y, q, 
                            A, a, b, alpha, beta, 
                            theta1, theta2, xi2,
                            method, bound0, boundqplus1,
@@ -286,7 +286,7 @@ GibbsRFLSMYJZ <- function(Y, H = NULL, X = NULL, q = 5,
                            tol)
   } else {
     H1 <- cbind(H, X)
-    model <- GibbsRFLSMYeoJohnsoncpp(Y, q, 
+    model <- GibbsRFLSMYeoJohnsonZcpp(Y, q, 
                                      A, a, b, alpha, beta, 
                                      theta1, theta2, xi2,
                                      method, bound0, boundqplus1,
