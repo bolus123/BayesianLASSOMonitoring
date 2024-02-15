@@ -388,7 +388,7 @@ Ph1MultipleTesting.Y0tr <- function(model, nsim = 10000, FAP0 = 0.2, side = "rig
     
     tmp <- mean(colSums(sig) == n)
     dif <- tmp - (1 - FAP0)
-    cat("dif:", dif, "\n")
+    ##cat("dif:", dif, "\n")
     return(dif)
   }
   
