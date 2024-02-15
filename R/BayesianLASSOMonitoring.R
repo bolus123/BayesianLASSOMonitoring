@@ -362,7 +362,7 @@ Ph1MultipleTesting.resi <- function(model, interval = c(1e-8, 0.5 - 1e-8), log =
 #' 
 #' 
 #' @export
-Ph1MultipleTesting.Y0tr <- function(model, nsim = 10000, FAP0 = 0.2, side = "right-sided") {
+Ph1MultipleTesting.Y0tr <- function(model, FAP0 = 0.2, side = "right-sided", nsim = 10000, interval = c(0.000001, 0.499999)) {
   
   root.finding <- function(adj.alpha, ph1mat, FAP0, n, nsim, side = "right-sided") {
     
@@ -408,7 +408,7 @@ Ph1MultipleTesting.Y0tr <- function(model, nsim = 10000, FAP0 = 0.2, side = "rig
                             matrix(model$sigma2[tmpsel]), matrix(model$theta[tmpsel]), 1e-32)
   }
   
-  adj.alpha <- uniroot(root.finding, c(0.000001, 0.499999), ph1mat = ph1mat, FAP0 = FAP0, n = n - q, nsim = nsim, side = side, 
+  adj.alpha <- uniroot(root.finding, interval, ph1mat = ph1mat, FAP0 = FAP0, n = n - q, nsim = nsim, side = side, 
           tol = 1e-6)$root
   
   lim <- matrix(NA, nrow = n - q, ncol = 2)
