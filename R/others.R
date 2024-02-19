@@ -99,68 +99,6 @@ rzinpoisinar3 <- function(n, alpha, lambda, pi, h, delta, burnin = 100) {
 }
 
 
-invert.q <- function(coef) {
-  out <- 1
-  
-  if (all(abs(coef) < 1)) {
-    minmod <- min(Mod(polyroot(c(1, coef))))
-    
-    if (minmod <= 1) {
-      out <- 0
-    }
-  } else {
-    out <- 0
-  }
-  
-  return(out)
-}
-
-pars.mat <- function(n, parsVec, norder = 1, isPhi = TRUE) {
-  if (isPhi == TRUE) {
-    Check <- invert.q(parsVec)
-    if (Check == 0) {
-      NULL
-    } else {
-      Mat <- diag(n)
-      for (i in 1:norder) {
-        Mat <- Mat + Diag(rep(parsVec[i], n - i), k = -i)
-      }
-      Mat
-    }
-  } else {
-    Mat <- diag(n)
-    for (i in 1:norder) {
-      Mat <- Mat + Diag(rep(parsVec[i], n - i), k = -i)
-    }
-    Mat
-  }
-  return(Mat)
-}
-
-
-sigma.mat <- function(n, order = c(1, 0, 0), phi.vec = 0.5, theta.vec = NULL, sigma2 = 1, burn.in = 50) {
-  if (order[1] == 0) {
-    phiMat <- diag(n + burn.in)
-  } else {
-    phiMat <- pars.mat(n + burn.in, -phi.vec, norder = order[1])
-  }
-  
-  if (order[3] == 0) {
-    thetaMat <- diag(n + burn.in)
-  } else {
-    thetaMat <- pars.mat(n + burn.in, theta.vec, norder = order[3], isPhi = FALSE)
-  }
-  
-  out <- solve(phiMat) %*% thetaMat %*% t(thetaMat) %*% t(solve(phiMat)) * sigma2
-  
-  gamma0 <- out[dim(out)[1], dim(out)[2]]
-  
-  if (burn.in > 0) {
-    out <- out[-c(1:burn.in), -c(1:burn.in)]
-  }
-  
-  list(sigma.mat = out, sqrtsigma.mat = sqrtm(out)$B, gamma0 = gamma0)
-}
 
 #' simulate realizations using ARMA(p, q) and one sustained shift
 #' 
