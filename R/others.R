@@ -217,9 +217,12 @@ rarma <- function(object, n, h, delta, xreg = NULL, nsim = 100, burnin = 50, low
   mu <- rep(ifelse(length(tmpint) == 0, 0, object$coef[tmpint]), n)
   mu[h:n] <- mu[h:n] + sqrt(gamma0) * delta
   
-  innov <- rnorm(n, mu, sqrt(object$sigma2))
-
-  ts <- simulate(object, nsim = n, future = FALSE, innov = innov, xreg = xreg)
+  ts <- simulate(object, nsim = n, future = FALSE, xreg = xreg)
+  
+  ts <- ts + mu
+  
+  #innov <- rnorm(n, mu, sqrt(object$sigma2))
+  #ts <- simulate(object, nsim = n, future = FALSE, innov = innov, xreg = xreg)
 
   ts[which(ts < lowerbound)] <- lowerbound
   ts
