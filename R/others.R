@@ -1,46 +1,43 @@
-fdelta <- function(alpha, lambda0, pi0, lambda1, pi1) {
+mu1f <- function(delta, lambda0, pi0) {
   
-  a <- sqrt(1 - sum(alpha ^ 2)) / (1 - sum(alpha))
-  d1 <- (1 - pi1) * lambda1 / 
-    sqrt(lambda1 * (1 - pi1) * (1 + pi1 * lambda1))
-  d0 <- (1 - pi0) * lambda0 / 
-    sqrt(lambda0 * (1 - pi0) * (1 + pi0 * lambda0))
+  mu0 <- (1 - pi0) * lambda0
+  c0 <- (1 + pi0 / (1 - pi0) * mu0)
   
-  a * (d1 - d0)
+  b <- - (2 * mu0 + delta ^ 2 * c0)
+  c <- mu0 ^ 2
+  a <- 1
+  d <- b ^ 2 - 4 * a * c
   
-}
-
-flambda1 <- function(delta, alpha, lambda0, pi0, pi1 = pi0, interval = c(1e-10, 1000)) {
+  out <- rep(NA, 2)
   
-  rootfinding <- function(lambda1, delta, alpha, lambda0, pi0, pi1) {
-    tmp <- fdelta(alpha, lambda0, pi0, lambda1, pi1) 
-    #cat("tmp:", tmp, "lambda1:", lambda1, "\n")
-    delta - tmp
-  }
+  out[1] <- -b - sqrt(d)
+  out[2] <- -b + sqrt(d)
   
-  uniroot(rootfinding, interval = interval, delta = delta, 
-          alpha = alpha, 
-          lambda0 = lambda0, pi0 = pi0, pi1 = pi1)$root
+  out <- out / 2 / a
+  
+  out[out >= mu0][1]
   
 }
 
-
-
-fpi1 <- function(delta, alpha, lambda0, pi0, lambda1 = lambda0, 
-                 interval = c(1e-10, 1 - 1e-10)) {
-  
-  rootfinding <- function(pi1, delta, alpha, lambda0, pi0, lambda1) {
-    tmp <- fdelta(alpha, lambda0, pi0, lambda1, pi1) 
-    #cat("tmp:", tmp, "pi1:", pi1, "\n")
-    delta - tmp
-  }
-  
-  uniroot(rootfinding, interval = interval, delta = delta, 
-          alpha = alpha, 
-          lambda0 = lambda0, lambda1 = lambda1, pi0 = pi0)$root
-  
+sigma21f <- function(delta, lambda0, pi0) {
+  c0 <- (1 + pi0 * lambda0)
+  mu1 <- mu1f(delta, lambda0, pi0)
+  c0 * mu1
 }
 
+pi1f <- function(delta, lambda0, pi0) {
+  mu1 <- mu1f(delta, lambda0, pi0)
+  sigma21 <- sigma21f(delta, lambda0, pi0)
+  pi1 <- 1 - mu1 ^ 2 / (sigma21 - mu1 + mu1 ^ 2)
+  pi1
+}
+
+lambda1f <- function(delta, lambda0, pi0) {
+  mu1 <- mu1f(delta, lambda0, pi0)
+  pi1 <- pi1f(delta, lambda0, pi0)
+  lambda1 <- mu1 / (1 - pi1)
+  lambda1
+}
 
 #' simulate realizations using INAR(3) with zero-inflated Poisson innovation and one sustained shift
 #' 
@@ -74,10 +71,10 @@ rzinpoisinar3 <- function(n, alpha, lambda, pi, h, delta, burnin = 100) {
   out <- rep(NA, n + burnin + q)
   out[1:q] <- VGAM::rzipois(q, lambda, pi)
   
-  
   k <- 0
   
-  lambda1 <- flambda1(delta, alpha, lambda, pi, pi1 = pi, interval = c(1e-10, 1000))
+  pi1 <- pi1f(delta, lambda, pi)
+  lambda1 <- lambda1f(delta, lambda, pi)
   
   for (i in (q + 1):(n + burnin + q)) {
     for (j in 1:q) {
@@ -89,7 +86,7 @@ rzinpoisinar3 <- function(n, alpha, lambda, pi, h, delta, burnin = 100) {
     }
     
     if (k >= h) {
-      out[i] <- out[i] + VGAM::rzipois(1, lambda1, pi)
+      out[i] <- out[i] + VGAM::rzipois(1, lambda1, pi1)
     } else {
       out[i] <- out[i] + VGAM::rzipois(1, lambda, pi)
     }
@@ -194,28 +191,10 @@ sigma.mat <- function(n, order = c(1, 0, 0), phi.vec = 0.5, theta.vec = NULL, si
 #' 
 rarma <- function(object, n, h, delta, xreg = NULL, nsim = 100, burnin = 50, lowerbound = 0) {
   
-  nphi <- grep("ar", names(object$coef))
-  ntheta <- grep("ma", names(object$coef))
-  
-  if (length(nphi) == 0) {
-    phi <- NULL
-  } else {
-    phi <- object$coef[nphi]
-  }
-  
-  if (length(ntheta) == 0) {
-    theta <- NULL
-  } else {
-    theta <- object$coef[ntheta]
-  }
-  
-  gamma0 <- sigma.mat(n = nsim, order = c(length(nphi), 0, length(ntheta)), 
-                      phi.vec = phi, theta.vec = theta, sigma2 = object$sigma2, burn.in = burnin)$gamma0
-  
   tmpint <- grep("intercept", names(object$coef))
   
   mu <- rep(ifelse(length(tmpint) == 0, 0, object$coef[tmpint]), n)
-  mu[h:n] <- mu[h:n] + sqrt(gamma0) * delta
+  mu[h:n] <- mu[h:n] + sqrt(object$sigma2) * delta
   
   ts <- simulate(object, nsim = n, future = FALSE, xreg = xreg)
   
