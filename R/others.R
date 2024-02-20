@@ -129,9 +129,7 @@ rzinpoisinar3 <- function(n, alpha, lambda, pi, h, delta, burnin = 100) {
 #' 
 rarma <- function(object, n, h, delta, xreg = NULL, nsim = 100, burnin = 50, lowerbound = 0) {
   
-  tmpint <- grep("intercept", names(object$coef))
-  
-  mu <- rep(ifelse(length(tmpint) == 0, 0, object$coef[tmpint]), n)
+  mu <- rep(0, n)
   mu[h:n] <- mu[h:n] + sqrt(object$sigma2) * delta
   
   ts <- simulate(object, nsim = n, future = FALSE, xreg = xreg)
