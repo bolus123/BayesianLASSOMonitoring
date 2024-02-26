@@ -1313,14 +1313,21 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
     
     if (Hflg == 1) {
       tmpresi = Rcpp::as<arma::mat>(model0["residuals"]);
-      tmpHGamma = H_.t() * H_;
-      Gamma = getInv(tmpHGamma) * H_.t() * tmpresi;
-      tmpHGamma = H_ * Gamma;
-      Mu = Mu + tmpHGamma;
-      tmpresi = tmpresi - tmpHGamma;
-      tmpresi = tmpresi.t() * tmpresi;
-      sigma2 = tmpresi(0) / T;
       Rcpp::Rcout << 1 << std::endl;
+      tmpHGamma = H_.t() * H_;
+      Rcpp::Rcout << 2 << std::endl;
+      Gamma = getInv(tmpHGamma) * H_.t() * tmpresi;
+      Rcpp::Rcout << 3 << std::endl;
+      tmpHGamma = H_ * Gamma;
+      Rcpp::Rcout << 4 << std::endl;
+      Mu = Mu + tmpHGamma;
+      Rcpp::Rcout << 5 << std::endl;
+      tmpresi = tmpresi - tmpHGamma;
+      Rcpp::Rcout << 6 << std::endl;
+      tmpresi = tmpresi.t() * tmpresi;
+      Rcpp::Rcout << 7 << std::endl;
+      sigma2 = tmpresi(0) / T;
+      Rcpp::Rcout << 8 << std::endl;
     } else {
       sigma2 = model0["sigma2"];
     }
