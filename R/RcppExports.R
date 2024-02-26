@@ -91,12 +91,20 @@ getXSeasonalityFS <- function(T, s, n) {
     .Call(`_BayesianLASSOMonitoring_getXSeasonalityFS`, T, s, n)
 }
 
+arimaxcpp <- function(Y, q, xreg) {
+    .Call(`_BayesianLASSOMonitoring_arimaxcpp`, Y, q, xreg)
+}
+
 GibbsRFLSMcpp <- function(Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H = NULL) {
     .Call(`_BayesianLASSOMonitoring_GibbsRFLSMcpp`, Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, H)
 }
 
 GibbsRFLSMUpdatecpp <- function(Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, G = NULL, oldpars = NULL, H = NULL) {
     .Call(`_BayesianLASSOMonitoring_GibbsRFLSMUpdatecpp`, Y, q, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, G, oldpars, H)
+}
+
+GibbsRFLSMXUpdatecpp <- function(Y, q, X, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, G = NULL, oldpars = NULL, H = NULL) {
+    .Call(`_BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp`, Y, q, X, A, a, b, alpha, beta, theta1, theta2, xi2, method, bound0, boundqplus1, nsim, by, burnin, tol, G, oldpars, H)
 }
 
 #' Absolute-value-constrained normal distribution
