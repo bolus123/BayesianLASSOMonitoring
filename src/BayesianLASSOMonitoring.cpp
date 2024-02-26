@@ -1250,6 +1250,7 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
   
   //Rcpp::Rcout << 1 << std::endl;
   
+  
   arma::mat tmpresi;
   arma::mat tmpHGamma; 
   
@@ -1311,26 +1312,7 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
     
     Mu.fill(muq);
     
-    if (Hflg == 1) {
-      tmpresi = Rcpp::as<arma::mat>(model0["residuals"]);
-      Rcpp::Rcout << 1 << std::endl;
-      tmpHGamma = H_.t() * H_;
-      Rcpp::Rcout << 2 << std::endl;
-      Gamma = getInv(tmpHGamma) * H_.t() * tmpresi;
-      Rcpp::Rcout << 3 << std::endl;
-      tmpHGamma = H_ * Gamma;
-      Rcpp::Rcout << 4 << std::endl;
-      Mu = Mu + tmpHGamma;
-      Rcpp::Rcout << 5 << std::endl;
-      tmpresi = tmpresi - tmpHGamma;
-      Rcpp::Rcout << 6 << std::endl;
-      tmpresi = tmpresi.t() * tmpresi;
-      Rcpp::Rcout << 7 << std::endl;
-      sigma2 = tmpresi(0) / T;
-      Rcpp::Rcout << 8 << std::endl;
-    } else {
-      sigma2 = model0["sigma2"];
-    }
+    sigma2 = model0["sigma2"];
     
     
     pho = R::rbeta(theta1, theta2);
@@ -1519,7 +1501,7 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
 
 
 // [[Rcpp::export]]
-Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, arma::mat X,
+Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, 
                                arma::mat A, double a, double b, double alpha, double beta, 
                                double theta1, double theta2, double xi2,
                                Rcpp::String method, double bound0, double boundqplus1,
@@ -1527,6 +1509,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, arma::mat X,
                                double tol, 
                                Rcpp::Nullable<Rcpp::NumericMatrix> G = R_NilValue,
                                Rcpp::Nullable<Rcpp::List> oldpars = R_NilValue,
+                               Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue,
                                Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
   
   //auto start = std::chrono::system_clock::now();
@@ -1556,6 +1539,21 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, arma::mat X,
     G_ = Rcpp::as<arma::mat>(G);
   } else {
     G_ = getGMat(T, q);
+  }
+  
+  // Calculate X
+  arma::mat X_; 
+  
+  int Xflg = 1;
+  int k = 1;
+  int r = q;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    k = X_.n_cols;
+    r = r + k;
+  } else {
+    Xflg = 0;
   }
   
   // Initialize ones
@@ -1599,7 +1597,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, arma::mat X,
   lambda2out.zeros();
   
   // Is it mono?
-  int MonoFlg = 0;
+  int MonoFlg = 1;
   if ((method == "MonoLASSO") || (method == "MonoALASSO")) {
     MonoFlg = 1;
   }
@@ -1642,18 +1640,43 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, arma::mat X,
   
   double pho;
   
-  arma::mat eta2(q, 1);
-  eta2.zeros();
+  arma::mat yeta2(q, 1);
+  yeta2.zeros();
   
-  arma::mat lambda2(q, 1);
-  lambda2.zeros();
+  arma::mat ylambda2(q, 1);
+  ylambda2.zeros();
   
-  arma::mat inveta2(q, 1);
-  arma::mat inveta2mat(q, q);
+  arma::mat yinveta2(q, 1);
+  arma::mat yinveta2mat(q, q);
+  
+  arma::mat xeta2(k, 1);
+  xeta2.zeros();
+  
+  arma::mat xlambda2(k, 1);
+  xlambda2.zeros();
+  
+  arma::mat xinveta2(k, 1);
+  arma::mat xinveta2mat(k, k);
   
   Rcpp::List oldpars_ = Rcpp::as<Rcpp::List>(oldpars);
   
-  //Rcpp::Rcout << 1 << std::endl;
+  arma::mat lambda2(r, 1);
+  lambda2.zeros();
+  
+  arma::mat inveta2(r, 1);
+  arma::mat inveta2mat(r, r);
+  
+  arma::mat Beta(k, 1);
+  Beta.zeros();
+  
+  arma::mat Betahat = Beta;
+  
+  arma::mat Kappa(k, 1);
+  Kappa.zeros();
+  
+  arma::mat coefarma;
+  
+  double tmpBeta;
   
   if (oldpars.isNotNull()) {
     Phi = Rcpp::as<arma::mat>(oldpars_["Phi"]);
@@ -1662,19 +1685,29 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, arma::mat X,
     Tau = Rcpp::as<arma::mat>(oldpars_["Tau"]);
     Gamma = Rcpp::as<arma::mat>(oldpars_["Gamma"]);
     pho = oldpars_["pho"];
-    
+    Beta = Rcpp::as<arma::mat>(oldpars_["Beta"]);
+    Kappa = Rcpp::as<arma::mat>(oldpars_["Kappa"]);
     //Rcpp::Rcout << 2 << std::endl;
     
     if ((method == "LASSO") || (method == "ALASSO") || (method == "MonoLASSO") || (method == "MonoALASSO")) {
-      eta2 = Rcpp::as<arma::mat>(oldpars_["eta2"]);
-      inveta2 =arma::pow(eta2, -1);
-      inveta2mat.diag() = inveta2;
-      lambda2 = Rcpp::as<arma::mat>(oldpars_["lambda2"]);
+      yeta2 = Rcpp::as<arma::mat>(oldpars_["yeta2"]);
+      yinveta2 =arma::pow(yeta2, -1);
+      yinveta2mat.diag() = yinveta2;
+      ylambda2 = Rcpp::as<arma::mat>(oldpars_["ylambda2"]);
+      
+      xeta2 = Rcpp::as<arma::mat>(oldpars_["xeta2"]);
+      xinveta2 =arma::pow(xeta2, -1);
+      xinveta2mat.diag() = xinveta2;
+      xlambda2 = Rcpp::as<arma::mat>(oldpars_["xlambda2"]);
     }
     
     muq = oldpars_["muq"];
   } else {
-    model0 = arimacpp(Y, q);
+    if (Xflg == 1) {
+      model0 = arimaxcpp(Y, q, X_);
+    } else {
+      model0 = arimacpp(Y, q);
+    }
     
     coef = model0["coef"];
     
@@ -1711,23 +1744,47 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, arma::mat X,
       }
     }
     
+    coefarma = Phi;
+    
+    
+    
+    yeta2 =arma::pow(Phi, 2);
+    yinveta2 =arma::pow(yeta2, -1);
+    yinveta2mat.diag() = yinveta2;
+    
+    
+    
     Mu.fill(muq);
+    
+    if (Xflg == 1) {
+      for (ii = 0; ii < k; ii++) {
+        tmpBeta = coef[q + 1 + ii];
+        Betahat(ii) = tmpBeta;
+      }
+      
+      Beta = Betahat;
+      coefarma = arma::join_cols(coefarma, Beta);
+      Mu = Mu + X_ * Betahat;
+    }
+    
     sigma2 = model0["sigma2"];
+    
+    xeta2 =arma::pow(Beta, 2);
+    xinveta2 =arma::pow(xeta2, -1);
+    xinveta2mat.diag() = xinveta2;
     
     pho = R::rbeta(theta1, theta2);
     
-    eta2 =arma::pow(Phi, 2);
-    inveta2 =arma::pow(eta2, -1);
-    
-    inveta2mat.diag() = inveta2;
-    
     if ((method == "LASSO") || (method == "MonoLASSO")) {
-      lambda2.fill(pow(q * sqrt(sigma2) /arma::accu(arma::abs(Phi)), 2));
+      lambda2.fill(pow(r * sqrt(sigma2) /arma::accu(arma::abs(coefarma)), 2));
     } else if ((method == "ALASSO") || (method == "MonoALASSO")) {
-      for (gg = 0; gg < q; gg++) {
-        lambda2(gg) = pow((sqrt(sigma2) / abs(Phi(gg))), 2);
+      for (gg = 0; gg < r; gg++) {
+        lambda2(gg) = pow((sqrt(sigma2) / abs(coefarma(gg))), 2);
       }
     }
+    
+    ylambda2 = lambda2.rows(0, q - 1);
+    xlambda2 = lambda2.rows(q, r - 1);
     
   }
   
