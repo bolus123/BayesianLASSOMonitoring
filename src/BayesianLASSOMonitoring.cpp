@@ -566,6 +566,33 @@ double updateSigma2(arma::mat resi,arma::colvec Phi,arma::mat inveta2mat, int T,
   return(sigma2);
 }
 
+
+double updateSigma2X(arma::mat resi, arma::colvec coef, arma::mat inveta2mat, int T, int q, int r, 
+                    arma::mat A, double a, double b, Rcpp::String method) {
+  double sigma2 = 0.0;
+  
+  arma::mat tResiResi = resi.t() * resi;
+  double tmptResiResi = tResiResi(0);
+  
+  arma::mat tcoefVarcoef; 
+  double tmptcoefVarcoef;
+  // update sigma2
+  if (method == "MT") {
+    sigma2 = 1.0 / R::rgamma((T - q) / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + b));
+  } else if (method == "regression") {
+    tcoefVarcoef = coef.t() * getInv(A) * coef;
+    tmptcoefVarcoef = tcoefVarcoef(0);
+    sigma2 = 1.0 / R::rgamma((T - q) / 2.0 + r / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + tmptcoefVarcoef / 2.0 + b));
+  } else if ((method == "LASSO") || (method == "ALASSO") || (method == "MonoLASSO") || (method == "MonoALASSO")) {
+    tcoefVarcoef = coef.t() * inveta2mat * coef;
+    tmptcoefVarcoef = tcoefVarcoef(0);
+    sigma2 = 1.0 / R::rgamma((T - q) / 2.0 + r / 2.0 + a, 1.0 / (tmptResiResi / 2.0 + tmptcoefVarcoef / 2.0 + b));
+  }
+  
+  return(sigma2);
+}
+
+
 arma::mat updateinveta2(arma::colvec Phi, double sigma2,arma::mat lambda2, int q, double tol) {
  arma::mat Phim =arma::conv_to<arma::mat>::from(Phi); 
  arma::mat inveta2(q, 1);
@@ -594,6 +621,37 @@ arma::mat updateinveta2(arma::colvec Phi, double sigma2,arma::mat lambda2, int q
   }
   return(inveta2);
 }
+
+
+arma::mat updateinveta2X(arma::colvec coef, double sigma2,arma::mat lambda2, int r, double tol) {
+  arma::mat coefm =arma::conv_to<arma::mat>::from(coef); 
+  arma::mat inveta2(r, 1);
+  arma::mat muPrime =arma::sqrt(sigma2 * (lambda2 %arma::pow(coefm, -2)));
+  arma::colvec tmp; 
+  int gg;
+  
+  double tmpmuPrime;
+  double tmplambda2;
+  
+  for (gg = 0; gg < q; gg++) {
+    tmpmuPrime = muPrime(gg, 0);
+    tmplambda2 = lambda2(gg, 0);
+    //tmp = rrinvgauss(1, tmpmuPrime, tmplambda2);
+    if ((-tol < coefm(gg, 0)) && (coefm(gg, 0) < tol)) {
+      inveta2(gg, 0) = 1 / R::rgamma(1.0 / 2.0, 2.0 / tmplambda2);
+    } else {
+      tmp = rinvgaussiancpp(1, tmpmuPrime, tmplambda2);
+      inveta2(gg, 0) = tmp(0);
+    }
+    
+    if (inveta2(gg, 0) < tol) {
+      inveta2(gg, 0) = tol;
+    }
+    
+  }
+  return(inveta2);
+}
+
 
 arma::mat updatelambda2(arma::mat eta2, int q, double alpha, double beta, Rcpp::String method){
  arma::mat lambda2(q, 1); 
@@ -1502,7 +1560,7 @@ Rcpp::List GibbsRFLSMUpdatecpp(arma::colvec Y,int q,
 
 // [[Rcpp::export]]
 Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q, 
-                               arma::mat A, double a, double b, double alpha, double beta, 
+                               arma::mat yA, arma::mat xA, double a, double b, double alpha, double beta, 
                                double theta1, double theta2, double xi2,
                                Rcpp::String method, double bound0, double boundqplus1,
                                int nsim, int by, int burnin,
@@ -1747,12 +1805,13 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q,
     coefarma = Phi;
     
     
-    
     yeta2 =arma::pow(Phi, 2);
     yinveta2 =arma::pow(yeta2, -1);
     yinveta2mat.diag() = yinveta2;
     
-    
+    eta2 = yeta2;
+    inveta2 = yinveta2;
+    inveta2mat = yinveta2mat;
     
     Mu.fill(muq);
     
@@ -1765,13 +1824,19 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q,
       Beta = Betahat;
       coefarma = arma::join_cols(coefarma, Beta);
       Mu = Mu + X_ * Betahat;
+      
+      xeta2 =arma::pow(Beta, 2);
+      xinveta2 =arma::pow(xeta2, -1);
+      xinveta2mat.diag() = xinveta2;
+      
+      eta2 = arma::join_cols(eta2, xeta2);
+      inveta2 = arma::join_cols(inveta2, xinveta2);
+      inveta2mat.diag() = inveta2;
     }
     
     sigma2 = model0["sigma2"];
     
-    xeta2 =arma::pow(Beta, 2);
-    xinveta2 =arma::pow(xeta2, -1);
-    xinveta2mat.diag() = xinveta2;
+    
     
     pho = R::rbeta(theta1, theta2);
     
@@ -1824,6 +1889,8 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q,
   
   arma::mat tmpSumTau; 
   
+  int jj = 0;
+  
   for (ii = 0; ii < TotalSim; ii++) {
     
     //if (ii % 100 == 0) {
@@ -1840,21 +1907,26 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y,int q,
     //Rcpp::Rcout << V << std::endl;
     
     // update Phi
-    Phi = updatePhi(V, Vas, A, 
-                    Phi, sigma2, inveta2mat, 
+    Phi = updatePhi(V, Vas, yA, 
+                    Phi, sigma2, yinveta2mat, 
                     bound0, boundqplus1,
                     MonoFlg, method);
+    
+    for (jj = 0; jj < q; jj++) {
+      coefarma(jj) = Phi(jj);
+    }
+    
     
     // Get residuals
     VasPhi = Vas * Phi;
     resi = V - VasPhi;
     
     // update sigma2
-    sigma2 = updateSigma2(resi, Phi, inveta2mat, T, q, 
+    sigma2 = updateSigma2X(resi, coefarma, inveta2mat, T, r, 
                           A, a, b, method);
     
     // update eta2
-    inveta2 = updateinveta2(Phi, sigma2, lambda2, q, tol);
+    inveta2 = updateinveta2(coefarma, sigma2, lambda2, r, tol);
     eta2 =arma::pow(inveta2, -1);
     inveta2mat.diag() = inveta2;
     
