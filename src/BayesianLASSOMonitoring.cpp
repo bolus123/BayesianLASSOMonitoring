@@ -2431,3 +2431,395 @@ arma::colvec simYph2(int h,arma::colvec Yyjph1,arma::mat Phi,arma::mat Mu, doubl
   return(Yph2);
   
 }
+
+
+
+
+arma::colvec updateCoef(arma::mat Y,arma::mat X, 
+                        arma::mat A, arma::colvec oldCoef, 
+                        double sigma2, arma::mat inveta2mat, 
+                        double bound0, double boundqplus1,
+                        int mono, Rcpp::String method) {
+  
+  //int n = X.n_rows;
+  int q = X.n_cols;
+  
+  // Initialize 
+  arma::mat tXX(q, q);
+  arma::mat invtXX(q, q);
+  arma::mat Coefhat(q, 1);
+  arma::mat Coef = oldCoef;
+  arma::mat S(q, q);
+  arma::mat tmpS(q, q);
+  arma::colvec M(q);
+  
+  arma::mat Sgg(1, q);
+  arma::mat Snotgg(q - 1, q);
+  arma::mat Snotnot(q - 1, q - 1);
+  arma::mat invSnotgg(q - 1, q - 1);
+  
+  arma::mat tmpMat(1, 1); 
+  arma::mat tmpSS(q, q);
+  int gg;
+  
+  double mj;
+  double sj;
+  
+  double bound1;
+  double bound2;
+  
+  arma::colvec tmp; 
+  
+  //Rcpp::Rcout << Vas << std::endl;
+  
+  // Get tV V
+  tXX = X.t() * X;
+  //Rcpp::Rcout << tVasVas << std::endl;
+  
+  // Get coef hat
+  invtXX = getInv(tXX);
+  Coefhat = invtXX * X.t() * Y;
+  
+  // update coef
+  if (method == "MT") {
+    tmpSS = tXX / sigma2 + A;
+    tmpSS = checkSym(tmpSS);
+    S = getInv(tmpSS);
+    S = checkSym(S);
+    M = S * ((tXX / sigma2) * Coefhat);
+  } else if (method == "regression") {
+    tmpSS = tXX + A;
+    tmpSS = checkSym(tmpSS);
+    tmpS = getInv(tmpSS);
+    S = tmpS * sigma2;
+    S = checkSym(S);
+    M = tmpS * (tXX * Coefhat);
+    
+  } else if ((method == "LASSO") || (method == "ALASSO")) {
+    tmpSS = tXX + inveta2mat;
+    tmpSS = checkSym(tmpSS);
+    tmpS = getInv(tmpSS);
+    S = tmpS * sigma2;
+    S = checkSym(S);
+    M = tmpS * (tXX * Coefhat);
+  }
+  
+  if (mono == 0) {
+    Coef = rmvnorm(M, S);
+  } else {
+    for (gg = 0; gg < q; gg++) {
+      Sgg = S.row(gg);
+      Snotgg = removeRow(S, gg);
+      Snotnot = removeCol(Snotgg, gg);
+      invSnotgg = getInv(Snotnot);
+      
+      tmpMat = M(gg) + removeCol(Sgg, gg) * invSnotgg * (removeRow(Coef, gg) - removeRow(M, gg));
+      mj = tmpMat(0);
+      
+      tmpMat = Sgg(gg) - removeCol(Sgg, gg) * invSnotgg * Snotgg.col(gg);
+      sj = tmpMat(0);
+      
+      if (gg == 0) {
+        bound1 = abs(bound0);
+        bound2 = abs(Coef(1));
+      } else if (gg == q - 1) {
+        bound1 = abs(Coef(q - 2));
+        bound2 = abs(boundqplus1);
+      } else {
+        bound1 = abs(Coef(gg - 1));
+        bound2 = abs(Coef(gg + 1));
+      }
+      tmp = rtwosegnorm(1, bound2, bound1, mj, sqrt(sj));
+      Coef(gg) = tmp(0);
+    }
+  }
+  
+  return(Coef);
+}
+
+
+double updateSigma2X(arma::mat resi, arma::mat phi, arma::mat beta, 
+                     arma::mat invphieta2mat, arma::mat invbetaeta2mat, 
+                     int T, int q, int p, 
+                     arma::mat phiA, arma::mat betaA, double a, double b, 
+                     Rcpp::String method)  {
+  double sigma2 = 0.0;
+  
+  arma::mat tResiResi = resi.t() * resi;
+  double tmptResiResi = tResiResi(0);
+  
+  arma::mat tCoefVarCoef; 
+  double tmptCoefVarCoef;
+  
+  double tmpa = T / 2.0 + a;
+  double tmpb = tmptResiResi / 2.0 + b;
+  
+  int m = q + p;
+  
+  arma::mat tmpcoef; 
+  
+  // update phi contribution
+  if (method == "regression") {
+    tCoefVarCoef = phi.t() * getInv(phiA) * phi;
+    tmptCoefVarCoef = tCoefVarCoef(0);
+    tmpa = tmpa + q / 2.0;
+    tmpb = tmpb + tmptCoefVarCoef / 2.0;
+  } else if ((method == "LASSO") || (method == "ALASSO")) {
+    tCoefVarCoef = phi.t() * invphieta2mat * phi;
+    tmptCoefVarCoef = tCoefVarCoef(0);
+    tmpa = tmpa + q / 2.0;
+    tmpb = tmpb + tmptCoefVarCoef / 2.0;
+  }
+  
+  // update beta contribution
+  if (p > 0) {
+    if (method == "regression") {
+      tCoefVarCoef = beta.t() * getInv(betaA) * beta;
+      tmptCoefVarCoef = tCoefVarCoef(0);
+      tmpa = tmpa + p / 2.0;
+      tmpb = tmpb + tmptCoefVarCoef / 2.0;
+    } else if ((method == "LASSO") || (method == "ALASSO")) {
+      tCoefVarCoef = beta.t() * invbetaeta2mat * beta;
+      tmptCoefVarCoef = tCoefVarCoef(0);
+      tmpa = tmpa + p / 2.0;
+      tmpb = tmpb + tmptCoefVarCoef / 2.0;
+    }
+  }
+  
+  sigma2 = 1.0 / R::rgamma(tmpa, 1.0 / (tmpb));
+  
+  return(sigma2);
+}
+
+arma::mat updatelambda2X(arma::mat phieta2, arma::mat betaeta2, int q, int p, double alpha, double beta, 
+                         Rcpp::String method){
+  arma::mat lambda2(q + p, 1); 
+  lambda2.zeros();
+  
+  double shape;
+  double scale;
+  
+  arma::vec tmpsum; 
+  int gg;
+  // update lambda2
+  if (method == "LASSO") {
+    shape = alpha + q + p;
+    tmpsum = arma::sum(phieta2);
+    if (p > 0) {
+      tmpsum = tmpsum + arma::sum(betaeta2);
+    }
+    scale = beta + tmpsum(0) / 2.0;
+    lambda2.fill(R::rgamma(shape, scale));
+  } else if (method == "ALASSO") {
+    shape = alpha + 1;
+    for (gg = 0; gg < q; gg++) {
+      scale = beta + phieta2(gg) / 2.0;
+      lambda2(gg) = R::rgamma(shape, scale);
+    }
+    if (p > 0) {
+      for (gg = 0; gg < p; gg++) {
+        scale = beta + betaeta2(gg) / 2.0;
+        lambda2(q + gg) = R::rgamma(shape, scale);
+      }
+    }
+  }
+  return(lambda2);
+}
+
+
+arma::mat updateinveta2X(arma::colvec coef, double sigma2, arma::mat lambda2, int q, double tol) {
+  arma::mat coefm =arma::conv_to<arma::mat>::from(coef); 
+  arma::mat inveta2(q, 1);
+  arma::mat muPrime =arma::sqrt(sigma2 * (lambda2 %arma::pow(coefm, -2)));
+  arma::colvec tmp; 
+  int gg;
+  
+  double tmpmuPrime;
+  double tmplambda2;
+  
+  for (gg = 0; gg < q; gg++) {
+    tmpmuPrime = muPrime(gg, 0);
+    tmplambda2 = lambda2(gg, 0);
+    //tmp = rrinvgauss(1, tmpmuPrime, tmplambda2);
+    if ((-tol < coefm(gg, 0)) && (coefm(gg, 0) < tol)) {
+      inveta2(gg, 0) = 1 / R::rgamma(1.0 / 2.0, 2.0 / tmplambda2);
+    } else {
+      tmp = rinvgaussiancpp(1, tmpmuPrime, tmplambda2);
+      inveta2(gg, 0) = tmp(0);
+    }
+    
+    if (inveta2(gg, 0) < tol) {
+      inveta2(gg, 0) = tol;
+    }
+    
+  }
+  return(inveta2);
+}
+
+
+arma::mat updateResi(arma::mat B, arma::colvec Phi, int q) {
+  int T = B.n_rows;
+  int m = B.n_cols;
+  arma::mat tmpB = B;
+  arma::mat tmpBcol(T, 1);
+  arma::mat tmp;
+  
+  for (int gg = 0; gg < m; gg++) {
+    tmpBcol = B.col(gg);
+    tmp = getV(tmpBcol, q);
+    tmpBcol = tmpBcol - tmp * Phi;
+    tmpB.col(gg) = tmpBcol;
+  }
+  
+  return(tmpB);
+} 
+
+
+Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma::colvec Beta, 
+                           arma::mat Tau, arma::mat Gamma, 
+                           double mu0, double sigma2, double pho, double xi2,
+                           int T, arma::mat H_, int m, int Xflg, int q){
+  
+  
+  
+  arma::mat Ht(T, 1); 
+  arma::mat tmpHt = Ht; 
+  arma::mat tmptHtHt; 
+  arma::mat tmptHtHtoversigma2; 
+  arma::mat Hnot(T, m - 1);
+  
+  arma::mat Taunot(m - 1, 1);
+  arma::mat Taut(1, 1);
+  arma::mat Gammanot(m - 1, 1);
+  arma::mat Gammat(1, 1);
+  
+  arma::mat zetanot(T, 1);
+  arma::mat zetat(T, 1);
+  
+  arma::mat probvec(m, 1); 
+  
+  arma::mat muGamma = Gamma;
+  arma::mat sigma2Gamma = Gamma;
+  
+  double tmpzetanot;
+  double tmpzetat;
+  arma::mat tmp;
+  double prob;
+  
+  arma::mat Gammathat(m, 1);
+  double st;
+  double mt; 
+  
+  int jj;
+  
+  arma::mat tmpY = Y - mu0;
+  
+  if (Xflg == 1) {
+    tmpY = tmpY - X_ * Beta; 
+  }
+  
+  
+  // update Tau and Gamma
+  for (jj = 0; jj < m; jj++) {
+    
+    Hnot = removeCol(H_, jj);
+    Ht = H_.col(jj);
+    
+    ////////////////
+    
+    Taunot = removeRow(Tau, jj);
+    Taut = Tau.row(jj);
+    
+    Gammanot = removeRow(Gamma, jj);
+    Gammat = Gamma.row(jj);
+    
+    ////////////////
+    //update Tau
+    zetanot = tmpY - Hnot * (Taunot % Gammanot);
+    zetat = zetanot - Ht * Gammat;
+    
+    zetanot = updateResi(zetanot, Phi, q);
+    zetat = updateResi(zetat, Phi, q);
+    
+    tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetanot.t() * zetanot);
+    tmpzetanot = tmp(0);
+    
+    tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetat.t() * zetat);
+    tmpzetat = tmp(0);
+    
+    prob = pho * tmpzetat / (pho * tmpzetat + (1 - pho) * tmpzetanot);
+    
+    Tau(jj) = R::rbinom(1, prob);
+    probvec(jj) = prob;
+    //############
+    if (Tau(jj) == 1) {
+      
+      tmpHt = updateResi(Ht, Phi, q);
+      
+      //#update Gamma
+      tmptHtHt = tmpHt.t() * tmpHt;
+      tmptHtHtoversigma2 = tmptHtHt / sigma2;
+      Gammathat = (1.0 / tmptHtHt) * tmpHt.t() * zetanot;
+      
+      tmp = 1.0 / (tmptHtHtoversigma2 + 1.0 / xi2);
+      st = tmp(0);
+      tmp = tmp * tmptHtHtoversigma2 * Gammathat;
+      mt = tmp(0);
+    } else {
+      mt = 0;
+      st = xi2;
+    }
+    
+    Gamma(jj) = R::rnorm(mt, sqrt(st));
+    muGamma(jj) = mt;
+    sigma2Gamma(jj) = st;
+  }
+  
+  Rcpp::List out = Rcpp::List::create(
+    Rcpp::_["Tau"] = Tau,
+    Rcpp::_["Gamma"] = Gamma,
+    Rcpp::_["prob"] = probvec,
+    Rcpp::_["muGamma"] = muGamma,
+    Rcpp::_["sigma2Gamma"] = sigma2Gamma
+  );
+  return(out);
+  
+}
+
+
+//' 
+ //' a and b for sigma2
+ //' alpha and beta for lambda2
+ //' A for phi
+ //' theta1 and theta2 for pho
+ //' xi2 for gamma
+ //'
+ //' pars = list(
+ //'  'method' = ,
+ //'  'phimono' = ,
+ //'  'phiq' = ,
+ //'  'phiA' = ,
+ //'  'phibound0' = ,
+ //'  'phiboundqplus1' = ,
+ //'  'betaA' = ,
+ //'  'gammaxi2' = ,
+ //'  'tautheta1' = ,
+ //'  'tautheta2' = ,
+ //'  'sigma2a' = ,
+ //'  'sigma2b' = ,
+ //'  'lambda2alpha' = ,
+ //'  'lambda2beta' = 
+ //' )
+ //'
+ //'
+ 
+ 
+ // [[Rcpp::export]]
+ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars,
+                                 int nsim, int by, int burnin, double tol, 
+                                 Rcpp::Nullable<Rcpp::List> X = R_NilValue,
+                                 Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
+   
+   
+   
+ }
