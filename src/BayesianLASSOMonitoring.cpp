@@ -409,6 +409,17 @@ Rcpp::List arimacpp(arma::colvec Y, int q){
   return arima(Y, Rcpp::Named("order") = ord, Rcpp::Named("method") = "CSS");
 }
 
+Rcpp::List arimaxcpp(arma::colvec Y, int q, arma::mat X) {
+  Rcpp::Environment pkg = Rcpp::Environment::namespace_env("stats");
+  
+  // Picking up Matrix() function from Matrix package
+  Rcpp::Function arima = pkg["arima"];
+  
+  Rcpp::NumericVector ord = Rcpp::NumericVector::create(q, 0, 0);
+  
+  return arima(Y, Rcpp::Named("order") = ord, Rcpp::Named("xreg") = X, Rcpp::Named("method") = "CSS");
+}
+
 arma::mat checkSym(arma::mat S) {
  arma::mat out;
   if (S.is_symmetric() == false) {
@@ -2542,7 +2553,7 @@ double updateSigma2X(arma::mat resi, arma::mat phi, arma::mat beta,
                      arma::mat invphieta2mat, arma::mat invbetaeta2mat, 
                      int T, int q, int p, 
                      arma::mat phiA, arma::mat betaA, double a, double b, 
-                     Rcpp::String method)  {
+                     Rcpp::String method, int Xflg)  {
   double sigma2 = 0.0;
   
   arma::mat tResiResi = resi.t() * resi;
@@ -2554,7 +2565,6 @@ double updateSigma2X(arma::mat resi, arma::mat phi, arma::mat beta,
   double tmpa = T / 2.0 + a;
   double tmpb = tmptResiResi / 2.0 + b;
   
-  int m = q + p;
   
   arma::mat tmpcoef; 
   
@@ -2572,7 +2582,7 @@ double updateSigma2X(arma::mat resi, arma::mat phi, arma::mat beta,
   }
   
   // update beta contribution
-  if (p > 0) {
+  if (Xflg == 1) {
     if (method == "regression") {
       tCoefVarCoef = beta.t() * getInv(betaA) * beta;
       tmptCoefVarCoef = tCoefVarCoef(0);
@@ -2592,7 +2602,7 @@ double updateSigma2X(arma::mat resi, arma::mat phi, arma::mat beta,
 }
 
 arma::mat updatelambda2X(arma::mat phieta2, arma::mat betaeta2, int q, int p, double alpha, double beta, 
-                         Rcpp::String method){
+                         Rcpp::String method, int Xflg){
   arma::mat lambda2(q + p, 1); 
   lambda2.zeros();
   
@@ -2605,7 +2615,7 @@ arma::mat updatelambda2X(arma::mat phieta2, arma::mat betaeta2, int q, int p, do
   if (method == "LASSO") {
     shape = alpha + q + p;
     tmpsum = arma::sum(phieta2);
-    if (p > 0) {
+    if (Xflg == 1) {
       tmpsum = tmpsum + arma::sum(betaeta2);
     }
     scale = beta + tmpsum(0) / 2.0;
@@ -2616,7 +2626,7 @@ arma::mat updatelambda2X(arma::mat phieta2, arma::mat betaeta2, int q, int p, do
       scale = beta + phieta2(gg) / 2.0;
       lambda2(gg) = R::rgamma(shape, scale);
     }
-    if (p > 0) {
+    if (Xflg == 1) {
       for (gg = 0; gg < p; gg++) {
         scale = beta + betaeta2(gg) / 2.0;
         lambda2(q + gg) = R::rgamma(shape, scale);
@@ -2655,7 +2665,6 @@ arma::mat updateinveta2X(arma::colvec coef, double sigma2, arma::mat lambda2, in
   }
   return(inveta2);
 }
-
 
 arma::mat updateResi(arma::mat B, arma::colvec Phi, int q) {
   int T = B.n_rows;
@@ -2786,40 +2795,316 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
   
 }
 
+// [[Rcpp::export]]
+Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol, 
+                                Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue, 
+                                Rcpp::Nullable<Rcpp::NumericMatrix> lambda2 = R_NilValue) {
+  
+  
+  
+  int phiq = bset["phiq"];
+  int phimono = bset["phimono"];
+  double gammaxi2 = bset["gammaxi2"];
+  double phibound0 = bset["phibound0"];
+  double phiboundqplus1 = bset["phiboundqplus1"];
+    
+  /////////////////////
+  
+  int T = Y.n_rows;
+  arma::mat X_;
+  Rcpp::List tmpmodel; 
+ 
+  Rcpp::NumericVector tmpcoef;
+  arma::mat Phi;
+  arma::mat Beta;
+  double mu0;
+  arma::mat Mu; 
+  double sigma2;
+   
+  arma::mat One(T, 1); 
+  
+  /////////////////////
+  
+  arma::mat lambda2_;
+  if (lambda2.isNotNull()) {
+    lambda2_ = Rcpp::as<arma::mat>(lambda2);
+  }
+  
+  /////////////////////
+   
+  arma::mat Tau(T, 1);
+  Tau.zeros();
+  
+  arma::mat Gamma;
+  Gamma.randn(T, 1);
+  Gamma = Gamma * sqrt(gammaxi2);
+  
+  /////////////////////
+  
+  int Xflg = 0;
+  int p = 0;
+  
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    tmpmodel = arimaxcpp(Y, phiq, X_);
+    Xflg = 1;
+    p = X_.n_cols;
+  } else {
+    tmpmodel = arimacpp(Y, phiq);
+  }
+  
+  arma::mat eta2(phiq + p, 1);
+  
+  arma::mat coef(phiq + p + 1, 1);
+  
+  /////////////////////
+  
+  sigma2 = tmpmodel["sigma2"];
+  tmpcoef = tmpmodel["coef"];
+  
+  for (int gg = 0; gg < (phiq + p + 1); gg++) {
+    coef(gg) = tmpcoef(gg);  
+  }
+  
+  mu0 = coef(phiq);
+  Phi = coef.rows(0, phiq - 1);
+  Beta = coef.rows(phiq + 1, phiq + p);
+  
+  eta2.rows(0, phiq - 1) = arma::pow(coef.rows(0, phiq - 1), 2);
+  
+  Mu = One * mu0;
+  
+  if (Xflg == 1) {
+    Mu = Mu + X_ * Beta;
+    eta2.rows(phiq, phiq + p - 1) = coef.rows(phiq + 1, phiq + p);
+  }
+  
+  /////////////////////
+  
+  Rcpp::List out;
+  
+  out = Rcpp::List::create(
+     Rcpp::_["Phi"] = Phi,
+     Rcpp::_["Beta"] = Beta,
+     Rcpp::_["Tau"] = Tau,
+     Rcpp::_["Gamma"] = Gamma,
+     Rcpp::_["mu0"] = mu0,
+     Rcpp::_["Mu"] = Mu,
+     Rcpp::_["eta2"] = eta2,
+     Rcpp::_["sigma2"] = sigma2,
+     Rcpp::_["lambda2"] = lambda2_
+  );
+  
+  return(out);
+  
+}
 
-//' 
- //' a and b for sigma2
- //' alpha and beta for lambda2
- //' A for phi
- //' theta1 and theta2 for pho
- //' xi2 for gamma
- //'
- //' pars = list(
- //'  'method' = ,
- //'  'phimono' = ,
- //'  'phiq' = ,
- //'  'phiA' = ,
- //'  'phibound0' = ,
- //'  'phiboundqplus1' = ,
- //'  'betaA' = ,
- //'  'gammaxi2' = ,
- //'  'tautheta1' = ,
- //'  'tautheta2' = ,
- //'  'sigma2a' = ,
- //'  'sigma2b' = ,
- //'  'lambda2alpha' = ,
- //'  'lambda2beta' = 
- //' )
- //'
- //'
+// [[Rcpp::export]]
+Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset,
+                                double tol, 
+                                Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue,
+                                Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
+  
+  int T = Y.n_rows;
+  
+  arma::mat One(T, 1);
+  One.ones();
+  
+  arma::mat X_;
+  arma::mat Beta;
+  int Xflg = 0;
+  
+  // Calculate X
+  int p = 0;
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    p = X_.n_cols;
+    Beta = Rcpp::as<arma::mat>(pars["Beta"]);
+    Xflg = 1;
+  } 
+  
+  arma::mat H_;
+  arma::mat Tau;
+  arma::mat Gamma; 
+  int Hflg = 0;
+  
+  // Calculate H
+  int m = 0;
+  if (H.isNotNull()) {
+    H_ = Rcpp::as<arma::mat>(H);
+    m = H_.n_cols;
+    Tau = Rcpp::as<arma::mat>(pars["Tau"]);
+    Gamma = Rcpp::as<arma::mat>(pars["Gamma"]);
+    Hflg = 1;
+  } 
+  
+  arma::mat Phi = Rcpp::as<arma::mat>(pars["Phi"]); 
+  double sigma2 = pars["sigma2"];
+  arma::mat lambda2 = Rcpp::as<arma::mat>(pars["lambda2"]);
+  
+  arma::mat Mu = Rcpp::as<arma::mat>(pars["Mu"]);
+  arma::mat eta2 = Rcpp::as<arma::mat>(pars["eta2"]);
+  arma::mat inveta2 = eta2; 
+  
+  double mu0 = pars["mu0"];
+  
+  // read bset
+  Rcpp::String method = bset["method"];
+  int phimono = bset["phimono"];
+  int phiq = bset["phiq"];
+  arma::mat phiA = Rcpp::as<arma::mat>(bset["phiA"]);
+  double phibound0 = bset["phibound0"];
+  double phiboundqplus1 = bset["phiboundqplus1"];
+  arma::mat betaA = Rcpp::as<arma::mat>(bset["betaA"]);
+  double gammaxi2 = bset["gammaxi2"];
+  double tautheta1 = bset["tautheta1"];
+  double tautheta2 = bset["tautheta2"];
+  double sigma2a = bset["sigma2a"];
+  double sigma2b = bset["sigma2b"];
+  double lambda2alpha = bset["lambda2alpha"];
+  double lambda2beta = bset["lambda2beta"];
+  int updatelambda2flg = bset["updatelambda2flg"];
+  
+  // initialize the computation
+  arma::mat tmpResiY;
+  arma::mat tmpResiX; 
+  
+  arma::mat phieta2 = eta2.rows(0, phiq - 1);
+  arma::mat invphieta2 = arma::pow(phieta2, -1);
+  arma::mat invphieta2mat(phiq, phiq); 
+  invphieta2mat.zeros();
+  invphieta2mat.diag() = invphieta2;
+  
+  arma::mat betaeta2; 
+  arma::mat invbetaeta2 = arma::pow(phieta2, -1);
+  arma::mat invbetaeta2mat(p, p);
+  invbetaeta2mat.zeros();
+  if (Xflg == 1) {
+    betaeta2 = eta2.rows(phiq, phiq + p - 1);
+    invbetaeta2 = arma::pow(betaeta2, -1);
+    invbetaeta2mat.diag() = invbetaeta2;
+  }
+  
+  Rcpp::List TauGamma;
+  arma::mat tmpSumTau;
+  double pho;
+  arma::colvec coef(phiq + p, 1); 
+  
+  double mu0hat;
+  
+  /////////////////////////////////////   
+  // update Phi
+  tmpResiY = Y - Mu;
+  tmpResiX = getV(tmpResiY, phiq);
+  
+  Phi = updateCoef(tmpResiY, tmpResiX, 
+                   phiA, Phi, 
+                   sigma2, invphieta2mat, 
+                   phibound0, phiboundqplus1,
+                   phimono, method);
+  
+  coef.rows(0, phiq - 1) = Phi;
+  
+  // update beta
+  if (Xflg == 1) {
+    tmpResiY = Y - mu0;
+    if (Hflg == 1) {
+      tmpResiY = tmpResiY - H_ * (Tau % Gamma);
+    }
+    tmpResiY = updateResi(tmpResiY, Phi, phiq);
+    tmpResiX = updateResi(X_, Phi, phiq);
+    
+    Beta = updateCoef(tmpResiY, tmpResiX, 
+                      betaA, Beta, 
+                      sigma2, invbetaeta2mat, 
+                      phibound0, phiboundqplus1,
+                      0, method);
+    
+    coef.rows(phiq, phiq + p - 1) = Beta;
+  }
+  
+  // update Tau and Gamma
+  if (Hflg == 1) {
+    //#update pho
+    tmpSumTau = arma::sum(Tau);
+    pho = R::rbeta(tautheta1 + tmpSumTau(0), tautheta2 + m - tmpSumTau(0));
+    
+    TauGamma = updateTauGammaX(Y, X_, Phi, Beta, 
+                               Tau, Gamma, 
+                               mu0, sigma2, pho, gammaxi2,
+                               T, H_, m, Xflg, phiq);
+    
+    Tau = Rcpp::as<arma::mat>(TauGamma["Tau"]);
+    Gamma = Rcpp::as<arma::mat>(TauGamma["Gamma"]);
+  }
+  
+  // update mu0
+  tmpResiY = Y;
+  if (Xflg == 1) {
+    tmpResiY = tmpResiY - X_ * Beta;
+  }
+  if (Hflg == 1) {
+    tmpResiY = tmpResiY - H_ * (Tau % Gamma);
+  }
+  tmpResiY = updateResi(tmpResiY, Phi, phiq);
+  mu0hat = arma::accu(tmpResiY) / (T + 0.0);
+  mu0 = R::rnorm(mu0hat, sqrt(sigma2 / (T + 0.0)));
+  
+  
+  // update Mu
+  Mu = X_ * Beta + H_ * (Tau % Gamma) + mu0;
+  
+  // update sigma2
+  // update eta2
+  inveta2 = updateinveta2X(coef, sigma2, lambda2, phiq + p, tol);
+  eta2 = arma::pow(inveta2, -1);
+  invphieta2 = inveta2.rows(0, phiq - 1);
+  phieta2 = eta2.rows(0, phiq - 1);
+  invphieta2mat.diag() = invphieta2;
+  if(Xflg == 1) {
+    invbetaeta2 = inveta2.rows(phiq, phiq + p - 1);
+    betaeta2 = eta2.rows(phiq, phiq + p - 1);
+    invbetaeta2mat.diag() = invbetaeta2;
+  }
+  
+  tmpResiY = Y - Mu;
+  sigma2 = updateSigma2X(tmpResiY, Phi, Beta, 
+                         invphieta2mat, invbetaeta2mat, 
+                         T, phiq, p, 
+                         phiA, betaA, sigma2a, sigma2b, 
+                         method, Xflg);
+  
+  
+  // update lambda2
+  
+  if (updatelambda2flg == 1) {
+    if ((method == "LASSO") || (method == "ALASSO")) {
+      lambda2 = updatelambda2X(phieta2, betaeta2, phiq, p, lambda2alpha, lambda2beta, method, Xflg);
+    }
+    
+  }
+  
+  
+  
+  /////////////////////////////////////   
+  // output the result
+  Rcpp::List out;
+  
+  out = Rcpp::List::create(
+    Rcpp::_["Phi"] = Phi,
+    Rcpp::_["Beta"] = Beta,
+    Rcpp::_["Tau"] = Tau,
+    Rcpp::_["Gamma"] = Gamma,
+    Rcpp::_["mu0"] = mu0, 
+    Rcpp::_["Mu"] = Mu, 
+    Rcpp::_["eta2"] = eta2,
+    Rcpp::_["sigma2"] = sigma2,
+    Rcpp::_["lambda2"] = lambda2
+  );
+  
+  return(out);
+  
+}
+
  
  
- // [[Rcpp::export]]
- Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars,
-                                 int nsim, int by, int burnin, double tol, 
-                                 Rcpp::Nullable<Rcpp::List> X = R_NilValue,
-                                 Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue) {
-   
-   
-   
- }
