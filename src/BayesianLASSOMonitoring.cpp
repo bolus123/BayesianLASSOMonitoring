@@ -3074,6 +3074,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   }
   
   tmpResiY = Y - Mu;
+  tmpResiY = updateResi(tmpResiY, Phi, phiq);
   sigma2 = updateSigma2X(tmpResiY, Phi, Beta, 
                          invphieta2mat, invbetaeta2mat, 
                          T, phiq, p, 
@@ -3112,5 +3113,120 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   
 }
 
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::mat lhfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
  
+   double pi = 3.14159265359;
+   
+   int q = Phi.n_rows;
+   int T = Y.n_elem;
+   
+   arma::mat V; 
+   arma::mat Vas;
+   arma::mat VasPhi;
+   arma::mat resi; 
+   
+   V = Y - Mu;
+   Vas = getV(V, q);
+   
+   VasPhi = Vas * Phi;
+   
+   resi = V - VasPhi;
+   
+   arma::mat lh = sqrt(1.0 / 2.0 / pi / sigma2) * exp(- 1.0 / 2.0 *arma::pow(resi, 2.0) / sigma2);
+   return(lh);
+   
+}
+
+
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::mat lhYJfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps) {
  
+ int T = Y.n_elem;
+ 
+ arma::colvec Yyj = yeojohnsontr(Y, theta, eps);
+ arma::mat lhYJ = lhfX(Yyj, Phi, Mu, sigma2);
+ 
+ for (int i = 0; i < T; i++) {
+   lhYJ(i) = lhYJ(i) * pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i)));
+ }
+ 
+ return(lhYJ);
+ 
+}
+ 
+// [[Rcpp::export]]
+arma::mat thetaYeoJohnsonMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
+                        double oldtheta, int burnin, int nsim, double tol) {
+  
+  double pi = 3.14159265359;
+  
+  int T = Y.n_elem;
+  int q = Phi.n_rows;
+  
+  double u;
+  double oldtheta_ = oldtheta;
+  double thetaas;
+  double A;
+  
+ arma::mat thetaout(nsim, 1); 
+  
+ arma::mat oldlhYJ = lhYJfX(Y, Phi, Mu, sigma2, oldtheta_, tol);
+
+ arma::mat newlhYJ; 
+  //double sumnewllhBC;
+  
+ arma::mat tmp; 
+  double pd;
+  
+  int i;
+  int j = 0;
+  
+  for (i = 0; i < (nsim + burnin); i++) {
+    u = R::runif(0.0, 1.0);
+    thetaas = R::rnorm(oldtheta_, 0.1);
+    newlhYJ = lhYJfX(Y, Phi, Mu, sigma2, thetaas, tol);
+
+    tmp = arma::cumprod(newlhYJ % arma::pow(oldlhYJ, -1));
+    tmp = tmp * (exp(- 1.0 / 2.0 * thetaas * thetaas)) /
+      (exp(- 1.0 / 2.0 * oldtheta_ * oldtheta_));
+    
+    //Rcpp::Rcout << tmp << std::endl;
+    pd = tmp(T - 1);
+    Rcpp::Rcout << pd << std::endl;
+    A = std::min(1.0, pd);
+    //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
+    //Rcpp::Rcout << A << std::endl;
+    
+    if (u < A) {
+      oldtheta_ = thetaas;
+      oldlhYJ = newlhYJ;
+    } 
+    
+    //Rcpp::Rcout << oldtheta_ << std::endl;
+    
+    if (i >= burnin) {
+      thetaout(j, 0) = oldtheta_;
+      j = j + 1;
+    }
+  }
+  
+  return(thetaout);
+  
+}
