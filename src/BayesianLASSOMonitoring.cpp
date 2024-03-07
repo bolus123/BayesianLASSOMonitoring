@@ -1,3 +1,5 @@
+#define ARMA_64BIT_WORD 1
+
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
 // we only include RcppArmadillo.h which pulls Rcpp.h in for us
@@ -8,6 +10,7 @@
 // RcppArmadillo so that the build process will know what to do
 //
 // [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::plugins(cpp11)]]
 
 // simple example of creating two matrices and
 // returning the result of an operatioon on them
@@ -2796,7 +2799,7 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
 }
 
 // [[Rcpp::export]]
-Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, 
+Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
                                 Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue, 
                                 Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue, 
                                 Rcpp::Nullable<Rcpp::NumericMatrix> lambda2 = R_NilValue) {
@@ -2805,11 +2808,13 @@ Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset,
   
   int phiq = bset["phiq"];
   double gammaxi2 = bset["gammaxi2"];
-    
+  Rcpp::String method = bset["method"];
+  int updatelambda2 = bset["updatelambda2"];
+  
   /////////////////////
   
   int T = Y.n_rows;
-  arma::mat X_;
+  
   Rcpp::List tmpmodel; 
  
   Rcpp::NumericVector tmpcoef;
@@ -2820,13 +2825,6 @@ Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset,
   double sigma2;
    
   arma::mat One(T, 1); 
-  
-  /////////////////////
-  
-  arma::mat lambda2_;
-  if (lambda2.isNotNull()) {
-    lambda2_ = Rcpp::as<arma::mat>(lambda2);
-  }
   
   /////////////////////
   int m;
@@ -2844,6 +2842,7 @@ Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset,
   
   /////////////////////
   
+  arma::mat X_;
   int Xflg = 0;
   int p = 0;
   
@@ -2860,27 +2859,60 @@ Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset,
   
   arma::mat coef(phiq + p + 1, 1);
   
+  
   /////////////////////
   
   sigma2 = tmpmodel["sigma2"];
   tmpcoef = tmpmodel["coef"];
   
+  
   for (int gg = 0; gg < (phiq + p + 1); gg++) {
     coef(gg) = tmpcoef(gg);  
   }
   
+  
   mu0 = coef(phiq);
   Phi = coef.rows(0, phiq - 1);
-  Beta = coef.rows(phiq + 1, phiq + p);
+  
+  if (Xflg == 1) {
+  
+    Beta = coef.rows(phiq + 1, phiq + p);
+  
+  }
+  
   
   eta2.rows(0, phiq - 1) = arma::pow(coef.rows(0, phiq - 1), 2);
   
   Mu = One * mu0;
   
+  
   if (Xflg == 1) {
     Mu = Mu + X_ * Beta;
     eta2.rows(phiq, phiq + p - 1) = coef.rows(phiq + 1, phiq + p);
   }
+  
+  /////////////////////
+  
+  arma::mat lambda2_(phiq + p, 1);
+  //lambda2_.fill(tol);
+  int gg;
+  
+  if (lambda2.isNotNull()) {
+    lambda2_ = Rcpp::as<arma::mat>(lambda2);
+  } else {
+    if (updatelambda2 == 1) {
+      if ((method == "LASSO")) {
+        lambda2_.fill(pow((phiq + p) * sqrt(sigma2) /arma::accu(arma::abs(coef)), 2));
+      } else if ((method == "ALASSO")) {
+        for (gg = 0; gg < (phiq + p); gg++) {
+          lambda2_(gg) = pow((sqrt(sigma2) / abs(coef(gg))), 2);
+        }
+      }
+    }
+  }
+  
+  //Rcpp::Rcout << lambda2_ << std::endl;
+  
   
   /////////////////////
   
@@ -2926,6 +2958,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
     Xflg = 1;
   } 
   
+  
   arma::mat H_;
   arma::mat Tau;
   arma::mat Gamma; 
@@ -2951,6 +2984,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   
   double mu0 = pars["mu0"];
   
+  
   // read bset
   Rcpp::String method = bset["method"];
   int phimono = bset["phimono"];
@@ -2966,7 +3000,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   double sigma2b = bset["sigma2b"];
   double lambda2alpha = bset["lambda2alpha"];
   double lambda2beta = bset["lambda2beta"];
-  int updatelambda2flg = bset["updatelambda2flg"];
+  int updatelambda2 = bset["updatelambda2"];
   
   // initialize the computation
   arma::mat tmpResiY;
@@ -2995,6 +3029,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   
   double mu0hat;
   
+  
   /////////////////////////////////////   
   // update Phi
   tmpResiY = Y - Mu;
@@ -3007,6 +3042,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
                    phimono, method);
   
   coef.rows(0, phiq - 1) = Phi;
+  
   
   // update beta
   if (Xflg == 1) {
@@ -3026,6 +3062,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
     coef.rows(phiq, phiq + p - 1) = Beta;
   }
   
+  
   // update Tau and Gamma
   if (Hflg == 1) {
     //#update pho
@@ -3041,6 +3078,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
     Gamma = Rcpp::as<arma::mat>(TauGamma["Gamma"]);
   }
   
+  
   // update mu0
   tmpResiY = Y;
   if (Xflg == 1) {
@@ -3055,15 +3093,31 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   
   
   // update Mu
-  Mu = X_ * Beta + H_ * (Tau % Gamma) + mu0;
+  
+  Mu = mu0 * One;
+  
+  if (Hflg == 1) {
+    Mu = Mu + H_ * (Tau % Gamma);
+  }
+  
+  if (Xflg == 1) {
+    Mu = Mu + X_ * Beta;
+  }
+  
   
   // update sigma2
   // update eta2
+  
   inveta2 = updateinveta2X(coef, sigma2, lambda2, phiq + p, tol);
   eta2 = arma::pow(inveta2, -1);
+  
   invphieta2 = inveta2.rows(0, phiq - 1);
+  
   phieta2 = eta2.rows(0, phiq - 1);
+  
   invphieta2mat.diag() = invphieta2;
+  
+  
   if(Xflg == 1) {
     invbetaeta2 = inveta2.rows(phiq, phiq + p - 1);
     betaeta2 = eta2.rows(phiq, phiq + p - 1);
@@ -3081,14 +3135,12 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   
   // update lambda2
   
-  if (updatelambda2flg == 1) {
+  if (updatelambda2 == 1) {
     if ((method == "LASSO") || (method == "ALASSO")) {
       lambda2 = updatelambda2X(phieta2, betaeta2, phiq, p, lambda2alpha, lambda2beta, method, Xflg);
     }
     
   }
-  
-  
   
   /////////////////////////////////////   
   // output the result
@@ -3236,81 +3288,9 @@ double llhYJfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, doubl
 
 
  
+
 // [[Rcpp::export]]
 arma::mat thetaYeoJohnsonMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
-                        double oldtheta, int burnin, int nsim, double tol) {
-  
-  double pi = 3.14159265359;
-  
-  int T = Y.n_elem;
-  int q = Phi.n_rows;
-  
-  double u;
-  double oldtheta_ = oldtheta;
-  double thetaas;
-  double A;
-  
- arma::mat thetaout(nsim, 1); 
-  
- arma::mat oldlhYJ = lhYJfX(Y, Phi, Mu, sigma2, oldtheta_, tol);
- arma::uvec ind0 =arma::find(oldlhYJ <= tol); 
- oldlhYJ(ind0).fill(tol);
-  
- arma::mat newlhYJ; 
- arma::uvec ind1;
-  
- arma::mat tmp; 
-  double pd;
-  
-  int i;
-  int j = 0;
-  
-  for (i = 0; i < (nsim + burnin); i++) {
-    u = R::runif(0.0, 1.0);
-    thetaas = R::rnorm(oldtheta_, 0.1);
-    newlhYJ = lhYJfX(Y, Phi, Mu, sigma2, thetaas, tol);
-    ind1 =arma::find(newlhYJ <= tol); 
-    newlhYJ(ind1).fill(tol);
-    
-    Rcpp::Rcout << oldlhYJ << std::endl;
-    Rcpp::Rcout << newlhYJ << std::endl;
- 
- 
-    tmp = arma::cumprod(newlhYJ % arma::pow(oldlhYJ, -1));
-    //Rcpp::Rcout << tmp << std::endl;
-    
-    tmp = tmp * (exp(- 1.0 / 2.0 * thetaas * thetaas)) /
-      (exp(- 1.0 / 2.0 * oldtheta_ * oldtheta_));
-    
-    //Rcpp::Rcout << tmp << std::endl;
-    
-    //Rcpp::Rcout << tmp << std::endl;
-    pd = tmp(T - 1);
-    //Rcpp::Rcout << pd << std::endl;
-    A = std::min(1.0, pd);
-    //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
-    //Rcpp::Rcout << A << std::endl;
-    
-    if (u < A) {
-      oldtheta_ = thetaas;
-      oldlhYJ = newlhYJ;
-    } 
-    
-    //Rcpp::Rcout << oldtheta_ << std::endl;
-    
-    if (i >= burnin) {
-      thetaout(j, 0) = oldtheta_;
-      j = j + 1;
-    }
-  }
-  
-  return(thetaout);
-  
-}
-
-
-// [[Rcpp::export]]
-arma::mat thetaYeoJohnsonMHXX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
                         double oldtheta, int burnin, int nsim, double tol) {
   
   double pi = 3.14159265359;
@@ -3341,7 +3321,10 @@ arma::mat thetaYeoJohnsonMHXX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double 
     thetaas = R::rnorm(oldtheta_, 0.1);
     newllhYJ = llhYJfX(Y, Phi, Mu, sigma2, thetaas, tol);
 
-    tmp = newllhYJ - oldllhYJ;
+    //tmp = newllhYJ - oldllhYJ;
+    
+    tmp = newllhYJ - oldllhYJ + (R::dnorm4(thetaas, 1, 0.1, 1) - R::dnorm4(oldtheta_, 1, 0.1, 1));
+    
     //Rcpp::Rcout << newllhYJ << std::endl;
     //Rcpp::Rcout << oldllhYJ << std::endl;
     
@@ -3372,3 +3355,689 @@ arma::mat thetaYeoJohnsonMHXX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double 
   return(thetaout);
   
 }
+
+
+
+
+// [[Rcpp::export]]
+arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
+                   double theta, double eps, int leftcensoring, double lowerbound, int rounding, int YJ) {
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Y.n_elem;
+  
+  arma::colvec YZ = Y;
+  arma::colvec YZyj = Yyj; 
+  
+  arma::mat V = YZyj - Mu; 
+  arma::mat Vas(1, q);
+  arma::mat VasPhi;
+  
+  arma::mat fit(T, 1);
+  arma::colvec tmp(1);
+  
+  double lbr;
+  double ubr;
+  
+  double lbl;
+  double ubl;
+  
+  double lb;
+  double ub;
+  
+  arma::colvec lbvec(T, 1);
+  arma::colvec ubvec(T, 1);
+  
+  int flgr = 0;
+  int flgl = 0;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  int ii;
+  if ((leftcensoring == 1) || (rounding == 1)) {
+    for (int i = 0; i < T; i++) {
+      
+      flgr = 0;
+      flgl = 0;
+      
+      for (int j = 0; j < q; j++) {
+        ii = i - 1 - j;
+        if (ii >= 0) {
+          Vas(0, j) = V(ii, 0);
+        } else {
+          Vas(0, j) = 0;
+        }
+      }
+      
+      VasPhi = Vas * Phi;
+      fit(i, 0) = Mu(i, 0) + VasPhi(0);
+      
+      if (rounding == 1) {
+        if (YJ == 1) {
+          tmp = yeojohnsontr(YZ.row(i) - 0.5, theta, eps);
+          lbr = tmp(0);
+          tmp = yeojohnsontr(YZ.row(i) + 0.5, theta, eps);
+          ubr = tmp(0);
+        } else {
+          lbr = YZ(i) - 0.5;
+          ubr = YZ(i) + 0.5;
+        }
+        flgr = 1;
+      }
+      
+      if (leftcensoring == 1) {
+        lbl = (-1.0) *arma::math::inf();
+        if (YZ(i) <= lowerbound) {
+          if (YJ == 1) {
+            tmp(0) = lowerbound;
+            tmp = yeojohnsontr(tmp, theta, eps);
+            ubl = tmp(0);
+          } else{
+            ubl = lowerbound;
+          }
+          
+          flgl = 1;
+        }
+      }
+      
+      //////// find the union
+      
+      if (flgr == 1) {
+        lb = lbr;
+        ub = ubr;
+      }
+      
+      if (flgl == 1) {
+        lb = lbl;
+        ub = ubl;
+        if (flgr == 1) {
+          if (ubr > ubl) {
+            ub = ubr;
+          }
+        } 
+      }
+        
+        lbvec(i) = lb;
+        ubvec(i) = ub;
+        
+        if ((flgr == 1) || (flgl == 1)) {
+          tmp = rtrnorm(1, fit(i, 0), sqrt(sigma2), lb, ub);
+          YZyj(i) = tmp(0);
+        }
+      
+      //////////////////////////// 
+      
+      V(i, 0) = YZyj(i) - Mu(i, 0);
+      
+    }
+  }
+  
+  if (YJ == 1) {
+    YZ = invyeojohnsontr(YZyj, theta, eps); 
+  } else {
+    YZ = YZyj;
+  }
+  
+  return(YZ);
+  
+}
+
+
+
+// [[Rcpp::export]]
+Rcpp::List getYZX(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
+                   double theta, double eps, int leftcensoring, double lowerbound, int rounding, int YJ) {
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Y.n_elem;
+  
+  arma::colvec YZ = Y;
+  arma::colvec YZyj = Yyj; 
+  
+  arma::mat V = YZyj - Mu; 
+  arma::mat Vas(1, q);
+  arma::mat VasPhi;
+  
+  arma::mat fit(T, 1);
+  arma::colvec tmp(1);
+  
+  double lbr;
+  double ubr;
+  
+  double lbl;
+  double ubl;
+  
+  double lb;
+  double ub;
+  
+  arma::colvec lbvec(T, 1);
+  arma::colvec ubvec(T, 1);
+  
+  int flgr = 0;
+  int flgl = 0;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  int ii;
+  if ((leftcensoring == 1) || (rounding == 1)) {
+    for (int i = 0; i < T; i++) {
+      
+      flgr = 0;
+      flgl = 0;
+      
+      for (int j = 0; j < q; j++) {
+        ii = i - 1 - j;
+        if (ii >= 0) {
+          Vas(0, j) = V(ii, 0);
+        } else {
+          Vas(0, j) = 0;
+        }
+      }
+      
+      VasPhi = Vas * Phi;
+      fit(i, 0) = Mu(i, 0) + VasPhi(0);
+      
+      if (rounding == 1) {
+        if (YJ == 1) {
+          tmp = yeojohnsontr(YZ.row(i) - 0.5, theta, eps);
+          lbr = tmp(0);
+          tmp = yeojohnsontr(YZ.row(i) + 0.5, theta, eps);
+          ubr = tmp(0);
+        } else {
+          lbr = YZ(i) - 0.5;
+          ubr = YZ(i) + 0.5;
+        }
+        flgr = 1;
+      }
+      
+      if (leftcensoring == 1) {
+        lbl = (-1.0) *arma::math::inf();
+        if (YZ(i) <= lowerbound) {
+          if (YJ == 1) {
+            tmp(0) = lowerbound;
+            tmp = yeojohnsontr(tmp, theta, eps);
+            ubl = tmp(0);
+          } else{
+            ubl = lowerbound;
+          }
+          
+          flgl = 1;
+        }
+      }
+      
+      //////// find the union
+      
+      if (flgr == 1) {
+        lb = lbr;
+        ub = ubr;
+      }
+      
+      if (flgl == 1) {
+        lb = lbl;
+        ub = ubl;
+        if (flgr == 1) {
+          if (ubr > ubl) {
+            ub = ubr;
+          }
+        } 
+      }
+      
+      lbvec(i) = lb;
+      ubvec(i) = ub;
+      
+      if ((flgr == 1) || (flgl == 1)) {
+        tmp = rtrnorm(1, fit(i, 0), sqrt(sigma2), lb, ub);
+        YZyj(i) = tmp(0);
+      }
+      
+      //////////////////////////// 
+      
+      V(i, 0) = YZyj(i) - Mu(i, 0);
+      
+    }
+  }
+  
+  if (YJ == 1) {
+    YZ = invyeojohnsontr(YZyj, theta, eps); 
+  } else {
+    YZ = YZyj;
+  }
+  
+  Rcpp::List out;
+  out = Rcpp::List::create(
+    Rcpp::_["YZ"] = YZ,
+    Rcpp::_["YZyj"] = YZyj,
+    Rcpp::_["lb"] = lbvec,
+    Rcpp::_["ub"] = ubvec,
+    Rcpp::_["fit"] = fit
+  );
+  
+  return(out);
+  
+}
+
+
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+Rcpp::List GibbsRFLSMXcpp(arma::colvec Y, 
+                          Rcpp::List bset, double tol, 
+                          int nsim, int thin, int burnin, 
+                          int verbose,
+                          Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue,
+                          Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue,
+                          Rcpp::Nullable<Rcpp::NumericMatrix> lambda2 = R_NilValue,
+                          Rcpp::Nullable<double> theta = R_NilValue) {
+  
+  int YJ = bset["YJ"];
+  int leftcensoring = bset["leftcensoring"];
+  int lowerbound = bset["lowerbound"];
+  int rounding = bset["rounding"];
+  int updateYJ = bset["updateYJ"];
+  int phiq = bset["phiq"];
+  Rcpp::String method = bset["method"];
+  int phimono = bset["phimono"];
+  //Rcpp::Rcout << 1 << std::endl;
+  
+  /////////////////////////////////////
+  
+  auto start = std::chrono::system_clock::now();
+  std::time_t start_time = std::chrono::system_clock::to_time_t(start);
+  
+  Rcpp::String monoword;
+  
+  if (phimono == 1) {
+    monoword = " with constraints on Phi";
+  } else {
+    monoword = " without constraints on Phi";
+  }
+  
+  if (verbose == 1) {
+    Rcpp::Rcout << "Start training using " << method.get_cstring() << monoword.get_cstring() << " at " << std::ctime(&start_time) <<  std::endl;
+  
+  }
+  
+  /////////////////////////////////////
+  
+  arma::mat Phi;
+  arma::mat Mu;
+  double sigma2;
+  
+  arma::mat YZ;
+  arma::mat Z; 
+  
+  arma::mat tmp;
+  int T = Y.n_rows;
+  
+  //Rcpp::Rcout << 2 << std::endl;
+  
+  /////////////////////////////////////
+  
+  arma::mat X_;
+  int p = 0;
+  int Xflg = 0;
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    p = X_.n_cols;
+    Xflg = 1;
+  } 
+  
+  arma::mat H_;
+  int m = 0;
+  int Hflg = 0;
+  if (H.isNotNull()) {
+    H_ = Rcpp::as<arma::mat>(H);
+    m = H_.n_cols;
+    Hflg = 1;
+  }
+  
+  
+  double theta_;
+  if (theta.isNotNull()) {
+    theta_ = Rcpp::as<double>(theta);
+  } else {
+    theta_ = 1.0;
+  }
+  
+  //Rcpp::Rcout << 3 << std::endl;
+  
+  /////////////////////////////////////
+  // initialize the iteration
+  arma::mat Yyj;
+  
+  if (YJ == 1) {
+    Yyj = yeojohnsontr(Y, theta_, tol);
+  } else {
+    Yyj = Y;
+  }
+  
+  Rcpp::List iter = initGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
+  
+  /////////////////////////////////////
+  
+  arma::mat Phimat(phiq, nsim);
+  arma::mat Betamat;
+  if (Xflg == 1) {
+    Betamat.set_size(p, nsim);
+  }
+  
+  arma::mat Taumat;
+  arma::mat Gammamat;
+  
+  if (Hflg == 1) {
+    Taumat.set_size(m, nsim);
+    Gammamat.set_size(m, nsim);
+  }
+  
+  arma::mat mu0mat(1, nsim);
+  arma::mat Mumat(T, nsim);
+  arma::mat eta2mat(phiq + p, nsim);
+  arma::mat sigma2mat(1, nsim);
+  arma::mat lambda2mat(phiq + p, nsim);
+  arma::mat thetamat(1, nsim);
+  arma::mat Zmat(T, nsim);
+  
+  //Rcpp::Rcout << 5 << std::endl;
+  
+  /////////////////////////////////////
+  
+  int tot_num = burnin + nsim * thin;
+  int k = 0;
+  for (int i = 0; i < tot_num; i++) {
+    if (verbose == 1) {
+      if (i % 100 == 0) {
+        Rcpp::Rcout <<"Training: " << ((i + 0.0) / (tot_num + 0.0) * 100.0) << '%' << std::endl;
+      }
+    }
+    
+    Phi = Rcpp::as<arma::mat>(iter["Phi"]);
+    Mu = Rcpp::as<arma::mat>(iter["Mu"]);
+    sigma2 = iter["sigma2"];
+    
+    //Rcpp::Rcout << 6 << std::endl;
+    
+    if ((leftcensoring == 1) || (rounding == 1)) {
+      YZ = getYZ(Yyj, Y, Phi, Mu, sigma2, 
+                 theta_, tol, leftcensoring, lowerbound, rounding, YJ);
+    } else {
+      YZ = Y;
+    }
+    
+    //Rcpp::Rcout << 7 << std::endl;
+    
+    if (updateYJ == 1) {
+      tmp = thetaYeoJohnsonMHX(YZ, Phi, Mu, sigma2, theta_, 0, 1, tol);
+      theta_ = tmp(0);
+      
+    }
+    
+    //Rcpp::Rcout << 8 << std::endl;
+    
+    if (YJ == 1) {
+      Yyj = yeojohnsontr(YZ, theta_, tol);
+    } else {
+      Yyj = YZ;
+    }
+    
+    //Rcpp::Rcout << 9 << std::endl;
+    
+    iter = GibbsRFLSMXUpdatecpp(Yyj, iter, bset, tol, X, H);
+      
+     //Rcpp::Rcout << 10 << std::endl;
+      
+    if (i >= burnin) {
+      if (i % thin == 0) {
+         Phimat.col(k) = Rcpp::as<arma::mat>(iter["Phi"]);
+      
+      if (Xflg == 1) {
+        Betamat.col(k) = Rcpp::as<arma::mat>(iter["Beta"]);
+      }
+      
+      if (Hflg == 1) {
+        Taumat.col(k) = Rcpp::as<arma::mat>(iter["Tau"]);
+        Gammamat.col(k) = Rcpp::as<arma::mat>(iter["Gamma"]);
+      }
+      
+      mu0mat(k) = iter["mu0"];
+      eta2mat.col(k) = Rcpp::as<arma::mat>(iter["eta2"]);
+      sigma2mat(k) = iter["sigma2"];
+      lambda2mat.col(k) = Rcpp::as<arma::mat>(iter["lambda2"]);
+      thetamat(k) = theta_;
+      Zmat.col(k) = YZ - Y;
+      
+      k++;
+      }
+
+    }
+    
+  }
+  
+  ///////////////////////////
+  if (verbose == 1) {
+    Rcpp::Rcout <<"Training: 100%" << std::endl;
+  }
+  
+  auto end = std::chrono::system_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+  
+  if (verbose == 1) {
+    Rcpp::Rcout << "Finished training at " << std::ctime(&end_time)
+              << "Elapsed time: " << elapsed_seconds.count() << "s"
+              << std::endl;
+  }
+  ///////////////////////////
+  
+  Rcpp::List out;
+  
+  out = Rcpp::List::create(
+    Rcpp::_["Phi"] = Phimat,
+    Rcpp::_["Beta"] = Betamat,
+    Rcpp::_["Tau"] = Taumat,
+    Rcpp::_["Gamma"] = Gammamat,
+    Rcpp::_["mu0"] = mu0mat,
+    Rcpp::_["eta2"] = eta2mat,
+    Rcpp::_["sigma2"] = sigma2mat,
+    Rcpp::_["lambda2"] = lambda2mat, 
+    Rcpp::_["theta"] = thetamat,
+    Rcpp::_["Z"] = Zmat
+  );
+  
+  return(out);
+  
+}
+
+
+
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYyjXph1(arma::colvec Yyj,arma::mat Phi,arma::mat Mu, double sigma2) {
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Yyj.n_elem;
+  //Rcpp::Rcout << T << std::endl;
+ arma::mat V(T, 1); 
+ arma::mat Vas(1, q);
+ arma::mat VasPhi;
+  
+ arma::mat fit(T, 1);
+ arma::mat simYyjph1(T, 1);
+ arma::colvec tmp;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  int ii = 0;
+  for (int i = 0; i < T; i++) {
+    V(i, 0) = Yyj(i) - Mu(i, 0);
+    
+    //Rcpp::Rcout << i << std::endl;
+    
+    for (int j = 0; j < q; j++) {
+        ii = i - 1 - j;
+        if (ii >= 0) {
+          Vas(0, j) = V(ii, 0);
+        } else {
+          Vas(0, j) = 0;
+        }
+    }
+    
+    VasPhi = Vas * Phi;
+    fit(i, 0) = Mu(i, 0) + VasPhi(0);
+    simYyjph1(i, 0) = R::rnorm(fit(i, 0), sqrt(sigma2));
+    
+    //Rcpp::Rcout << 3 << std::endl;
+    //Rcpp::Rcout << ucYyj(i)  << std::endl;
+    
+    
+    //Rcpp::Rcout << 4 << std::endl;
+  }
+  
+  //Rcpp::Rcout << ucYyj << std::endl;
+  
+  //ucY = invyeojohnsontr(ucYyj, theta, eps);
+  
+  //Rcpp::Rcout << 5 << std::endl;
+  
+  return(simYyjph1);
+  
+}
+
+
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYXph1(arma::colvec Yyj,arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
+                      int leftcensoring, double lowerbound, int rounding) {
+  
+ arma::colvec Yyjph1 = simYyjXph1(Yyj, Phi, Mu, sigma2); 
+ arma::colvec Yph1 = invyeojohnsontr(Yyjph1, theta, eps); 
+ arma::uvec ind0;
+ if (leftcensoring == 1) {
+   ind0 =arma::find(Yph1 <= lowerbound); 
+   Yph1(ind0).fill(lowerbound);
+ }
+ 
+ if (rounding == 1) {
+   Yph1 = arma::round(Yph1);
+ }
+  return(Yph1);
+  
+}
+
+
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYyjXph2(int h,arma::colvec Yyjph1,arma::mat Phi,arma::mat Mu, double sigma2) {
+  
+  int q = Phi.n_rows;
+  //Rcpp::Rcout << q << std::endl;
+  int T = Yyjph1.n_elem;
+  //Rcpp::Rcout << T << std::endl;
+ arma::mat V(T + h, 1); 
+ arma::mat Vas(1, q);
+ arma::mat VasPhi;
+  
+ arma::mat fit(T + h, 1);
+ arma::mat simYyjph2(T + h, 1);
+ arma::colvec tmp;
+  
+  //Rcpp::Rcout << 1 << std::endl;
+  int ii = 0;
+  //for (int i = 0; i < (T + h); i++) {
+  for (int i = 0; i < (T + h); i++) {
+    
+    
+    //Rcpp::Rcout << i << std::endl;
+    
+    for (int j = 0; j < q; j++) {
+        ii = i - 1 - j;
+        if (ii >= 0) {
+          Vas(0, j) = V(ii, 0);
+        } else {
+          Vas(0, j) = 0;
+        }
+      }
+    
+      VasPhi = Vas * Phi;
+      fit(i, 0) = Mu(i, 0) + VasPhi(0);
+      simYyjph2(i, 0) = R::rnorm(fit(i, 0), sqrt(sigma2));
+    
+    
+    if (i < T) {
+      V(i, 0) = Yyjph1(i) - Mu(i, 0);
+    } else if (i >= T) {
+      V(i, 0) = simYyjph2(i, 0) - Mu(i, 0);
+    }
+    
+    //Rcpp::Rcout << 3 << std::endl;
+    //Rcpp::Rcout << ucYyj(i)  << std::endl;
+    
+    
+    //Rcpp::Rcout << 4 << std::endl;
+  }
+  
+  //Rcpp::Rcout << ucYyj << std::endl;
+  
+  //ucY = invyeojohnsontr(ucYyj, theta, eps);
+  
+  //Rcpp::Rcout << 5 << std::endl;
+  
+  return(simYyjph2);
+
+}
+
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+arma::colvec simYXph2(int h,arma::colvec Yyjph1,arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
+                      int leftcensoring, double lowerbound, int rounding) {
+  
+ arma::colvec Yyjph2 = simYyjXph2(h, Yyjph1, Phi, Mu, sigma2); 
+ arma::colvec Yph2 = invyeojohnsontr(Yyjph2, theta, eps); 
+ arma::uvec ind0;
+ if (leftcensoring == 1) {
+   ind0 =arma::find(Yph2 <= lowerbound); 
+   Yph2(ind0).fill(lowerbound);
+ }
+ 
+ if (rounding == 1) {
+   Yph2 = arma::round(Yph2);
+ }
+  
+  return(Yph2);
+  
+}
+
+

@@ -1,15 +1,25 @@
 [
     {
         "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-        "file_last_write": 1709769813.0,
+        "file_last_write": 1709853954.0,
         "definitions": [
             {
-                "usr": "c:BayesianLASSOMonitoring.cpp@156@macro@ARMA_WARN_LEVEL",
+                "usr": "c:BayesianLASSOMonitoring.cpp@8@macro@ARMA_64BIT_WORD",
+                "kind": 9,
+                "parent_name": "",
+                "name": "ARMA_64BIT_WORD",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 1,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:BayesianLASSOMonitoring.cpp@183@macro@ARMA_WARN_LEVEL",
                 "kind": 9,
                 "parent_name": "",
                 "name": "ARMA_WARN_LEVEL",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 4,
+                "line": 6,
                 "column": 9,
                 "hidden": false
             },
@@ -19,7 +29,7 @@
                 "parent_name": "",
                 "name": "rinvgaussiancpp(int, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 22,
+                "line": 25,
                 "column": 14,
                 "hidden": false
             },
@@ -29,7 +39,7 @@
                 "parent_name": "",
                 "name": "getV(arma::colvec, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 34,
+                "line": 37,
                 "column": 11,
                 "hidden": false
             },
@@ -39,7 +49,7 @@
                 "parent_name": "",
                 "name": "rmvnorm(arma::colvec, arma::mat)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 58,
+                "line": 61,
                 "column": 14,
                 "hidden": false
             },
@@ -49,7 +59,7 @@
                 "parent_name": "",
                 "name": "rtwosegnorm(int, double, double, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 80,
+                "line": 83,
                 "column": 14,
                 "hidden": false
             },
@@ -59,7 +69,7 @@
                 "parent_name": "",
                 "name": "getGMat(int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 111,
+                "line": 114,
                 "column": 11,
                 "hidden": false
             },
@@ -69,7 +79,7 @@
                 "parent_name": "",
                 "name": "getPhiMat(arma::colvec, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 121,
+                "line": 124,
                 "column": 11,
                 "hidden": false
             },
@@ -79,7 +89,7 @@
                 "parent_name": "",
                 "name": "getHMatMT(int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 146,
+                "line": 149,
                 "column": 11,
                 "hidden": false
             },
@@ -89,7 +99,7 @@
                 "parent_name": "",
                 "name": "getHMatSustained(int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 167,
+                "line": 170,
                 "column": 11,
                 "hidden": false
             },
@@ -99,7 +109,7 @@
                 "parent_name": "",
                 "name": "getHMatIsolated(int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 201,
+                "line": 204,
                 "column": 11,
                 "hidden": false
             },
@@ -109,7 +119,7 @@
                 "parent_name": "",
                 "name": "getHMatGradual(int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 237,
+                "line": 240,
                 "column": 11,
                 "hidden": false
             },
@@ -119,7 +129,7 @@
                 "parent_name": "",
                 "name": "getXSeasonalityFS(int, double, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 274,
+                "line": 277,
                 "column": 11,
                 "hidden": false
             },
@@ -129,7 +139,7 @@
                 "parent_name": "",
                 "name": "getInv(arma::mat)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 297,
+                "line": 300,
                 "column": 11,
                 "hidden": false
             },
@@ -139,7 +149,7 @@
                 "parent_name": "",
                 "name": "removeRow(arma::mat, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 315,
+                "line": 318,
                 "column": 11,
                 "hidden": false
             },
@@ -149,7 +159,7 @@
                 "parent_name": "",
                 "name": "removeCol(arma::mat, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 330,
+                "line": 333,
                 "column": 11,
                 "hidden": false
             },
@@ -159,7 +169,7 @@
                 "parent_name": "",
                 "name": "removeCols(arma::mat, arma::uvec)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 345,
+                "line": 348,
                 "column": 11,
                 "hidden": false
             },
@@ -169,7 +179,7 @@
                 "parent_name": "",
                 "name": "removeRows(arma::mat, arma::uvec)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 374,
+                "line": 377,
                 "column": 11,
                 "hidden": false
             },
@@ -179,7 +189,7 @@
                 "parent_name": "",
                 "name": "arimacpp(arma::colvec, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 401,
+                "line": 404,
                 "column": 12,
                 "hidden": false
             },
@@ -189,7 +199,7 @@
                 "parent_name": "",
                 "name": "arimaxcpp(arma::colvec, int, arma::mat)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 412,
+                "line": 415,
                 "column": 12,
                 "hidden": false
             },
@@ -199,7 +209,7 @@
                 "parent_name": "",
                 "name": "checkSym(arma::mat)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 423,
+                "line": 426,
                 "column": 11,
                 "hidden": false
             },
@@ -209,7 +219,7 @@
                 "parent_name": "",
                 "name": "updatePhi(arma::mat, arma::mat, arma::mat, arma::colvec, double, arma::mat, double, double, int, Rcpp::String)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 432,
+                "line": 435,
                 "column": 14,
                 "hidden": false
             },
@@ -219,7 +229,7 @@
                 "parent_name": "",
                 "name": "updateSigma2(arma::mat, arma::colvec, arma::mat, int, int, arma::mat, double, double, Rcpp::String)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 542,
+                "line": 545,
                 "column": 8,
                 "hidden": false
             },
@@ -229,7 +239,7 @@
                 "parent_name": "",
                 "name": "updateinveta2(arma::colvec, double, arma::mat, int, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 567,
+                "line": 570,
                 "column": 11,
                 "hidden": false
             },
@@ -239,7 +249,7 @@
                 "parent_name": "",
                 "name": "updatelambda2(arma::mat, int, double, double, Rcpp::String)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 596,
+                "line": 599,
                 "column": 11,
                 "hidden": false
             },
@@ -249,7 +259,7 @@
                 "parent_name": "",
                 "name": "updateTauGamma(arma::colvec, arma::colvec, arma::mat, arma::mat, double, double, double, double, int, int, arma::mat, arma::mat, int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 618,
+                "line": 621,
                 "column": 12,
                 "hidden": false
             },
@@ -259,7 +269,7 @@
                 "parent_name": "",
                 "name": "updateMuqMu(arma::colvec, arma::mat, arma::mat, double, arma::mat, arma::mat, arma::mat, int, int, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 732,
+                "line": 735,
                 "column": 12,
                 "hidden": false
             },
@@ -269,7 +279,7 @@
                 "parent_name": "",
                 "name": "GibbsRFLSMcpp(arma::colvec &, int &, arma::mat &, double &, double &, double &, double &, double &, double &, double &, Rcpp::String &, double &, double &, int &, int &, int &, double &, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 777,
+                "line": 780,
                 "column": 12,
                 "hidden": false
             },
@@ -279,7 +289,7 @@
                 "parent_name": "",
                 "name": "GibbsRFLSMUpdatecpp(arma::colvec, int, arma::mat, double, double, double, double, double, double, double, Rcpp::String, double, double, int, int, int, double, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::List>, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1115,
+                "line": 1118,
                 "column": 12,
                 "hidden": false
             },
@@ -289,7 +299,7 @@
                 "parent_name": "",
                 "name": "lhf(arma::colvec, arma::mat, arma::mat, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1504,
+                "line": 1507,
                 "column": 11,
                 "hidden": false
             },
@@ -299,7 +309,7 @@
                 "parent_name": "",
                 "name": "boxcoxtr(arma::colvec, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1541,
+                "line": 1544,
                 "column": 14,
                 "hidden": false
             },
@@ -309,7 +319,7 @@
                 "parent_name": "",
                 "name": "invboxcoxtr(arma::colvec, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1549,
+                "line": 1552,
                 "column": 14,
                 "hidden": false
             },
@@ -319,7 +329,7 @@
                 "parent_name": "",
                 "name": "invyeojohnsontr(arma::colvec, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1557,
+                "line": 1560,
                 "column": 14,
                 "hidden": false
             },
@@ -329,7 +339,7 @@
                 "parent_name": "",
                 "name": "yeojohnsontr(arma::colvec, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1579,
+                "line": 1582,
                 "column": 14,
                 "hidden": false
             },
@@ -339,7 +349,7 @@
                 "parent_name": "",
                 "name": "lhBCf(arma::colvec, arma::mat, arma::mat, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1603,
+                "line": 1606,
                 "column": 11,
                 "hidden": false
             },
@@ -349,7 +359,7 @@
                 "parent_name": "",
                 "name": "lhYJf(arma::colvec, arma::mat, arma::mat, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1625,
+                "line": 1628,
                 "column": 11,
                 "hidden": false
             },
@@ -359,7 +369,7 @@
                 "parent_name": "",
                 "name": "thetaBoxCoxMH(arma::colvec, arma::mat, arma::mat, double, double, int, int, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1646,
+                "line": 1649,
                 "column": 11,
                 "hidden": false
             },
@@ -369,7 +379,7 @@
                 "parent_name": "",
                 "name": "thetaYeoJohnsonMH(arma::colvec, arma::mat, arma::mat, double, double, int, int, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1713,
+                "line": 1716,
                 "column": 11,
                 "hidden": false
             },
@@ -379,7 +389,7 @@
                 "parent_name": "",
                 "name": "GibbsRFLSMBoxCoxcpp(arma::colvec &, int &, arma::mat &, double &, double &, double &, double &, double &, double &, double &, Rcpp::String &, double &, double &, int, double &, int &, int &, int &, double &, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::List>, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1780,
+                "line": 1783,
                 "column": 12,
                 "hidden": false
             },
@@ -389,7 +399,7 @@
                 "parent_name": "",
                 "name": "rtrnorm(int, double, double, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1943,
+                "line": 1946,
                 "column": 14,
                 "hidden": false
             },
@@ -399,7 +409,7 @@
                 "parent_name": "",
                 "name": "getucY(arma::colvec, arma::colvec, arma::mat, arma::mat, double, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 1963,
+                "line": 1966,
                 "column": 14,
                 "hidden": false
             },
@@ -409,7 +419,7 @@
                 "parent_name": "",
                 "name": "GibbsRFLSMYeoJohnsonZcpp(arma::colvec &, int &, arma::mat &, double &, double &, double &, double &, double &, double &, double &, Rcpp::String &, double &, double &, int, double &, int, double, int &, int &, int &, double &, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::List>, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2023,
+                "line": 2026,
                 "column": 12,
                 "hidden": false
             },
@@ -419,7 +429,7 @@
                 "parent_name": "",
                 "name": "getfityj(arma::colvec, arma::mat, arma::mat, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2222,
+                "line": 2225,
                 "column": 14,
                 "hidden": false
             },
@@ -429,7 +439,7 @@
                 "parent_name": "",
                 "name": "getfit(arma::colvec, arma::mat, arma::mat, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2275,
+                "line": 2278,
                 "column": 14,
                 "hidden": false
             },
@@ -439,7 +449,7 @@
                 "parent_name": "",
                 "name": "simYyjph1(arma::colvec, arma::mat, arma::mat, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2292,
+                "line": 2295,
                 "column": 14,
                 "hidden": false
             },
@@ -449,7 +459,7 @@
                 "parent_name": "",
                 "name": "simYph1(arma::colvec, arma::mat, arma::mat, double, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2349,
+                "line": 2352,
                 "column": 14,
                 "hidden": false
             },
@@ -459,7 +469,7 @@
                 "parent_name": "",
                 "name": "simYyjph2(int, arma::colvec, arma::mat, arma::mat, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2371,
+                "line": 2374,
                 "column": 14,
                 "hidden": false
             },
@@ -469,7 +479,7 @@
                 "parent_name": "",
                 "name": "simYph2(int, arma::colvec, arma::mat, arma::mat, double, double, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2434,
+                "line": 2437,
                 "column": 14,
                 "hidden": false
             },
@@ -479,7 +489,7 @@
                 "parent_name": "",
                 "name": "updateCoef(arma::mat, arma::mat, arma::mat, arma::colvec, double, arma::mat, double, double, int, Rcpp::String)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2449,
+                "line": 2452,
                 "column": 14,
                 "hidden": false
             },
@@ -489,7 +499,7 @@
                 "parent_name": "",
                 "name": "updateSigma2X(arma::mat, arma::mat, arma::mat, arma::mat, arma::mat, int, int, int, arma::mat, arma::mat, double, double, Rcpp::String, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2552,
+                "line": 2555,
                 "column": 8,
                 "hidden": false
             },
@@ -499,7 +509,7 @@
                 "parent_name": "",
                 "name": "updatelambda2X(arma::mat, arma::mat, int, int, double, double, Rcpp::String, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2604,
+                "line": 2607,
                 "column": 11,
                 "hidden": false
             },
@@ -509,7 +519,7 @@
                 "parent_name": "",
                 "name": "updateinveta2X(arma::colvec, double, arma::mat, int, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2640,
+                "line": 2643,
                 "column": 11,
                 "hidden": false
             },
@@ -519,7 +529,7 @@
                 "parent_name": "",
                 "name": "updateResi(arma::mat, arma::colvec, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2669,
+                "line": 2672,
                 "column": 11,
                 "hidden": false
             },
@@ -529,17 +539,17 @@
                 "parent_name": "",
                 "name": "updateTauGammaX(arma::colvec, arma::mat, arma::colvec, arma::colvec, arma::mat, arma::mat, double, double, double, double, int, arma::mat, int, int, int)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2687,
+                "line": 2690,
                 "column": 12,
                 "hidden": false
             },
             {
-                "usr": "c:@F@initGibbsRFLSMXcpp#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Nullable>#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S2_#S2_#",
+                "usr": "c:@F@initGibbsRFLSMXcpp#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#$@N@Rcpp@S@Nullable>#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S2_#S2_#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "initGibbsRFLSMXcpp(arma::colvec, Rcpp::List, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::NumericMatrix>)",
+                "name": "initGibbsRFLSMXcpp(arma::colvec, Rcpp::List, double, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2799,
+                "line": 2802,
                 "column": 12,
                 "hidden": false
             },
@@ -549,8 +559,128 @@
                 "parent_name": "",
                 "name": "GibbsRFLSMXUpdatecpp(arma::colvec, Rcpp::List, Rcpp::List, double, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 2909,
+                "line": 2938,
                 "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@lhfX#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "lhfX(arma::colvec, arma::mat, arma::mat, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3174,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@llhfX#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "llhfX(arma::colvec, arma::mat, arma::mat, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3207,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@lhYJfX#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "lhYJfX(arma::colvec, arma::mat, arma::mat, double, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3242,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@llhYJfX#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "llhYJfX(arma::colvec, arma::mat, arma::mat, double, double, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3272,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@thetaYeoJohnsonMHX#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#I#I#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "thetaYeoJohnsonMHX(arma::colvec, arma::mat, arma::mat, double, double, int, int, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3293,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getYZ#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getYZ(arma::colvec, arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3363,
+                "column": 14,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@getYZX#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "getYZX(arma::colvec, arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3488,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@GibbsRFLSMXcpp#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#I#I#I#I#$@N@Rcpp@S@Nullable>#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#S2_#S2_#$@N@Rcpp@S@Nullable>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "GibbsRFLSMXcpp(arma::colvec, Rcpp::List, double, int, int, int, int, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<Rcpp::NumericMatrix>, Rcpp::Nullable<double>)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3629,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simYyjXph1#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simYyjXph1(arma::colvec, arma::mat, arma::mat, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3867,
+                "column": 14,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simYXph1#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simYXph1(arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3928,
+                "column": 14,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simYyjXph2#I#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simYyjXph2(int, arma::colvec, arma::mat, arma::mat, double)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 3956,
+                "column": 14,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simYXph2#I#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simYXph2(int, arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int)",
+                "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
+                "line": 4024,
+                "column": 14,
                 "hidden": false
             }
         ],
