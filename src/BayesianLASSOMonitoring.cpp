@@ -2796,8 +2796,9 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
 }
 
 // [[Rcpp::export]]
-Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol, 
+Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, 
                                 Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue, 
+                                Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue, 
                                 Rcpp::Nullable<Rcpp::NumericMatrix> lambda2 = R_NilValue) {
   
   
@@ -2831,13 +2832,18 @@ Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   }
   
   /////////////////////
-   
-  arma::mat Tau(T, 1);
-  Tau.zeros();
-  
+  int m;
+  arma::mat Tau;
   arma::mat Gamma;
-  Gamma.randn(T, 1);
-  Gamma = Gamma * sqrt(gammaxi2);
+  arma::mat H_;
+  if (H.isNotNull()) {
+    H_ = Rcpp::as<arma::mat>(H);
+    m = H_.n_cols;
+    Gamma.randn(m, 1);
+    Gamma = Gamma * sqrt(gammaxi2);
+    Tau.zeros(m, 1);
+  }
+  
   
   /////////////////////
   
