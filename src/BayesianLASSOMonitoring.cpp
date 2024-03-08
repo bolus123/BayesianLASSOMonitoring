@@ -1,5 +1,3 @@
-#define ARMA_64BIT_WORD 1
-
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
 // we only include RcppArmadillo.h which pulls Rcpp.h in for us
@@ -10,7 +8,6 @@
 // RcppArmadillo so that the build process will know what to do
 //
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::plugins(cpp11)]]
 
 // simple example of creating two matrices and
 // returning the result of an operatioon on them

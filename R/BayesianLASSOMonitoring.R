@@ -517,7 +517,7 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
     }
   }
   
-  sig <- 1 - ((lim[, 1] <= model$Y[-c(1:q)]) & (model$Y[-c(1:q)] <= lim[, 2]))
+  sig <- 1 - ((lim[, 1] <= model$Y) & (model$Y <= lim[, 2]))
   
   list("grandsig" = sum(sig) > 0, "sig" = sig, "lim" = lim, "adj.alpha" = adj.alpha, 
        "Yph1" = ph1mat)
