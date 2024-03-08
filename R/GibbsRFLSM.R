@@ -39,7 +39,7 @@ GibbsRFLSMX <- function(Y, bset, X = NULL, H = NULL,
   
   model <- GibbsRFLSMXcpp(matrix(Y, ncol = 1), bset, 
                         tol = tol, nsim = nsim, thin = thin, burnin = burnin, verbose = verbose,
-                        X = X, H = H1)
+                        X = X, H = H, lambda2 = bset$lambda2, theta = bset$theta)
   
   out <- list(
     "Phi" = matrix(model$Phi, ncol = nsim),
