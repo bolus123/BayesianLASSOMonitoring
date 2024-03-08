@@ -3691,8 +3691,15 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
       mu0mat(k) = iter["mu0"];
       eta2mat.col(k) = Rcpp::as<arma::mat>(iter["eta2"]);
       sigma2mat(k) = iter["sigma2"];
-      lambda2mat.col(k) = Rcpp::as<arma::mat>(iter["lambda2"]);
-      thetamat(k) = theta_;
+      
+      if (updatelambda2 == 1) {
+        lambda2mat.col(k) = Rcpp::as<arma::mat>(iter["lambda2"]);
+      }
+      
+      if (updateYJ == 1) {
+        thetamat(k) = theta_;
+      }
+      
       Zmat.col(k) = YZ - Y;
       
       k++;
