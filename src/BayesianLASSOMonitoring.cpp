@@ -3668,7 +3668,11 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     thetamat.set_size(1, nsim);
   }
   
-  arma::mat Zmat(T, nsim);
+  arma::mat Zmat;
+  
+  if ((leftcensoring == 1) || (rounding == 1)) {
+    Zmat.set_size(T, nsim);
+  }
   
   //Rcpp::Rcout << 5 << std::endl;
   
@@ -3749,7 +3753,10 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
         thetamat(k) = theta_;
       }
       
-      Zmat.col(k) = YZ - Y;
+      if ((leftcensoring == 1) || (rounding == 1)) {
+        Zmat.col(k) = YZ - Y;
+      }
+      
       
       k++;
       }
