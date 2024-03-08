@@ -319,8 +319,8 @@ thetaYeoJohnsonMHX <- function(Y, Phi, Mu, sigma2, oldtheta, burnin, nsim, tol) 
     .Call(`_BayesianLASSOMonitoring_thetaYeoJohnsonMHX`, Y, Phi, Mu, sigma2, oldtheta, burnin, nsim, tol)
 }
 
-getYZ <- function(Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding) {
-    .Call(`_BayesianLASSOMonitoring_getYZ`, Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding)
+getYZ <- function(Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, updateYJ) {
+    .Call(`_BayesianLASSOMonitoring_getYZ`, Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, updateYJ)
 }
 
 GibbsRFLSMXcpp <- function(Y, bset, tol, nsim, thin, burnin, verbose, X = NULL, H = NULL, lambda2 = NULL, theta = NULL) {

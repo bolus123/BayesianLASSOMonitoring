@@ -594,8 +594,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // getYZ
-arma::colvec getYZ(arma::colvec Yyj, arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps, int leftcensoring, double lowerbound, int rounding);
-RcppExport SEXP _BayesianLASSOMonitoring_getYZ(SEXP YyjSEXP, SEXP YSEXP, SEXP PhiSEXP, SEXP MuSEXP, SEXP sigma2SEXP, SEXP thetaSEXP, SEXP epsSEXP, SEXP leftcensoringSEXP, SEXP lowerboundSEXP, SEXP roundingSEXP) {
+arma::colvec getYZ(arma::colvec Yyj, arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps, int leftcensoring, double lowerbound, int rounding, int updateYJ);
+RcppExport SEXP _BayesianLASSOMonitoring_getYZ(SEXP YyjSEXP, SEXP YSEXP, SEXP PhiSEXP, SEXP MuSEXP, SEXP sigma2SEXP, SEXP thetaSEXP, SEXP epsSEXP, SEXP leftcensoringSEXP, SEXP lowerboundSEXP, SEXP roundingSEXP, SEXP updateYJSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -609,7 +609,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type leftcensoring(leftcensoringSEXP);
     Rcpp::traits::input_parameter< double >::type lowerbound(lowerboundSEXP);
     Rcpp::traits::input_parameter< int >::type rounding(roundingSEXP);
-    rcpp_result_gen = Rcpp::wrap(getYZ(Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding));
+    Rcpp::traits::input_parameter< int >::type updateYJ(updateYJSEXP);
+    rcpp_result_gen = Rcpp::wrap(getYZ(Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, updateYJ));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -740,7 +741,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLASSOMonitoring_lhYJfX", (DL_FUNC) &_BayesianLASSOMonitoring_lhYJfX, 6},
     {"_BayesianLASSOMonitoring_llhYJfX", (DL_FUNC) &_BayesianLASSOMonitoring_llhYJfX, 6},
     {"_BayesianLASSOMonitoring_thetaYeoJohnsonMHX", (DL_FUNC) &_BayesianLASSOMonitoring_thetaYeoJohnsonMHX, 8},
-    {"_BayesianLASSOMonitoring_getYZ", (DL_FUNC) &_BayesianLASSOMonitoring_getYZ, 10},
+    {"_BayesianLASSOMonitoring_getYZ", (DL_FUNC) &_BayesianLASSOMonitoring_getYZ, 11},
     {"_BayesianLASSOMonitoring_GibbsRFLSMXcpp", (DL_FUNC) &_BayesianLASSOMonitoring_GibbsRFLSMXcpp, 11},
     {"_BayesianLASSOMonitoring_simYyjXph1", (DL_FUNC) &_BayesianLASSOMonitoring_simYyjXph1, 4},
     {"_BayesianLASSOMonitoring_simYXph1", (DL_FUNC) &_BayesianLASSOMonitoring_simYXph1, 9},
