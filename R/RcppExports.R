@@ -327,14 +327,6 @@ getYZX <- function(Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerboun
     .Call(`_BayesianLASSOMonitoring_getYZX`, Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, YJ)
 }
 
-#' Absolute-value-constrained normal distribution
-#' 
-#' gets a sample from a normal distribution whose absolute observations are constrained.
-#'
-#' @param n is sample size.
-#' @export
-#' @examples
-#' rtwosegnorm(10, 1, 2, 0, 1)
 GibbsRFLSMXcpp <- function(Y, bset, tol, nsim, thin, burnin, verbose, X = NULL, H = NULL, lambda2 = NULL, theta = NULL) {
     .Call(`_BayesianLASSOMonitoring_GibbsRFLSMXcpp`, Y, bset, tol, nsim, thin, burnin, verbose, X, H, lambda2, theta)
 }

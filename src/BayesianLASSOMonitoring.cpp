@@ -3630,15 +3630,6 @@ Rcpp::List getYZX(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, do
 }
 
 
-
-//' Absolute-value-constrained normal distribution
-//' 
-//' gets a sample from a normal distribution whose absolute observations are constrained.
-//'
-//' @param n is sample size.
-//' @export
-//' @examples
-//' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
 Rcpp::List GibbsRFLSMXcpp(arma::colvec Y, 
                           Rcpp::List bset, double tol, 

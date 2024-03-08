@@ -3,7 +3,6 @@
 export(GibbsRFLSM.sim.ph1)
 export(GibbsRFLSM.sim.ph2)
 export(GibbsRFLSMX)
-export(GibbsRFLSMXcpp)
 export(Ph1BayesianLASSO)
 export(Ph1MultipleTesting)
 export(Ph1MultipleTesting.BF)
