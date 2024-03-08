@@ -3728,37 +3728,36 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
       if (i % thin == 0) {
          Phimat.col(k) = Rcpp::as<arma::mat>(iter["Phi"]);
       
-      if (Xflg == 1) {
-        Betamat.col(k) = Rcpp::as<arma::mat>(iter["Beta"]);
-      }
-      
-      if (Hflg == 1) {
-        Taumat.col(k) = Rcpp::as<arma::mat>(iter["Tau"]);
-        Gammamat.col(k) = Rcpp::as<arma::mat>(iter["Gamma"]);
-      }
-      
-      mu0mat(k) = iter["mu0"];
-      
-      if ((method == "LASSO") || (method == "ALASSO")){
-        eta2mat.col(k) = Rcpp::as<arma::mat>(iter["eta2"]);
-      }
-      
-      sigma2mat(k) = iter["sigma2"];
-      
-      if ((updatelambda2 == 1) && ((method == "LASSO") || (method == "ALASSO"))){
-        lambda2mat.col(k) = Rcpp::as<arma::mat>(iter["lambda2"]);
-      }
-      
-      if (updateYJ == 1) {
-        thetamat(k) = theta_;
-      }
-      
-      if ((leftcensoring == 1) || (rounding == 1)) {
-        Zmat.col(k) = YZ - Y;
-      }
-      
-      
-      k++;
+        if (Xflg == 1) {
+          Betamat.col(k) = Rcpp::as<arma::mat>(iter["Beta"]);
+        }
+        
+        if (Hflg == 1) {
+          Taumat.col(k) = Rcpp::as<arma::mat>(iter["Tau"]);
+          Gammamat.col(k) = Rcpp::as<arma::mat>(iter["Gamma"]);
+        }
+        
+        mu0mat(k) = iter["mu0"];
+        
+        if ((method == "LASSO") || (method == "ALASSO")){
+          eta2mat.col(k) = Rcpp::as<arma::mat>(iter["eta2"]);
+        }
+        
+        sigma2mat(k) = iter["sigma2"];
+        
+        if ((updatelambda2 == 1) && ((method == "LASSO") || (method == "ALASSO"))){
+          lambda2mat.col(k) = Rcpp::as<arma::mat>(iter["lambda2"]);
+        }
+        
+        if (updateYJ == 1) {
+          thetamat(k) = theta_;
+        }
+        
+        if ((leftcensoring == 1) || (rounding == 1)) {
+          Zmat.col(k) = YZ - Y;
+        }
+        
+        k++;
       }
 
     }
