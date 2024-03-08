@@ -3264,8 +3264,8 @@ arma::mat lhYJfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, dou
    tmp = tmp * pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i)));
  }
  
- Rcpp::Rcout << lhYJ << std::endl;
- Rcpp::Rcout << tmp << std::endl;
+ //Rcpp::Rcout << lhYJ << std::endl;
+ //Rcpp::Rcout << tmp << std::endl;
  
  
  
@@ -3374,7 +3374,7 @@ arma::mat thetaYeoJohnsonMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double s
 
 // [[Rcpp::export]]
 arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
-                   double theta, double eps, int leftcensoring, double lowerbound, int rounding, int YJ) {
+                   double theta, double eps, int leftcensoring, double lowerbound, int rounding) {
   
   int q = Phi.n_rows;
   //Rcpp::Rcout << q << std::endl;
@@ -3426,28 +3426,28 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
       fit(i, 0) = Mu(i, 0) + VasPhi(0);
       
       if (rounding == 1) {
-        if (YJ == 1) {
+        //if (YJ == 1) {
           tmp = yeojohnsontr(YZ.row(i) - 0.5, theta, eps);
           lbr = tmp(0);
           tmp = yeojohnsontr(YZ.row(i) + 0.5, theta, eps);
           ubr = tmp(0);
-        } else {
-          lbr = YZ(i) - 0.5;
-          ubr = YZ(i) + 0.5;
-        }
+        //} else {
+        //  lbr = YZ(i) - 0.5;
+        //  ubr = YZ(i) + 0.5;
+        //}
         flgr = 1;
       }
       
       if (leftcensoring == 1) {
         lbl = (-1.0) *arma::math::inf();
         if (YZ(i) <= lowerbound) {
-          if (YJ == 1) {
+          //if (YJ == 1) {
             tmp(0) = lowerbound;
             tmp = yeojohnsontr(tmp, theta, eps);
             ubl = tmp(0);
-          } else{
-            ubl = lowerbound;
-          }
+          //} else{
+          //  ubl = lowerbound;
+          //}
           
           flgl = 1;
         }
@@ -3485,149 +3485,17 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
     }
   }
   
-  if (YJ == 1) {
+  //if (YJ == 1) {
     YZ = invyeojohnsontr(YZyj, theta, eps); 
-  } else {
-    YZ = YZyj;
-  }
+  //} else {
+  //  YZ = YZyj;
+  //}
   
   return(YZ);
   
 }
 
 
-
-// [[Rcpp::export]]
-Rcpp::List getYZX(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
-                   double theta, double eps, int leftcensoring, double lowerbound, int rounding, int YJ) {
-  
-  int q = Phi.n_rows;
-  //Rcpp::Rcout << q << std::endl;
-  int T = Y.n_elem;
-  
-  arma::colvec YZ = Y;
-  arma::colvec YZyj = Yyj; 
-  
-  arma::mat V = YZyj - Mu; 
-  arma::mat Vas(1, q);
-  arma::mat VasPhi;
-  
-  arma::mat fit(T, 1);
-  arma::colvec tmp(1);
-  
-  double lbr;
-  double ubr;
-  
-  double lbl;
-  double ubl;
-  
-  double lb;
-  double ub;
-  
-  arma::colvec lbvec(T, 1);
-  arma::colvec ubvec(T, 1);
-  
-  int flgr = 0;
-  int flgl = 0;
-  
-  //Rcpp::Rcout << 1 << std::endl;
-  int ii;
-  if ((leftcensoring == 1) || (rounding == 1)) {
-    for (int i = 0; i < T; i++) {
-      
-      flgr = 0;
-      flgl = 0;
-      
-      for (int j = 0; j < q; j++) {
-        ii = i - 1 - j;
-        if (ii >= 0) {
-          Vas(0, j) = V(ii, 0);
-        } else {
-          Vas(0, j) = 0;
-        }
-      }
-      
-      VasPhi = Vas * Phi;
-      fit(i, 0) = Mu(i, 0) + VasPhi(0);
-      
-      if (rounding == 1) {
-        if (YJ == 1) {
-          tmp = yeojohnsontr(YZ.row(i) - 0.5, theta, eps);
-          lbr = tmp(0);
-          tmp = yeojohnsontr(YZ.row(i) + 0.5, theta, eps);
-          ubr = tmp(0);
-        } else {
-          lbr = YZ(i) - 0.5;
-          ubr = YZ(i) + 0.5;
-        }
-        flgr = 1;
-      }
-      
-      if (leftcensoring == 1) {
-        lbl = (-1.0) *arma::math::inf();
-        if (YZ(i) <= lowerbound) {
-          if (YJ == 1) {
-            tmp(0) = lowerbound;
-            tmp = yeojohnsontr(tmp, theta, eps);
-            ubl = tmp(0);
-          } else{
-            ubl = lowerbound;
-          }
-          
-          flgl = 1;
-        }
-      }
-      
-      //////// find the union
-      
-      if (flgr == 1) {
-        lb = lbr;
-        ub = ubr;
-      }
-      
-      if (flgl == 1) {
-        lb = lbl;
-        ub = ubl;
-        if (flgr == 1) {
-          if (ubr > ubl) {
-            ub = ubr;
-          }
-        } 
-      }
-      
-      lbvec(i) = lb;
-      ubvec(i) = ub;
-      
-      if ((flgr == 1) || (flgl == 1)) {
-        tmp = rtrnorm(1, fit(i, 0), sqrt(sigma2), lb, ub);
-        YZyj(i) = tmp(0);
-      }
-      
-      //////////////////////////// 
-      
-      V(i, 0) = YZyj(i) - Mu(i, 0);
-      
-    }
-  }
-  
-  if (YJ == 1) {
-    YZ = invyeojohnsontr(YZyj, theta, eps); 
-  } else {
-    YZ = YZyj;
-  }
-  
-  Rcpp::List out;
-  out = Rcpp::List::create(
-    Rcpp::_["YZ"] = YZ,
-    Rcpp::_["YZyj"] = YZyj,
-    Rcpp::_["lb"] = lbvec,
-    Rcpp::_["ub"] = ubvec,
-    Rcpp::_["fit"] = fit
-  );
-  
-  return(out);
-  
-}
 
 
 // [[Rcpp::export]]
@@ -3640,7 +3508,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
                           Rcpp::Nullable<Rcpp::NumericMatrix> lambda2 = R_NilValue,
                           Rcpp::Nullable<double> theta = R_NilValue) {
   
-  int YJ = bset["YJ"];
+  //int YJ = bset["YJ"];
   int leftcensoring = bset["leftcensoring"];
   int lowerbound = bset["lowerbound"];
   int rounding = bset["rounding"];
@@ -3648,6 +3516,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   int phiq = bset["phiq"];
   Rcpp::String method = bset["method"];
   int phimono = bset["phimono"];
+  int updatelambda2 = bset["updatelambda2"];
   //Rcpp::Rcout << 1 << std::endl;
   
   /////////////////////////////////////
@@ -3716,11 +3585,11 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   // initialize the iteration
   arma::mat Yyj;
   
-  if (YJ == 1) {
+  //if (YJ == 1) {
     Yyj = yeojohnsontr(Y, theta_, tol);
-  } else {
-    Yyj = Y;
-  }
+  //} else {
+  //  Yyj = Y;
+  //}
   
   Rcpp::List iter = initGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
   
@@ -3728,6 +3597,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   
   arma::mat Phimat(phiq, nsim);
   arma::mat Betamat;
+  
   if (Xflg == 1) {
     Betamat.set_size(p, nsim);
   }
@@ -3744,8 +3614,17 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   arma::mat Mumat(T, nsim);
   arma::mat eta2mat(phiq + p, nsim);
   arma::mat sigma2mat(1, nsim);
-  arma::mat lambda2mat(phiq + p, nsim);
-  arma::mat thetamat(1, nsim);
+  
+  arma::mat lambda2mat;
+  if (updatelambda2 == 1) {
+    lambda2mat.set_size(phiq + p, nsim);
+  }
+  
+  arma::mat thetamat;
+  if (updateYJ == 1) {
+    thetamat.set_size(1, nsim);
+  }
+  
   arma::mat Zmat(T, nsim);
   
   //Rcpp::Rcout << 5 << std::endl;
@@ -3769,7 +3648,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     
     if ((leftcensoring == 1) || (rounding == 1)) {
       YZ = getYZ(Yyj, Y, Phi, Mu, sigma2, 
-                 theta_, tol, leftcensoring, lowerbound, rounding, YJ);
+                 theta_, tol, leftcensoring, lowerbound, rounding);
     } else {
       YZ = Y;
     }
@@ -3784,11 +3663,11 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     
     //Rcpp::Rcout << 8 << std::endl;
     
-    if (YJ == 1) {
+    //if (YJ == 1) {
       Yyj = yeojohnsontr(YZ, theta_, tol);
-    } else {
-      Yyj = YZ;
-    }
+    //} else {
+    //  Yyj = YZ;
+    //}
     
     //Rcpp::Rcout << 9 << std::endl;
     
