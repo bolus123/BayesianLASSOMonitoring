@@ -3617,6 +3617,7 @@ Rcpp::List getYZX(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, do
 }
 
 
+
 //' Absolute-value-constrained normal distribution
 //' 
 //' gets a sample from a normal distribution whose absolute observations are constrained.

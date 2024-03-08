@@ -1,232 +1,38 @@
-#' Random Flexible Level Shift Model
-#' 
-#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
-#' @param Y is a vector.
-#' @param H is the design matrix for shifts.
-#' @param X is the input matrix
-#' @param q is the number of lags.
-#' @param A is a given variance-covariance matrix in MT and regression for the slab-and-spike coefficients.
-#' @param a is a given shape of the prior gamma distribution for sigma2.
-#' @param b is a given scale of the prior gamma distribution for sigma2.
-#' @param alpha is a given shape of the prior gamma distribution for lambda2.
-#' @param beta is a given scale of the prior gamma distribution for lambda2.
-#' @param theta1 is a given shape1 of the prior beta distribution for the probability of Tau and Kappa.
-#' @param theta2 is a given shape2 of the prior beta distribution for the probability of Tau and Kappa.
-#' @param xi2 is a given variance of the prior normal distribution for shifts.
-#' @param method is a choice of methods including MT(McCulloch-Tsay), regression, LASSO, ALASSO(Adaptive LASSO), MonoLASSO(LASSO with Monotonicity constrains), MonoALASSO(Adaptive LASSO with Monotonicity constrains).
-#' @param bound0 is an upper bound of the methods with Monotonicity constrains.
-#' @param boundqplus1 is  a lower bound of the methods with Monotonicity constrains.
-#' @param nsim is the number of draws from MCMC.
-#' @param by is the interval of systematic sampling for the draws from MCMC.
-#' @param burnin is the length of burn-in period.
-#' @param tol is the tolerance level.
-#' @references McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
-#' 
+#' Bayesian LASSO Phase I Monitoring
 #' 
 #' @export
-#' @examples
-#' nsim <- 100
-#' burnin <- 100
-#' T <- 100
-#' q <- 5
-#' H <- getHMatMT(T, q)
-#' Y <- arima.sim(list(ar = 0.5), n = T)
 #' 
-#' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSM <- function(Y, H = NULL, X = NULL, q = 5, 
-                       A = diag(nrow = q), 
-                       a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
-                       theta1 = 1, theta2 = 1, xi2 = 0.1,
-                       method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
-                       nsim = 1000, by = 1, burnin = 1000, tol = 1e-10) {
-  
-  TT <- length(Y)
-  
-  if (is.null(H) && is.null(X)) {
-    model <- GibbsRFLSMcpp(Y, q, 
-                       A, a, b, alpha, beta, 
-                       theta1, theta2, xi2,
-                       method, bound0, boundqplus1,
-                       nsim, by, burnin,
-                       tol)
-  } else {
-    H1 <- cbind(H, X)
-    model <- GibbsRFLSMcpp(Y, q, 
-                        A, a, b, alpha, beta, 
-                        theta1, theta2, xi2,
-                        method, bound0, boundqplus1,
-                        nsim, by, burnin,
-                        tol, H1)
-    
-  }
-  
-  if (is.null(H)) {
-    m <- 0
-    Gamma <- NA
-    Tau <- NA
-    pGamma <- NA
-    muGamma <- NA
-    sigma2Gamma <- NA
-  } else {
-    m <- dim(H)[2]
-    Gamma <- model$Gamma[1:m, ]
-    Tau <- model$Tau[1:m, ]
-    pGamma <- model$p[1:m, ]
-    muGamma <- model$muGamma[1:m, ]
-    sigma2Gamma <- model$sigma2Gamma[1:m, ]
-  }
-  
-  if (is.null(X)) {
-    p <- 0
-    Beta <- NA
-    Kappa <- NA
-    pBeta <- NA
-    muBeta <- NA
-    sigma2Beta <- NA
-  } else {
-    p <- dim(X)[2]
-    Beta <- model$Gamma[(m + 1):(m + p), ]
-    Kappa <- model$Tau[(m + 1):(m + p), ]
-    pBeta <- model$p[(m + 1):(m + p), ]
-    muBeta <- model$muGamma[(m + 1):(m + p), ]
-    sigma2Beta <- model$sigma2Gamma[(m + 1):(m + p), ]
-  }
-  
-  
-  
-  out <- list(
-    "Phi" = matrix(model$Phi, ncol = nsim),
-    "Beta" = matrix(Beta, ncol = nsim),
-    "pBeta" = matrix(pBeta, ncol = nsim),
-    "muBeta" = matrix(muBeta, ncol = nsim),
-    "sigma2Beta" = matrix(sigma2Beta, ncol = nsim),
-    "Kappa" = matrix(Kappa, ncol = nsim),
-    "Gamma" = matrix(Gamma, ncol = nsim),
-    "pGamma" = matrix(pGamma, ncol = nsim),
-    "muGamma" = matrix(muGamma, ncol = nsim),
-    "sigma2Gamma" = matrix(sigma2Gamma, ncol = nsim),
-    "Tau" = matrix(Tau, ncol = nsim),
-    "sigma2" = model$sigma2,
-    "lambda2" = model$lambda2,
-    "muq" = model$muq,
-    "Mu" = model$Mu
+bset <- function(method = "ALASSO", phimono = TRUE, phiq = 5, phiA = diag(nrow = phiq), phibound0 = Inf, phiboundqplus1 = 0, 
+                 betap = 10, betaA = diag(nrow = betap), gammaxi2 = 0.1, tautheta1 = 1, tautheta2 = 1, 
+                 sigma2a = 1, sigma2b = 1, lambda2 = NULL, updatelambda2 = TRUE, lambda2alpha = 0.1, lambda2beta = 0.1, 
+                 theta = NULL, YJ = TRUE, updateYJ = TRUE, leftcensoring = TRUE, lowerbound = 0, rounding = TRUE) {
+  bset <- list(
+    "method" = method,
+    "phimono" = ifelse(phimono, 1, 0),
+    "phiq" = phiq,
+    "phiA" = phiA,
+    "phibound0" = phibound0,
+    "phiboundqplus1" = phiboundqplus1,
+    "betaA" = betaA,
+    "gammaxi2" = gammaxi2,
+    "tautheta1" = tautheta1,
+    "tautheta2" = tautheta2,
+    "sigma2a" = sigma2a,
+    "sigma2b" = sigma2b,
+    "lambda2" = lambda2,
+    "updatelambda2" = ifelse(updatelambda2, 1, 0),
+    "lambda2alpha" = lambda2alpha,
+    "lambda2beta" = lambda2beta,
+    "theta" = theta,
+    "YJ" = ifelse(YJ, 1, 0),
+    "updateYJ" = ifelse(updateYJ, 1, 0),
+    "leftcensoring" = ifelse(leftcensoring, 1, 0),
+    "lowerbound" = lowerbound,
+    "rounding" = ifelse(rounding, 1, 0)
   )
-  
-  return(out)
-  
+  return(bset)
 }
-
-
-#' Random Flexible Level Shift Model
-#' 
-#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
-#' @param Y is a vector.
-#' @param H is the design matrix for shifts.
-#' @param X is the input matrix
-#' @param q is the number of lags.
-#' @param A is a given variance-covariance matrix in MT and regression for the slab-and-spike coefficients.
-#' @param a is a given shape of the prior gamma distribution for sigma2.
-#' @param b is a given scale of the prior gamma distribution for sigma2.
-#' @param alpha is a given shape of the prior gamma distribution for lambda2.
-#' @param beta is a given scale of the prior gamma distribution for lambda2.
-#' @param theta1 is a given shape1 of the prior beta distribution for the probability of Tau and Kappa.
-#' @param theta2 is a given shape2 of the prior beta distribution for the probability of Tau and Kappa.
-#' @param xi2 is a given variance of the prior normal distribution for shifts.
-#' @param method is a choice of methods including MT(McCulloch-Tsay), regression, LASSO, ALASSO(Adaptive LASSO), MonoLASSO(LASSO with Monotonicity constrains), MonoALASSO(Adaptive LASSO with Monotonicity constrains).
-#' @param bound0 is an upper bound of the methods with Monotonicity constrains.
-#' @param boundqplus1 is  a lower bound of the methods with Monotonicity constrains.
-#' @param nsim is the number of draws from MCMC.
-#' @param by is the interval of systematic sampling for the draws from MCMC.
-#' @param burnin is the length of burn-in period.
-#' @param tol is the tolerance level.
-#' @param log is the flag triggering the log transformation
-#' @param const is the constant added to the input during the log transformation
-#' @param sta is the flag triggering the standardization
-#' @references McCulloch, R. E., & Tsay, R. S. (1993). Bayesian inference and prediction for mean and variance shifts in autoregressive time series. Journal of the american Statistical association, 88(423), 968-978.
-#' 
-#' 
-#' @export
-#' @examples
-#' alpha <- c(0.03083069, 0.06242601, 0.09120189)
-#' lambda <- 0.239385
-#' pi <- 0.1453097
-#'
-#' TT <- 183
-#' w <- 28
-#' Y <- rzinpoisinar3(TT + w, alpha, lambda, pi, ceiling(TT / 2) + w, delta = 1, burnin = 100)
-#' 
-#' H <- getHMatMT(T, q)
-#' Y <- arima.sim(list(ar = 0.5), n = T)
-#' 
-#' result <- GibbsRFLSM.ma(Y, H = H, q = q, nsim = nsim, burnin = burnin)
-#' 
-GibbsRFLSM.ma <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1), q = 5, 
-                       A = diag(nrow = q), 
-                       a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
-                       theta1 = 1, theta2 = 1, xi2 = 0.1,
-                       method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
-                       nsim = 1000, by = 1, burnin = 1000, tol = 1e-10,
-                       log = TRUE, const = 1, sta = TRUE) {
-  
-  YY <- c(Y0, Y)
-  TT <- length(Y)
-  nn <- length(YY)
-  ####################################
-  
-    Y1 <- movaver(YY, w)[(nn - TT + 1):nn]
-    Y1.ma <- Y1
-    Y2 <- trans(Y1, log = log, const = const, sta = sta)
-    Y1 <- Y2$Y
-  
-  ####################################
-  
-  model <- GibbsRFLSM(Y1, H, X, q, 
-                    A, 
-                    a, b, alpha, beta, 
-                    theta1, theta2, xi2,
-                    method, bound0, boundqplus1,
-                    nsim, by, burnin, tol)
-    
-  
-  if (w == 1) {
-    tmpY0 <- NULL
-  } else {
-    tmpY0 <- YY[(nn - TT - (w - 1) + 1):(nn - TT)]
-  }
-    
-  out <- list(
-    "Phi" = model$Phi,
-    "Beta" = model$Beta,
-    "pBeta" = model$pBeta,
-    "muBeta" = model$muBeta,
-    "sigma2Beta" = model$sigma2Beta,
-    "Kappa" = model$Kappa,
-    "Gamma" = model$Gamma,
-    "pGamma" = model$pGamma,
-    "muGamma" = model$muGamma,
-    "sigma2Gamma" = model$sigma2Gamma,
-    "Tau" = model$Tau,
-    "sigma2" = model$sigma2,
-    "lambda2" = model$lambda2,
-    "muq" = model$muq,
-    "Mu" = model$Mu,
-    "w" = w,
-    "Y.tr" = Y2$Y,
-    "meanY" = Y2$meanY,
-    "sdY" = Y2$sdY,
-    "Y.ma" = Y1.ma,
-    "X" = X,
-    "H" = H,
-    "Y" = Y,
-    "Y0" = tmpY0
-  )
-  
-  return(out)
-  
-}
-
-
 
 #' Random Flexible Level Shift Model
 #' 
@@ -264,84 +70,19 @@ GibbsRFLSM.ma <- function(Y, w = 7, H = NULL, X = NULL, Y0 = rep(mean(Y), w - 1)
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSMYJZ <- function(Y, H = NULL, X = NULL, q = 5, 
-                       A = diag(nrow = q), 
-                       a = 0.1, b = 0.1, alpha = 0.1, beta = 0.1, 
-                       theta1 = 1, theta2 = 1, xi2 = 0.1,
-                       method = "MonoALASSO", bound0 = Inf, boundqplus1 = 0,
-                       updateYJ = 1, theta = 1,
-                       updateZ = 1, eps = 1e-6,
-                       nsim = 1000, by = 1, burnin = 1000, tol = 1e-10) {
+GibbsRFLSMX <- function(Y, X = NULL, H = NULL, 
+                        bset = bset(betap = ifelse(class(X)[1] == "matrix", diag(nrow = dim(X)[2]), diag(nrow = 1))), 
+                        tol = 1e-10, nsim = 300, thin = 10, burnin = 1000, verbose = TRUE) {
   
-  TT <- length(Y)
+  model <- GibbsRFLSMXcpp(Y, 
+                 bset, tol, 
+                 nsim, thin, burnin, 
+                 verbose = ifelse(verbose, 1, 0),
+                 X = X,
+                 H = H,
+                 lambda2 = bset$lambda2,
+                 theta = bset$theta)
   
-  if (is.null(H) && is.null(X)) {
-    model <- GibbsRFLSMYeoJohnsonZcpp(Y, q, 
-                           A, a, b, alpha, beta, 
-                           theta1, theta2, xi2,
-                           method, bound0, boundqplus1,
-                           updateYJ, theta,
-                           updateZ, eps,
-                           nsim, by, burnin,
-                           tol)
-  } else {
-    H1 <- cbind(H, X)
-    model <- GibbsRFLSMYeoJohnsonZcpp(Y, q, 
-                                     A, a, b, alpha, beta, 
-                                     theta1, theta2, xi2,
-                                     method, bound0, boundqplus1,
-                                     updateYJ, theta,
-                                     updateZ, eps,
-                                     nsim, by, burnin,
-                                     tol, NULL, NULL, H1)
-    
-  }
-  
-  if (is.null(H)) {
-    m <- 0
-    Gamma <- NA
-    Tau <- NA
-    pGamma <- NA
-    muGamma <- NA
-    sigma2Gamma <- NA
-  } else {
-    m <- dim(H)[2]
-    Gamma <- model$Gamma[1:m, ]
-    Tau <- model$Tau[1:m, ]
-  }
-  
-  if (is.null(X)) {
-    p <- 0
-    Beta <- NA
-    Kappa <- NA
-    pBeta <- NA
-    muBeta <- NA
-    sigma2Beta <- NA
-  } else {
-    p <- dim(X)[2]
-    Beta <- model$Gamma[(m + 1):(m + p), ]
-    Kappa <- model$Tau[(m + 1):(m + p), ]
-  }
-  
-  
-  
-  out <- list(
-    "Phi" = matrix(model$Phi, ncol = nsim),
-    "Beta" = matrix(Beta, ncol = nsim),
-    "Kappa" = matrix(Kappa, ncol = nsim),
-    "Gamma" = matrix(Gamma, ncol = nsim),
-    "Tau" = matrix(Tau, ncol = nsim),
-    "sigma2" = model$sigma2,
-    "lambda2" = model$lambda2,
-    "muq" = model$muq,
-    "Mu" = model$Mu,
-    "theta" = model$theta,
-    "Yyj" = model$Yyj,
-    "H" = H,
-    "X" = X,
-    "Y" = Y
-  )
-  
-  return(out)
+  return(model)
   
 }
