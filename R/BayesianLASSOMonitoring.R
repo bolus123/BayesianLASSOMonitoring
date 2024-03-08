@@ -482,7 +482,7 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
   n <- length(model$Y)
   nnsim <- dim(model$Phi)[2]
   
-  ph1mat <- matrix(NA, nrow = n - q, ncol = nsim)
+  ph1mat <- matrix(NA, nrow = n, ncol = nsim)
   
   for (i in 1:nsim) {
     tmpsel <- sample(1:nnsim, 1)
