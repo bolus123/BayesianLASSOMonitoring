@@ -37,14 +37,9 @@
 GibbsRFLSMX <- function(Y, bset, X = NULL, H = NULL, 
                         tol = 1e-10, nsim = 300, thin = 10, burnin = 1000, verbose = TRUE) {
   
-  model <- GibbsRFLSMXcpp(Y, 
-                 bset, tol, 
-                 nsim, thin, burnin, 
-                 verbose = ifelse(verbose, 1, 0),
-                 X = X,
-                 H = H,
-                 lambda2 = bset$lambda2,
-                 theta = bset$theta)
+  model <- GibbsRFLSMXcpp(matrix(Y, ncol = 1), bset, 
+                        tol = tol, nsim = nsim, thin = thin, burnin = burnin, verbose = verbose,
+                        X = X, H = H1)
   
   out <- list(
     "Phi" = matrix(model$Phi, ncol = nsim),
