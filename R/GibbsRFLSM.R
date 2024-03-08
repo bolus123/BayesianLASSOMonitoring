@@ -42,13 +42,13 @@ GibbsRFLSMX <- function(Y, bset, X = NULL, H = NULL,
                         X = X, H = H, lambda2 = bset$lambda2, theta = bset$theta)
   
   out <- list(
-    "Phi" = matrix(model$Phi, ncol = nsim),
-    "Beta" = matrix(model$Beta, ncol = nsim),
-    "Gamma" = matrix(model$Gamma, ncol = nsim),
-    "Tau" = matrix(model$Tau, ncol = nsim),
+    "Phi" = model$Phi,
+    "Beta" = model$Beta,
+    "Gamma" = model$Gamma,
+    "Tau" = model$Tau,
     "mu0" = model$mu0,
     "sigma2" = model$sigma2,
-    "lambda2" = matrix(model$lambda2, ncol = nsim),
+    "lambda2" = model$lambda2,
     "theta" = model$theta,
     "Z" = model$Z,
     "H" = H,
