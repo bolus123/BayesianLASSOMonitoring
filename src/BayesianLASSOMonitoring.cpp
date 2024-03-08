@@ -3616,7 +3616,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   arma::mat sigma2mat(1, nsim);
   
   arma::mat lambda2mat;
-  if (updatelambda2 == 1) {
+  if ((updatelambda2 == 1) && ((method == "LASSO") || (method == "ALASSO"))) {
     lambda2mat.set_size(phiq + p, nsim);
   }
   
@@ -3692,7 +3692,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
       eta2mat.col(k) = Rcpp::as<arma::mat>(iter["eta2"]);
       sigma2mat(k) = iter["sigma2"];
       
-      if (updatelambda2 == 1) {
+      if ((updatelambda2 == 1) && ((method == "LASSO") || (method == "ALASSO"))){
         lambda2mat.col(k) = Rcpp::as<arma::mat>(iter["lambda2"]);
       }
       
