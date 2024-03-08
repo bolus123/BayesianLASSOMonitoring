@@ -5,14 +5,14 @@
 \title{Bayesian LASSO Phase I Monitoring}
 \usage{
 bset(
+  X = NULL,
   method = "ALASSO",
   phimono = TRUE,
   phiq = 5,
   phiA = diag(nrow = phiq),
   phibound0 = Inf,
   phiboundqplus1 = 0,
-  betap = 10,
-  betaA = diag(nrow = betap),
+  betaA = ifelse(class(X)[1] == "matrix", dim(X)[2], 1),
   gammaxi2 = 0.1,
   tautheta1 = 1,
   tautheta2 = 1,

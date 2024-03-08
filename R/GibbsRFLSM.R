@@ -3,8 +3,8 @@
 #' @export
 #' 
 #' 
-bset <- function(method = "ALASSO", phimono = TRUE, phiq = 5, phiA = diag(nrow = phiq), phibound0 = Inf, phiboundqplus1 = 0, 
-                 betap = 10, betaA = diag(nrow = betap), gammaxi2 = 0.1, tautheta1 = 1, tautheta2 = 1, 
+bset <- function(X = NULL, method = "ALASSO", phimono = TRUE, phiq = 5, phiA = diag(nrow = phiq), phibound0 = Inf, phiboundqplus1 = 0, 
+                 betaA = ifelse(class(X)[1] == "matrix", dim(X)[2], 1), gammaxi2 = 0.1, tautheta1 = 1, tautheta2 = 1, 
                  sigma2a = 1, sigma2b = 1, lambda2 = NULL, updatelambda2 = TRUE, lambda2alpha = 0.1, lambda2beta = 0.1, 
                  theta = NULL, YJ = TRUE, updateYJ = TRUE, leftcensoring = TRUE, lowerbound = 0, rounding = TRUE) {
   bset <- list(
