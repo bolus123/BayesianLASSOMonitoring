@@ -119,10 +119,26 @@ invboxcoxtr <- function(Ybc, theta) {
     .Call(`_BayesianLASSOMonitoring_invboxcoxtr`, Ybc, theta)
 }
 
+#' Absolute-value-constrained normal distribution
+#' 
+#' gets a sample from a normal distribution whose absolute observations are constrained.
+#'
+#' @param n is sample size.
+#' @export
+#' @examples
+#' rtwosegnorm(10, 1, 2, 0, 1)
 invyeojohnsontr <- function(Yyj, theta, eps) {
     .Call(`_BayesianLASSOMonitoring_invyeojohnsontr`, Yyj, theta, eps)
 }
 
+#' Absolute-value-constrained normal distribution
+#' 
+#' gets a sample from a normal distribution whose absolute observations are constrained.
+#'
+#' @param n is sample size.
+#' @export
+#' @examples
+#' rtwosegnorm(10, 1, 2, 0, 1)
 yeojohnsontr <- function(Y, theta, eps) {
     .Call(`_BayesianLASSOMonitoring_yeojohnsontr`, Y, theta, eps)
 }

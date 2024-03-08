@@ -1,39 +1,3 @@
-#' Bayesian LASSO Phase I Monitoring
-#' 
-#' @export
-#' 
-#' 
-bset <- function(X = NULL, method = "ALASSO", phimono = TRUE, phiq = 5, phiA = diag(nrow = phiq), phibound0 = Inf, phiboundqplus1 = 0, 
-                 betaA = ifelse(class(X)[1] == "matrix", dim(X)[2], 1), gammaxi2 = 0.1, tautheta1 = 1, tautheta2 = 1, 
-                 sigma2a = 1, sigma2b = 1, lambda2 = NULL, updatelambda2 = TRUE, lambda2alpha = 0.1, lambda2beta = 0.1, 
-                 theta = NULL, YJ = TRUE, updateYJ = TRUE, leftcensoring = TRUE, lowerbound = 0, rounding = TRUE) {
-  bset <- list(
-    "method" = method,
-    "phimono" = ifelse(phimono, 1, 0),
-    "phiq" = phiq,
-    "phiA" = phiA,
-    "phibound0" = phibound0,
-    "phiboundqplus1" = phiboundqplus1,
-    "betaA" = betaA,
-    "gammaxi2" = gammaxi2,
-    "tautheta1" = tautheta1,
-    "tautheta2" = tautheta2,
-    "sigma2a" = sigma2a,
-    "sigma2b" = sigma2b,
-    "lambda2" = lambda2,
-    "updatelambda2" = ifelse(updatelambda2, 1, 0),
-    "lambda2alpha" = lambda2alpha,
-    "lambda2beta" = lambda2beta,
-    "theta" = theta,
-    "YJ" = ifelse(YJ, 1, 0),
-    "updateYJ" = ifelse(updateYJ, 1, 0),
-    "leftcensoring" = ifelse(leftcensoring, 1, 0),
-    "lowerbound" = lowerbound,
-    "rounding" = ifelse(rounding, 1, 0)
-  )
-  return(bset)
-}
-
 #' Random Flexible Level Shift Model
 #' 
 #' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
@@ -70,8 +34,7 @@ bset <- function(X = NULL, method = "ALASSO", phimono = TRUE, phiq = 5, phiA = d
 #' 
 #' result <- GibbsRFLSM(Y, H = H, q = q, nsim = nsim, burnin = burnin)
 #' 
-GibbsRFLSMX <- function(Y, X = NULL, H = NULL, 
-                        bset = bset(betap = ifelse(class(X)[1] == "matrix", diag(nrow = dim(X)[2]), diag(nrow = 1))), 
+GibbsRFLSMX <- function(Y, bset, X = NULL, H = NULL, 
                         tol = 1e-10, nsim = 300, thin = 10, burnin = 1000, verbose = TRUE) {
   
   model <- GibbsRFLSMXcpp(Y, 
@@ -83,6 +46,22 @@ GibbsRFLSMX <- function(Y, X = NULL, H = NULL,
                  lambda2 = bset$lambda2,
                  theta = bset$theta)
   
-  return(model)
+  out <- list(
+    "Phi" = matrix(model$Phi, ncol = nsim),
+    "Beta" = matrix(model$Beta, ncol = nsim),
+    "Gamma" = matrix(model$Gamma, ncol = nsim),
+    "Tau" = matrix(model$Tau, ncol = nsim),
+    "mu0" = model$mu0,
+    "sigma2" = model$sigma2,
+    "lambda2" = matrix(model$lambda2, ncol = nsim),
+    "theta" = model$theta,
+    "Z" = model$Z,
+    "H" = H,
+    "X" = X,
+    "Y" = Y,
+    "nsim" = nsim
+  )
+  
+  return(out)
   
 }

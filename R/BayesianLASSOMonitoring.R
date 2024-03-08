@@ -434,7 +434,97 @@ Ph1MultipleTesting.Y0tr <- function(model, FAP0 = 0.2, side = "right-sided", nsi
   
 }
 
-
+#' Bayesian LASSO Phase I Monitoring
+#' 
+#' gets a posterior sample using Gibbs sampling for Random Flexible Level Shift Model
+#' @param model is model.
+#' @param nsim is .
+#' @param FAP0 is 
+#' @param log is model.
+#' @param const is .
+#' @param sta is 
+#' 
+#' 
+#' @export
+Ph1MultipleTesting.Y01 <- function(model, bset, 
+                                   FAP0 = 0.2, side = "right-sided", 
+                                   nsim = 10000, interval = c(0.000001, 0.499999)) {
+  
+  root.finding <- function(adj.alpha, ph1mat, FAP0, n, nsim, side = "right-sided") {
+    
+    lim <- matrix(NA, nrow = n, ncol = 2)
+    sig <- matrix(NA, nrow = n, ncol = nsim)
+    
+    for (i in 1:n) {
+      if (side == "right-sided") {
+        lim[i, 1] <- -Inf
+        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha)
+      } else if (side == "left-sided") {
+        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha)
+        lim[i, 2] <- infert
+      } else if (side == "two-sided") {
+        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2)
+        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2)
+      }
+    }
+    
+    for (i in 1:nsim) {
+      sig[, i] <- (lim[, 1] <= ph1mat[, i]) & (ph1mat[, i] <= lim[, 2])
+    }
+    
+    tmp <- mean(colSums(sig) == n)
+    dif <- tmp - (1 - FAP0)
+    ##cat("dif:", dif, "\n")
+    return(dif)
+  }
+  
+  q <- dim(model$Phi)[1]
+  n <- length(model$Y)
+  nnsim <- dim(model$Phi)[2]
+  
+  ph1mat <- matrix(NA, nrow = n - q, ncol = nsim)
+  
+  for (i in 1:nsim) {
+    tmpsel <- sample(1:nnsim, 1)
+    Mu0 <- matrix(rep(model$mu0[tmpsel], n))
+    if (!is.null(model$X)) {
+      Mu0 <- Mu0 + model$X %*% (model$Beta[, tmpsel])
+    }
+    ph1mat[, i] <- simYph1(matrix(model$Yyj[, tmpsel]), matrix(model$Phi[, tmpsel]), matrix(Mu0), 
+                            matrix(model$sigma2[tmpsel]), matrix(model$theta[tmpsel]), 1e-32)
+    
+    tmpYyj <- yeojohnsontr(xx$Z[, tmpsel] + Y1, xx$theta[tmpsel], 1e-32)
+    simYXph1(matrix(tmpYyj, ncol = 1), matrix(xx$Phi[, tmpsel], ncol = 1), matrix(tmpMu1[, tmpsel] + xx$mu0[tmpsel], ncol = 1),  
+                   xx$sigma2[tmpsel],  xx$theta[tmpsel], 
+                   1e-32, 1, 0, 1)
+    
+  }
+  
+  adj.alpha <- uniroot(root.finding, interval, ph1mat = ph1mat, FAP0 = FAP0, n = n - q, nsim = nsim, side = side, 
+          tol = 1e-6)$root
+  
+  lim <- matrix(NA, nrow = n - q, ncol = 2)
+  sig <- matrix(NA, nrow = n - q, ncol = 1)
+  
+  for (i in 1:(n - q)) {
+    if (side == "right-sided") {
+      lim[i, 1] <- -Inf
+      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha, na.rm = TRUE)
+    } else if (side == "left-sided") {
+      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha, na.rm = TRUE)
+      lim[i, 2] <- infert
+    } else if (side == "two-sided") {
+      lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2, na.rm = TRUE)
+      lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2, na.rm = TRUE)
+    }
+  }
+  
+  sig <- 1 - ((lim[, 1] <= model$Y[-c(1:q)]) & (model$Y[-c(1:q)] <= lim[, 2]))
+  
+  list("grandsig" = sum(sig) > 0, "sig" = sig, "lim" = lim, "adj.alpha" = adj.alpha, 
+       "Yph1" = ph1mat)
+  
+}
 
 
 #' Bayesian LASSO Phase I Monitoring

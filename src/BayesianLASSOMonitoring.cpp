@@ -1556,6 +1556,14 @@ arma::colvec invboxcoxtr(arma::colvec Ybc, double theta) {
   
 }
 
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
 arma::colvec invyeojohnsontr(arma::colvec Yyj, double theta, double eps) {
   int T = Yyj.n_elem;
@@ -1578,6 +1586,14 @@ arma::colvec invyeojohnsontr(arma::colvec Yyj, double theta, double eps) {
   return(ans);
 } 
 
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
 arma::colvec yeojohnsontr(arma::colvec Y, double theta, double eps) {
   int T = Y.n_elem;

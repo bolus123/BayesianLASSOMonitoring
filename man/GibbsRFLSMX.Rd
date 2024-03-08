@@ -6,10 +6,9 @@
 \usage{
 GibbsRFLSMX(
   Y,
+  bset,
   X = NULL,
   H = NULL,
-  bset = bset(betap = ifelse(class(X)[1] == "matrix", diag(nrow = dim(X)[2]), diag(nrow =
-    1))),
   tol = 1e-10,
   nsim = 300,
   thin = 10,
