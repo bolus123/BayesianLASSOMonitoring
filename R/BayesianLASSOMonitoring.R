@@ -490,23 +490,21 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
     if (!is.null(model$X)) {
       Mu0 <- Mu0 + model$X %*% (model$Beta[, tmpsel])
     }
-    ph1mat[, i] <- simYph1(matrix(model$Yyj[, tmpsel]), matrix(model$Phi[, tmpsel]), matrix(Mu0), 
-                            matrix(model$sigma2[tmpsel]), matrix(model$theta[tmpsel]), 1e-32)
     
-    tmpYyj <- yeojohnsontr(xx$Z[, tmpsel] + Y1, xx$theta[tmpsel], 1e-32)
-    simYXph1(matrix(tmpYyj, ncol = 1), matrix(xx$Phi[, tmpsel], ncol = 1), matrix(tmpMu1[, tmpsel] + xx$mu0[tmpsel], ncol = 1),  
-                   xx$sigma2[tmpsel],  xx$theta[tmpsel], 
-                   1e-32, 1, 0, 1)
+    tmpYyj <- yeojohnsontr(model$Z[, tmpsel] + model$Y, model$theta[tmpsel], 1e-32)
+    ph1mat[, i] <- simYXph1(matrix(tmpYyj, ncol = 1), matrix(model$Phi[, tmpsel], ncol = 1), Mu0,  
+                   model$sigma2[tmpsel],  model$theta[tmpsel], 
+                   1e-32, bset$leftcensoring, bset$lowerbound, bset$rounding)
     
   }
   
-  adj.alpha <- uniroot(root.finding, interval, ph1mat = ph1mat, FAP0 = FAP0, n = n - q, nsim = nsim, side = side, 
+  adj.alpha <- uniroot(root.finding, interval, ph1mat = ph1mat, FAP0 = FAP0, n = n, nsim = nsim, side = side, 
           tol = 1e-6)$root
   
-  lim <- matrix(NA, nrow = n - q, ncol = 2)
-  sig <- matrix(NA, nrow = n - q, ncol = 1)
+  lim <- matrix(NA, nrow = n, ncol = 2)
+  sig <- matrix(NA, nrow = n, ncol = 1)
   
-  for (i in 1:(n - q)) {
+  for (i in 1:n) {
     if (side == "right-sided") {
       lim[i, 1] <- -Inf
       lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha, na.rm = TRUE)
