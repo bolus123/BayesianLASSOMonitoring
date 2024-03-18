@@ -4,7 +4,18 @@
 \alias{simYXph1}
 \title{Absolute-value-constrained normal distribution}
 \usage{
-simYXph1(Yyj, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding)
+simYXph1(
+  Y,
+  Phi,
+  Mu,
+  sigma2,
+  theta,
+  eps,
+  leftcensoring,
+  lowerbound,
+  rounding,
+  Z = NULL
+)
 }
 \arguments{
 \item{n}{is sample size.}

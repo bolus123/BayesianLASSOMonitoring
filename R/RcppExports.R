@@ -263,6 +263,10 @@ initGibbsRFLSMXcpp <- function(Y, bset, tol, X = NULL, H = NULL, lambda2 = NULL)
     .Call(`_BayesianLASSOMonitoring_initGibbsRFLSMXcpp`, Y, bset, tol, X, H, lambda2)
 }
 
+simpleinitGibbsRFLSMXcpp <- function(Y, bset, tol, X = NULL, H = NULL, lambda2 = NULL) {
+    .Call(`_BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp`, Y, bset, tol, X, H, lambda2)
+}
+
 GibbsRFLSMXUpdatecpp <- function(Y, pars, bset, tol, X = NULL, H = NULL) {
     .Call(`_BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp`, Y, pars, bset, tol, X, H)
 }
@@ -347,8 +351,8 @@ simYyjXph1 <- function(Yyj, Phi, Mu, sigma2) {
 #' @export
 #' @examples
 #' rtwosegnorm(10, 1, 2, 0, 1)
-simYXph1 <- function(Yyj, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding) {
-    .Call(`_BayesianLASSOMonitoring_simYXph1`, Yyj, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding)
+simYXph1 <- function(Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z = NULL) {
+    .Call(`_BayesianLASSOMonitoring_simYXph1`, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z)
 }
 
 #' Absolute-value-constrained normal distribution
@@ -371,7 +375,7 @@ simYyjXph2 <- function(h, Yyjph1, Phi, Mu, sigma2) {
 #' @export
 #' @examples
 #' rtwosegnorm(10, 1, 2, 0, 1)
-simYXph2 <- function(h, Yyjph1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding) {
-    .Call(`_BayesianLASSOMonitoring_simYXph2`, h, Yyjph1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding)
+simYXph2 <- function(h, Y1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z1 = NULL) {
+    .Call(`_BayesianLASSOMonitoring_simYXph2`, h, Y1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z1)
 }
 

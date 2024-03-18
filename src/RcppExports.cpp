@@ -499,6 +499,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// simpleinitGibbsRFLSMXcpp
+Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol, Rcpp::Nullable<Rcpp::NumericMatrix> X, Rcpp::Nullable<Rcpp::NumericMatrix> H, Rcpp::Nullable<Rcpp::NumericMatrix> lambda2);
+RcppExport SEXP _BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp(SEXP YSEXP, SEXP bsetSEXP, SEXP tolSEXP, SEXP XSEXP, SEXP HSEXP, SEXP lambda2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::colvec >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type bset(bsetSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type H(HSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type lambda2(lambda2SEXP);
+    rcpp_result_gen = Rcpp::wrap(simpleinitGibbsRFLSMXcpp(Y, bset, tol, X, H, lambda2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // GibbsRFLSMXUpdatecpp
 Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset, double tol, Rcpp::Nullable<Rcpp::NumericMatrix> X, Rcpp::Nullable<Rcpp::NumericMatrix> H);
 RcppExport SEXP _BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp(SEXP YSEXP, SEXP parsSEXP, SEXP bsetSEXP, SEXP tolSEXP, SEXP XSEXP, SEXP HSEXP) {
@@ -650,12 +666,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // simYXph1
-arma::colvec simYXph1(arma::colvec Yyj, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps, int leftcensoring, double lowerbound, int rounding);
-RcppExport SEXP _BayesianLASSOMonitoring_simYXph1(SEXP YyjSEXP, SEXP PhiSEXP, SEXP MuSEXP, SEXP sigma2SEXP, SEXP thetaSEXP, SEXP epsSEXP, SEXP leftcensoringSEXP, SEXP lowerboundSEXP, SEXP roundingSEXP) {
+arma::colvec simYXph1(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps, int leftcensoring, double lowerbound, int rounding, Rcpp::Nullable<Rcpp::NumericMatrix> Z);
+RcppExport SEXP _BayesianLASSOMonitoring_simYXph1(SEXP YSEXP, SEXP PhiSEXP, SEXP MuSEXP, SEXP sigma2SEXP, SEXP thetaSEXP, SEXP epsSEXP, SEXP leftcensoringSEXP, SEXP lowerboundSEXP, SEXP roundingSEXP, SEXP ZSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::colvec >::type Yyj(YyjSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type Y(YSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Phi(PhiSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Mu(MuSEXP);
     Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
@@ -664,7 +680,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type leftcensoring(leftcensoringSEXP);
     Rcpp::traits::input_parameter< double >::type lowerbound(lowerboundSEXP);
     Rcpp::traits::input_parameter< int >::type rounding(roundingSEXP);
-    rcpp_result_gen = Rcpp::wrap(simYXph1(Yyj, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type Z(ZSEXP);
+    rcpp_result_gen = Rcpp::wrap(simYXph1(Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -684,13 +701,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // simYXph2
-arma::colvec simYXph2(int h, arma::colvec Yyjph1, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps, int leftcensoring, double lowerbound, int rounding);
-RcppExport SEXP _BayesianLASSOMonitoring_simYXph2(SEXP hSEXP, SEXP Yyjph1SEXP, SEXP PhiSEXP, SEXP MuSEXP, SEXP sigma2SEXP, SEXP thetaSEXP, SEXP epsSEXP, SEXP leftcensoringSEXP, SEXP lowerboundSEXP, SEXP roundingSEXP) {
+arma::colvec simYXph2(int h, arma::colvec Y1, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps, int leftcensoring, double lowerbound, int rounding, Rcpp::Nullable<Rcpp::NumericMatrix> Z1);
+RcppExport SEXP _BayesianLASSOMonitoring_simYXph2(SEXP hSEXP, SEXP Y1SEXP, SEXP PhiSEXP, SEXP MuSEXP, SEXP sigma2SEXP, SEXP thetaSEXP, SEXP epsSEXP, SEXP leftcensoringSEXP, SEXP lowerboundSEXP, SEXP roundingSEXP, SEXP Z1SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type h(hSEXP);
-    Rcpp::traits::input_parameter< arma::colvec >::type Yyjph1(Yyjph1SEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type Y1(Y1SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Phi(PhiSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Mu(MuSEXP);
     Rcpp::traits::input_parameter< double >::type sigma2(sigma2SEXP);
@@ -699,7 +716,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type leftcensoring(leftcensoringSEXP);
     Rcpp::traits::input_parameter< double >::type lowerbound(lowerboundSEXP);
     Rcpp::traits::input_parameter< int >::type rounding(roundingSEXP);
-    rcpp_result_gen = Rcpp::wrap(simYXph2(h, Yyjph1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type Z1(Z1SEXP);
+    rcpp_result_gen = Rcpp::wrap(simYXph2(h, Y1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z1));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -735,6 +753,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLASSOMonitoring_simYyjph2", (DL_FUNC) &_BayesianLASSOMonitoring_simYyjph2, 5},
     {"_BayesianLASSOMonitoring_simYph2", (DL_FUNC) &_BayesianLASSOMonitoring_simYph2, 7},
     {"_BayesianLASSOMonitoring_initGibbsRFLSMXcpp", (DL_FUNC) &_BayesianLASSOMonitoring_initGibbsRFLSMXcpp, 6},
+    {"_BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp", (DL_FUNC) &_BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp, 6},
     {"_BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp", (DL_FUNC) &_BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp, 6},
     {"_BayesianLASSOMonitoring_lhfX", (DL_FUNC) &_BayesianLASSOMonitoring_lhfX, 4},
     {"_BayesianLASSOMonitoring_llhfX", (DL_FUNC) &_BayesianLASSOMonitoring_llhfX, 4},
@@ -744,9 +763,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLASSOMonitoring_getYZ", (DL_FUNC) &_BayesianLASSOMonitoring_getYZ, 11},
     {"_BayesianLASSOMonitoring_GibbsRFLSMXcpp", (DL_FUNC) &_BayesianLASSOMonitoring_GibbsRFLSMXcpp, 11},
     {"_BayesianLASSOMonitoring_simYyjXph1", (DL_FUNC) &_BayesianLASSOMonitoring_simYyjXph1, 4},
-    {"_BayesianLASSOMonitoring_simYXph1", (DL_FUNC) &_BayesianLASSOMonitoring_simYXph1, 9},
+    {"_BayesianLASSOMonitoring_simYXph1", (DL_FUNC) &_BayesianLASSOMonitoring_simYXph1, 10},
     {"_BayesianLASSOMonitoring_simYyjXph2", (DL_FUNC) &_BayesianLASSOMonitoring_simYyjXph2, 5},
-    {"_BayesianLASSOMonitoring_simYXph2", (DL_FUNC) &_BayesianLASSOMonitoring_simYXph2, 10},
+    {"_BayesianLASSOMonitoring_simYXph2", (DL_FUNC) &_BayesianLASSOMonitoring_simYXph2, 11},
     {NULL, NULL, 0}
 };
 

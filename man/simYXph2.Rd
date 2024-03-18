@@ -6,7 +6,7 @@
 \usage{
 simYXph2(
   h,
-  Yyjph1,
+  Y1,
   Phi,
   Mu,
   sigma2,
@@ -14,7 +14,8 @@ simYXph2(
   eps,
   leftcensoring,
   lowerbound,
-  rounding
+  rounding,
+  Z1 = NULL
 )
 }
 \arguments{
