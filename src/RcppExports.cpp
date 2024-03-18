@@ -499,6 +499,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// simpleinitGibbsRFLSMXcpp
+Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol, Rcpp::Nullable<Rcpp::NumericMatrix> X, Rcpp::Nullable<Rcpp::NumericMatrix> H, Rcpp::Nullable<Rcpp::NumericMatrix> lambda2);
+RcppExport SEXP _BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp(SEXP YSEXP, SEXP bsetSEXP, SEXP tolSEXP, SEXP XSEXP, SEXP HSEXP, SEXP lambda2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::colvec >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type bset(bsetSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type H(HSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type lambda2(lambda2SEXP);
+    rcpp_result_gen = Rcpp::wrap(simpleinitGibbsRFLSMXcpp(Y, bset, tol, X, H, lambda2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // GibbsRFLSMXUpdatecpp
 Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset, double tol, Rcpp::Nullable<Rcpp::NumericMatrix> X, Rcpp::Nullable<Rcpp::NumericMatrix> H);
 RcppExport SEXP _BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp(SEXP YSEXP, SEXP parsSEXP, SEXP bsetSEXP, SEXP tolSEXP, SEXP XSEXP, SEXP HSEXP) {
@@ -735,6 +751,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesianLASSOMonitoring_simYyjph2", (DL_FUNC) &_BayesianLASSOMonitoring_simYyjph2, 5},
     {"_BayesianLASSOMonitoring_simYph2", (DL_FUNC) &_BayesianLASSOMonitoring_simYph2, 7},
     {"_BayesianLASSOMonitoring_initGibbsRFLSMXcpp", (DL_FUNC) &_BayesianLASSOMonitoring_initGibbsRFLSMXcpp, 6},
+    {"_BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp", (DL_FUNC) &_BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp, 6},
     {"_BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp", (DL_FUNC) &_BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp, 6},
     {"_BayesianLASSOMonitoring_lhfX", (DL_FUNC) &_BayesianLASSOMonitoring_lhfX, 4},
     {"_BayesianLASSOMonitoring_llhfX", (DL_FUNC) &_BayesianLASSOMonitoring_llhfX, 4},

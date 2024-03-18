@@ -2466,7 +2466,7 @@ arma::colvec updateCoef(arma::mat Y,arma::mat X,
                         arma::mat A, arma::colvec oldCoef, 
                         double sigma2, arma::mat inveta2mat, 
                         double bound0, double boundqplus1,
-                        int mono, Rcpp::String method) {
+                        int ord, Rcpp::String method) {
   
   //int n = X.n_rows;
   int q = X.n_cols;
@@ -2531,7 +2531,7 @@ arma::colvec updateCoef(arma::mat Y,arma::mat X,
     M = tmpS * (tXX * Coefhat);
   }
   
-  if (mono == 0) {
+  if (ord == 0) {
     Coef = rmvnorm(M, S);
   } else {
     for (gg = 0; gg < q; gg++) {
@@ -2971,6 +2971,172 @@ Rcpp::List initGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   
 }
 
+
+// [[Rcpp::export]]
+Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
+                                Rcpp::Nullable<Rcpp::NumericMatrix> X = R_NilValue, 
+                                Rcpp::Nullable<Rcpp::NumericMatrix> H = R_NilValue, 
+                                Rcpp::Nullable<Rcpp::NumericMatrix> lambda2 = R_NilValue) {
+  
+  
+  
+  int phiq = bset["phiq"];
+  double gammaxi2 = bset["gammaxi2"];
+  Rcpp::String method = bset["method"];
+  int updatelambda2 = bset["updatelambda2"];
+  
+  /////////////////////
+  
+  int T = Y.n_rows;
+  
+  Rcpp::List tmpmodel; 
+ 
+  Rcpp::NumericVector tmpcoef;
+  arma::mat Phi;
+  arma::mat Beta;
+  double mu0;
+  arma::mat Mu; 
+  double sigma2;
+   
+  arma::mat One(T, 1); 
+  
+  /////////////////////
+  int m;
+  arma::mat Tau;
+  arma::mat Gamma;
+  arma::mat H_;
+  if (H.isNotNull()) {
+    H_ = Rcpp::as<arma::mat>(H);
+    m = H_.n_cols;
+    Gamma.randn(m, 1);
+    Gamma = Gamma * sqrt(gammaxi2);
+    Tau.zeros(m, 1);
+  }
+  
+  /////////////////////
+  
+  arma::mat X_;
+  int Xflg = 0;
+  int p = 0;
+  
+  //if (X.isNotNull()) {
+  //  X_ = Rcpp::as<arma::mat>(X);
+  //  tmpmodel = arimaxcpp(Y, phiq, X_);
+  //  Xflg = 1;
+  //  p = X_.n_cols;
+  //} else {
+  //  tmpmodel = arimacpp(Y, phiq);
+  //}
+  
+  arma::mat eta2;
+  
+  if ((method == "LASSO") || (method == "ALASSO")) {
+    eta2.set_size(phiq + p, 1);
+  }
+  
+  arma::mat coef(phiq + p + 1, 1);
+  coef.fill(tol);
+  
+  /////////////////////
+  
+  //sigma2 = tmpmodel["sigma2"];
+  //tmpcoef = tmpmodel["coef"];
+  
+  for (int gg = 0; gg < (phiq + p + 1); gg++) {
+    coef(gg) = tmpcoef(gg);  
+  }
+  
+  /////////////////////  
+
+  //mu0 = coef(phiq);
+  mu0 = arma::accu(Y) / T;
+  Mu = One * mu0;
+  
+  /////////////////////  
+  
+  Phi = coef.rows(0, phiq - 1);
+  
+  if ((method == "LASSO") || (method == "ALASSO")) {
+    eta2.rows(0, phiq - 1) = arma::pow(coef.rows(0, phiq - 1), 2);
+  }
+  
+  /////////////////////    
+  
+  if (Xflg == 1) {
+  
+    Beta = coef.rows(phiq + 1, phiq + p);
+    Mu = Mu + X_ * Beta;
+    
+    if ((method == "LASSO") || (method == "ALASSO")) {
+      eta2.rows(phiq, phiq + p - 1) = arma::pow(coef.rows(phiq + 1, phiq + p), 2);
+    }
+    
+  }
+  
+  sigma2 = arma::accu(arma::pow(Y - Mu, 2)) / T;
+  
+  /////////////////////
+  
+  arma::mat lambda2_;
+  double tmpval = 0.0;
+  int gg;
+  
+  if ((method == "LASSO") || (method == "ALASSO")) {
+    lambda2_.set_size(phiq + p, 1);
+    if (lambda2.isNotNull()) {
+    lambda2_ = Rcpp::as<arma::mat>(lambda2);
+  } else {
+    if (updatelambda2 == 1) {
+      if ((method == "LASSO")) {
+        tmpval = arma::accu(arma::abs(Phi));
+        if (Xflg == 1) {
+          tmpval = tmpval + arma::accu(arma::abs(Beta));
+        }
+        lambda2_.fill(pow((phiq + p) * sqrt(sigma2) / tmpval, 2));
+      } else if ((method == "ALASSO")) {
+        for (gg = 0; gg < (phiq); gg++) {
+          lambda2_(gg) = pow((sqrt(sigma2) / abs(Phi(gg))), 2);
+        }
+        if (Xflg == 1) {
+          for (gg = phiq; gg < (phiq + p); gg++) {
+            lambda2_(gg) = pow((sqrt(sigma2) / abs(Beta(gg - phiq))), 2);
+          }
+        }
+      }
+    }
+  }
+  }
+  
+  //lambda2_.fill(tol);
+  
+  
+  
+  
+  //Rcpp::Rcout << lambda2_ << std::endl;
+  
+  
+  /////////////////////
+  
+  Rcpp::List out;
+  
+  out = Rcpp::List::create(
+     Rcpp::_["Phi"] = Phi,
+     Rcpp::_["Beta"] = Beta,
+     Rcpp::_["Tau"] = Tau,
+     Rcpp::_["Gamma"] = Gamma,
+     Rcpp::_["mu0"] = mu0,
+     Rcpp::_["Mu"] = Mu,
+     Rcpp::_["eta2"] = eta2,
+     Rcpp::_["sigma2"] = sigma2,
+     Rcpp::_["lambda2"] = lambda2_
+  );
+  
+  return(out);
+  
+}
+
+
+
 // [[Rcpp::export]]
 Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset,
                                 double tol, 
@@ -3024,7 +3190,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
   
   // read bset
   Rcpp::String method = bset["method"];
-  int phimono = bset["phimono"];
+  int phiorder = bset["phiorder"];
   int phiq = bset["phiq"];
   arma::mat phiA = Rcpp::as<arma::mat>(bset["phiA"]);
   double phibound0 = bset["phibound0"];
@@ -3086,7 +3252,7 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
                    phiA, Phi, 
                    sigma2, invphieta2mat, 
                    phibound0, phiboundqplus1,
-                   phimono, method);
+                   phiorder, method);
   
   coef.rows(0, phiq - 1) = Phi;
   
@@ -3553,7 +3719,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   int updateYJ = bset["updateYJ"];
   int phiq = bset["phiq"];
   Rcpp::String method = bset["method"];
-  int phimono = bset["phimono"];
+  int phiorder = bset["phiorder"];
   int updatelambda2 = bset["updatelambda2"];
   //Rcpp::Rcout << 1 << std::endl;
   
@@ -3562,16 +3728,16 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   auto start = std::chrono::system_clock::now();
   std::time_t start_time = std::chrono::system_clock::to_time_t(start);
   
-  Rcpp::String monoword;
+  Rcpp::String ordword;
   
-  if (phimono == 1) {
-    monoword = " with constraints on Phi";
+  if (phiorder == 1) {
+    ordword = " with constraints on Phi";
   } else {
-    monoword = " without constraints on Phi";
+    ordword = " without constraints on Phi";
   }
   
   if (verbose == 1) {
-    Rcpp::Rcout << "Start training using " << method.get_cstring() << monoword.get_cstring() << " at " << std::ctime(&start_time) <<  std::endl;
+    Rcpp::Rcout << "Start training using " << method.get_cstring() << ordword.get_cstring() << " at " << std::ctime(&start_time) <<  std::endl;
   
   }
   
@@ -3629,7 +3795,9 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     Yyj = Y;
   }
   
-  Rcpp::List iter = initGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
+  //Rcpp::List iter = initGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
+  
+  Rcpp::List iter = simpleinitGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
   
   /////////////////////////////////////
   
