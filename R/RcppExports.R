@@ -263,10 +263,6 @@ initGibbsRFLSMXcpp <- function(Y, bset, tol, X = NULL, H = NULL, lambda2 = NULL)
     .Call(`_BayesianLASSOMonitoring_initGibbsRFLSMXcpp`, Y, bset, tol, X, H, lambda2)
 }
 
-simpleinitGibbsRFLSMXcpp <- function(Y, bset, tol, X = NULL, H = NULL, lambda2 = NULL) {
-    .Call(`_BayesianLASSOMonitoring_simpleinitGibbsRFLSMXcpp`, Y, bset, tol, X, H, lambda2)
-}
-
 GibbsRFLSMXUpdatecpp <- function(Y, pars, bset, tol, X = NULL, H = NULL) {
     .Call(`_BayesianLASSOMonitoring_GibbsRFLSMXUpdatecpp`, Y, pars, bset, tol, X, H)
 }
