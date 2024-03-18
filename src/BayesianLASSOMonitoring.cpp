@@ -2985,7 +2985,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   double gammaxi2 = bset["gammaxi2"];
   Rcpp::String method = bset["method"];
   int updatelambda2 = bset["updatelambda2"];
-  int phiorder = bset["phiorder"];
+  int phimono = bset["phimono"];
   
   /////////////////////
   
@@ -3036,7 +3036,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   
   int nn = 0;
   
-  //if (phiorder == 2) {
+  //if (phimono == 2) {
   //  nn = phiq * 2 + p;
   //} else {
     nn = phiq + p;
@@ -3060,7 +3060,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   
   /////////////////////  
   
-  //if (phiorder == 2) {
+  //if (phimono == 2) {
     
   //  Phi.set_size(phiq * 2, 1);
     
@@ -3073,7 +3073,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   
   
   if ((method == "LASSO") || (method == "ALASSO")) {
-    //if (phiorder == 2) {
+    //if (phimono == 2) {
     //  eta2.rows(0, phiq * 2 - 1) = arma::pow(Phi, 2);
     //} else {
       eta2.rows(0, phiq - 1) = arma::pow(Phi, 2);
@@ -3093,7 +3093,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
     Mu = Mu + X_ * Beta;
     
     if ((method == "LASSO") || (method == "ALASSO")) {
-      //if (phiorder == 2) {
+      //if (phimono == 2) {
       //  eta2.rows(phiq * 2, phiq * 2 + p - 1) = arma::pow(Beta, 2);
       //} else {
         eta2.rows(phiq, phiq + p - 1) = arma::pow(Beta, 2);
@@ -3128,7 +3128,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
         
       } else if ((method == "ALASSO")) {
         
-        //if (phiorder == 2) {
+        //if (phimono == 2) {
         //  
         //  for (gg = 0; gg < (phiq * 2); gg++) {
         //    lambda2_(gg) = pow((sqrt(sigma2) / abs(Phi(gg))), 2);
