@@ -3015,8 +3015,6 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   
   /////////////////////
   
-  //Rcpp::Rcout << 3.1 << std::endl;
-  
   arma::mat X_;
   int Xflg = 0;
   int p = 0;
@@ -3039,26 +3037,20 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   arma::mat coef(phiq + p + 1, 1);
   coef.fill(tol);
   
-  //Rcpp::Rcout << 3.2 << std::endl;
-  
   /////////////////////
   
   //sigma2 = tmpmodel["sigma2"];
   //tmpcoef = tmpmodel["coef"];
   
-  //for (int gg = 0; gg < (phiq + p + 1); gg++) {
-  //  coef(gg) = tmpcoef(gg);  
-  //}
-  
-   //Rcpp::Rcout << 3.21 << std::endl;
+  for (int gg = 0; gg < (phiq + p + 1); gg++) {
+    coef(gg) = tmpcoef(gg);  
+  }
   
   /////////////////////  
 
   //mu0 = coef(phiq);
   mu0 = arma::accu(Y) / T;
   Mu = One * mu0;
-  
-  //Rcpp::Rcout << 3.22 << std::endl;
   
   /////////////////////  
   
@@ -3067,8 +3059,6 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   if ((method == "LASSO") || (method == "ALASSO")) {
     eta2.rows(0, phiq - 1) = arma::pow(coef.rows(0, phiq - 1), 2);
   }
-  
-  //Rcpp::Rcout << 3.23 << std::endl;
   
   /////////////////////    
   
@@ -3084,8 +3074,6 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   }
   
   sigma2 = arma::accu(arma::pow(Y - Mu, 2)) / T;
-  
-  //Rcpp::Rcout << 3.3 << std::endl;
   
   /////////////////////
   
@@ -3122,7 +3110,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   //lambda2_.fill(tol);
   
   
-  //Rcpp::Rcout << 3.4 << std::endl;
+  
   
   //Rcpp::Rcout << lambda2_ << std::endl;
   
@@ -3811,8 +3799,6 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   
   Rcpp::List iter = simpleinitGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
   
-  //Rcpp::Rcout << 4 << std::endl;
-  
   /////////////////////////////////////
   
   arma::mat Phimat(phiq, nsim);
@@ -3882,7 +3868,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
       YZ = Y;
     }
     
-    ///Rcpp::Rcout << 7 << std::endl;
+    //Rcpp::Rcout << 7 << std::endl;
     
     if (updateYJ == 1) {
       tmp = thetaYeoJohnsonMHX(YZ, Phi, Mu, sigma2, theta_, 0, 1, tol);
