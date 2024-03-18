@@ -4084,21 +4084,36 @@ arma::colvec simYyjXph1(arma::colvec Yyj,arma::mat Phi,arma::mat Mu, double sigm
 //' @examples
 //' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
-arma::colvec simYXph1(arma::colvec Yyj,arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
-                      int leftcensoring, double lowerbound, int rounding) {
+arma::colvec simYXph1(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
+                      int leftcensoring, double lowerbound, int rounding, 
+                      Rcpp::Nullable<Rcpp::NumericMatrix> Z = R_NilValue) {
   
- arma::colvec Yyjph1 = simYyjXph1(Yyj, Phi, Mu, sigma2); 
- arma::colvec Yph1 = invyeojohnsontr(Yyjph1, theta, eps); 
- arma::uvec ind0;
- if (leftcensoring == 1) {
-   ind0 =arma::find(Yph1 <= lowerbound); 
-   Yph1(ind0).fill(lowerbound);
- }
+  arma::mat Z_; 
+  if (Z.isNotNull()) {
+    Z_ = Rcpp::as<arma::mat>(Z);
+  }
  
- if (rounding == 1) {
-   Yph1 = arma::round(Yph1);
- }
-  return(Yph1);
+  arma::mat YZ; 
+  if ((leftcensoring == 1) || (rounding == 1)) {
+    YZ = Y + Z_;
+  } else {
+    YZ = Y;
+  }
+  
+  arma::mat Yyj = yeojohnsontr(YZ, theta, eps);
+  
+   arma::colvec Yyjph1 = simYyjXph1(Yyj, Phi, Mu, sigma2); 
+   arma::colvec Yph1 = invyeojohnsontr(Yyjph1, theta, eps); 
+   arma::uvec ind0;
+   if (leftcensoring == 1) {
+     ind0 =arma::find(Yph1 <= lowerbound); 
+     Yph1(ind0).fill(lowerbound);
+   }
+   
+   if (rounding == 1) {
+     Yph1 = arma::round(Yph1);
+   }
+    return(Yph1);
   
 }
 
@@ -4180,8 +4195,23 @@ arma::colvec simYyjXph2(int h,arma::colvec Yyjph1,arma::mat Phi,arma::mat Mu, do
 //' @examples
 //' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
-arma::colvec simYXph2(int h,arma::colvec Yyjph1,arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
-                      int leftcensoring, double lowerbound, int rounding) {
+arma::colvec simYXph2(int h,arma::colvec Y1,arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
+                      int leftcensoring, double lowerbound, int rounding, 
+                      Rcpp::Nullable<Rcpp::NumericMatrix> Z1 = R_NilValue) {
+  
+  arma::mat Z1_; 
+  if (Z1.isNotNull()) {
+    Z1_ = Rcpp::as<arma::mat>(Z1);
+  }
+ 
+  arma::mat YZ1; 
+  if ((leftcensoring == 1) || (rounding == 1)) {
+    YZ1 = Y1 + Z1_;
+  } else {
+    YZ1 = Y1;
+  }
+  
+  arma::mat Yyjph1 = yeojohnsontr(YZ1, theta, eps);
   
  arma::colvec Yyjph2 = simYyjXph2(h, Yyjph1, Phi, Mu, sigma2); 
  arma::colvec Yph2 = invyeojohnsontr(Yyjph2, theta, eps); 
