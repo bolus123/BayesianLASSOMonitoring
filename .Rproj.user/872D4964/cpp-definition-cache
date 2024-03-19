@@ -1,7 +1,7 @@
 [
     {
         "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-        "file_last_write": 1710794299.0,
+        "file_last_write": 1710797695.0,
         "definitions": [
             {
                 "usr": "c:BayesianLASSOMonitoring.cpp@156@macro@ARMA_WARN_LEVEL",
@@ -644,10 +644,10 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@simYXph1#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#",
+                "usr": "c:@F@simYXph1#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#$@N@Rcpp@S@Nullable>#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "simYXph1(arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int)",
+                "name": "simYXph1(arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
                 "line": 4087,
                 "column": 14,
@@ -659,17 +659,17 @@
                 "parent_name": "",
                 "name": "simYyjXph2(int, arma::colvec, arma::mat, arma::mat, double)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 4115,
+                "line": 4130,
                 "column": 14,
                 "hidden": false
             },
             {
-                "usr": "c:@F@simYXph2#I#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#",
+                "usr": "c:@F@simYXph2#I#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#d#d#d#I#d#I#$@N@Rcpp@S@Nullable>#$@N@Rcpp@S@Matrix>#VI14#@N@Rcpp@ST>1#T@PreserveStorage#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "simYXph2(int, arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int)",
+                "name": "simYXph2(int, arma::colvec, arma::mat, arma::mat, double, double, double, int, double, int, Rcpp::Nullable<Rcpp::NumericMatrix>)",
                 "file": "/Users/yuihuiyao/Documents/GitHub/BayesianLASSOMonitoring/src/BayesianLASSOMonitoring.cpp",
-                "line": 4183,
+                "line": 4198,
                 "column": 14,
                 "hidden": false
             }
