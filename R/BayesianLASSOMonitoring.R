@@ -494,7 +494,7 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
     tmpYyj <- yeojohnsontr(model$Z[, tmpsel] + model$Y, model$theta[tmpsel], 1e-32)
     ph1mat[, i] <- simYXph1(matrix(tmpYyj, ncol = 1), matrix(model$Phi[, tmpsel], ncol = 1), Mu0,  
                    model$sigma2[tmpsel],  model$theta[tmpsel], 
-                   1e-32, bset$leftcensoring, bset$lowerbound, bset$rounding)
+                   1e-32, bset$leftcensoring, bset$lowerbound, bset$rounding, as.matrix(model$Z[, tmpsel]))
     
   }
   
