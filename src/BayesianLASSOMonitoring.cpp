@@ -2705,7 +2705,7 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
                            double mu0, double sigma2, double pho, double xi2,
                            int T, arma::mat H_, int m, int Xflg, int q){
   
-  
+  double pi = 3.14159265359;
   
   arma::mat Ht(T, 1); 
   arma::mat tmpHt = Ht; 
@@ -2743,12 +2743,19 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
     tmpY = tmpY - X_ * Beta; 
   }
   
+  //Rcpp::Rcout << "Y:" << Y << std::endl;
+  //Rcpp::Rcout << "tmpY:" << tmpY << std::endl;
+  //Rcpp::Rcout << "Tau and Gamma:" << arma::join_rows(Tau, Gamma) << std::endl;
+  //Rcpp::Rcout << "Gamma:" << Gamma << std::endl;
   
   // update Tau and Gamma
   for (jj = 0; jj < m; jj++) {
     
     Hnot = removeCol(H_, jj);
     Ht = H_.col(jj);
+    
+    //Rcpp::Rcout << "Hnot:" << Hnot << std::endl;
+    //Rcpp::Rcout << "Ht:" << Ht << std::endl;
     
     ////////////////
     
@@ -2758,24 +2765,57 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
     Gammanot = removeRow(Gamma, jj);
     Gammat = Gamma.row(jj);
     
+    //Rcpp::Rcout << "Taut:" << Taut << std::endl;
+    //Rcpp::Rcout << "Gammat:" << Gammat << std::endl;
+    
+    //Rcpp::Rcout << "Taunot:" << Taunot << std::endl;
+    //Rcpp::Rcout << "Gammanot:" << Gammanot << std::endl;
+    
     ////////////////
+    
+    //Rcpp::Rcout << "Taunot:" << Taunot << std::endl;
+    
     //update Tau
     zetanot = tmpY - Hnot * (Taunot % Gammanot);
     zetat = zetanot - Ht * Gammat;
     
+    //Rcpp::Rcout << "a0:" << Taunot << std::endl;
+    //Rcpp::Rcout << "a:" << Taunot % Gammanot << std::endl;
+    //Rcpp::Rcout << "b:" << Ht * Gammat << std::endl;
+    
+    //Rcpp::Rcout << "zetanot:" << zetanot.t() * zetanot << std::endl;
+    //Rcpp::Rcout << "zetat:" << zetat.t() * zetat << std::endl;
+    
     zetanot = updateResi(zetanot, Phi, q);
     zetat = updateResi(zetat, Phi, q);
     
-    tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetanot.t() * zetanot);
-    tmpzetanot = tmp(0);
+    //Rcpp::Rcout << "resizetanot:" << zetanot << std::endl;
+    //Rcpp::Rcout << "resizetat:" << zetat << std::endl;
     
-    tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetat.t() * zetat);
+    //tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetanot.t() * zetanot);
+    //tmpzetanot = tmp(0);
+    
+    //tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetat.t() * zetat);
+    //tmpzetat = tmp(0);
+    
+    //prob = pho * tmpzetat / (pho * tmpzetat + (1 - pho) * tmpzetanot);
+    
+    tmp = arma::exp(-1.0 / 2.0 / sigma2 * zetanot.t() * zetanot - 
+      (-1.0 / 2.0 / sigma2 * zetat.t() * zetat));
+    
     tmpzetat = tmp(0);
     
-    prob = pho * tmpzetat / (pho * tmpzetat + (1 - pho) * tmpzetanot);
+    prob = 1.0 / (1.0 + (1.0 - pho) / pho * tmpzetat);
+    
+    //Rcpp::Rcout << "tmpzetat:" << tmpzetat << std::endl;
+    //Rcpp::Rcout << "prob:" << prob << std::endl;
     
     Tau(jj) = R::rbinom(1, prob);
     probvec(jj) = prob;
+    
+    //Rcpp::Rcout << prob << std::endl;
+    //Rcpp::Rcout << Tau(jj) << std::endl;
+    
     //############
     if (Tau(jj) == 1) {
       
@@ -3001,6 +3041,7 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   double sigma2;
    
   arma::mat One(T, 1); 
+  One.ones();
   
   /////////////////////
   int m;
@@ -3025,14 +3066,13 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   int Xflg = 0;
   int p = 0;
   
-  //if (X.isNotNull()) {
-  //  X_ = Rcpp::as<arma::mat>(X);
-  //  tmpmodel = arimaxcpp(Y, phiq, X_);
-  //  Xflg = 1;
-  //  p = X_.n_cols;
-  //} else {
-  //  tmpmodel = arimacpp(Y, phiq);
-  //}
+  if (X.isNotNull()) {
+    X_ = Rcpp::as<arma::mat>(X);
+    Xflg = 1;
+    p = X_.n_cols;
+    Beta.set_size(p, 1);
+    Beta.fill(tol);
+  } 
   
   int nn = 0;
   
@@ -3087,9 +3127,6 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   
   if (Xflg == 1) {
   
-    Beta.set_size(p, 1);
-    Beta.fill(tol);
-    
     Mu = Mu + X_ * Beta;
     
     if ((method == "LASSO") || (method == "ALASSO")) {
@@ -3279,15 +3316,12 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
     }
   }
   
-  
-  
   Rcpp::List TauGamma;
   arma::mat tmpSumTau;
   double pho;
   arma::colvec coef(phiq + p, 1); 
   
   double mu0hat;
-  
   
   /////////////////////////////////////   
   // update Phi
@@ -3301,7 +3335,6 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
                    phimono, method);
   
   coef.rows(0, phiq - 1) = Phi;
-  
   
   // update beta
   if (Xflg == 1) {
@@ -3328,6 +3361,20 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
     tmpSumTau = arma::sum(Tau);
     pho = R::rbeta(tautheta1 + tmpSumTau(0), tautheta2 + m - tmpSumTau(0));
     
+    
+    //Rcpp::Rcout << Y << std::endl;
+    //Rcpp::Rcout << X_ << std::endl;
+    //Rcpp::Rcout << Phi << std::endl;
+    //Rcpp::Rcout << Beta << std::endl;
+    //Rcpp::Rcout << Tau << std::endl;
+    //Rcpp::Rcout << Gamma << std::endl;
+    //Rcpp::Rcout << mu0 << std::endl;
+    //Rcpp::Rcout << sigma2 << std::endl;
+    //Rcpp::Rcout << pho << std::endl;
+    //Rcpp::Rcout << gammaxi2 << std::endl;
+    //Rcpp::Rcout << m << std::endl;
+    //Rcpp::Rcout << phiq << std::endl;
+    
     TauGamma = updateTauGammaX(Y, X_, Phi, Beta, 
                                Tau, Gamma, 
                                mu0, sigma2, pho, gammaxi2,
@@ -3335,6 +3382,10 @@ Rcpp::List GibbsRFLSMXUpdatecpp(arma::colvec Y, Rcpp::List pars, Rcpp::List bset
     
     Tau = Rcpp::as<arma::mat>(TauGamma["Tau"]);
     Gamma = Rcpp::as<arma::mat>(TauGamma["Gamma"]);
+    
+    //Rcpp::Rcout << Tau << std::endl;
+    //Rcpp::Rcout << Gamma << std::endl;
+    
   }
   
   
@@ -3655,7 +3706,13 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
   int flgr = 0;
   int flgl = 0;
   
+  //Rcpp::Rcout << "leftcensoring:" << leftcensoring << std::endl;
+  //Rcpp::Rcout << "rounding:" << rounding  << std::endl;
+  
   //Rcpp::Rcout << 1 << std::endl;
+  
+  //Rcpp::Rcout << "Phi:" << Phi  << std::endl;
+  
   int ii;
   if ((leftcensoring == 1) || (rounding == 1)) {
     for (int i = 0; i < T; i++) {
@@ -3674,6 +3731,9 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
       
       VasPhi = Vas * Phi;
       fit(i, 0) = Mu(i, 0) + VasPhi(0);
+      
+      //Rcpp::Rcout << "Mu:" << Mu(i, 0) << std::endl;
+      //Rcpp::Rcout << "VasPhi:" << VasPhi(0) << std::endl;
       
       if (rounding == 1) {
         if (updateYJ == 1) {
@@ -3726,7 +3786,17 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
         if ((flgr == 1) || (flgl == 1)) {
           tmp = rtrnorm(1, fit(i, 0), sqrt(sigma2), lb, ub);
           YZyj(i) = tmp(0);
+          
+        //Rcpp::Rcout << "fit(i, 0):" << fit(i, 0)  << std::endl;
+        //Rcpp::Rcout << "sigma2:" << sigma2  << std::endl;
+        //Rcpp::Rcout << "lb:" << lb  << std::endl;
+        //Rcpp::Rcout << "ub:" << ub  << std::endl;
+        //Rcpp::Rcout << "tmp:" << tmp  << std::endl;
+        //Rcpp::Rcout << "YZyj:" << YZyj(i)  << std::endl;
+          
         }
+        
+        
       
       //////////////////////////// 
       
@@ -3767,6 +3837,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   Rcpp::String method = bset["method"];
   int phimono = bset["phimono"];
   int updatelambda2 = bset["updatelambda2"];
+  
   //Rcpp::Rcout << 1 << std::endl;
   
   /////////////////////////////////////
@@ -3844,6 +3915,8 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   //Rcpp::List iter = initGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
   Rcpp::List iter = simpleinitGibbsRFLSMXcpp(Yyj, bset, tol, X, H, lambda2);
   
+  //Rcpp::Rcout << iter << std::endl;
+  
   /////////////////////////////////////
   
   arma::mat Phimat(phiq, nsim);
@@ -3904,7 +3977,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     Mu = Rcpp::as<arma::mat>(iter["Mu"]);
     sigma2 = iter["sigma2"];
     
-    //Rcpp::Rcout << 6 << std::endl;
+    //Rcpp::Rcout << "i:" << i << std::endl;
     
     if ((leftcensoring == 1) || (rounding == 1)) {
       YZ = getYZ(Yyj, Y, Phi, Mu, sigma2, 
@@ -3912,6 +3985,12 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     } else {
       YZ = Y;
     }
+    
+    //Rcpp::Rcout << "leftcensoring:" << leftcensoring << std::endl;
+    //Rcpp::Rcout << "rounding:" << rounding << std::endl;
+    
+    //Rcpp::Rcout << "Y:" << Y << std::endl;
+    //Rcpp::Rcout << "YZ:" << YZ << std::endl;
     
     //Rcpp::Rcout << 7 << std::endl;
     
@@ -3922,6 +4001,8 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     } else {
       Yyj = YZ;
     }
+    
+    //Rcpp::Rcout << "Yyj:" << Yyj << std::endl;
     
     //Rcpp::Rcout << 8 << std::endl;
     
@@ -3935,7 +4016,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     
     iter = GibbsRFLSMXUpdatecpp(Yyj, iter, bset, tol, X, H);
       
-     //Rcpp::Rcout << 10 << std::endl;
+    //Rcpp::Rcout << 10 << std::endl;
       
     if (i >= burnin) {
       if (i % thin == 0) {
