@@ -2008,7 +2008,7 @@ arma::colvec getucY(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, 
       
       if (Y(i) == 0) { 
         //Rcpp::Rcout << 3.01 << std::endl;
-        tmp = rtrnorm(1, fit(i - q, 0), sqrt(sigma2), (-1.0) *arma::math::inf(), 0.0);
+        tmp = rtrnorm(1, fit(i - q, 0), sqrt(sigma2), (-1.0) *arma::datum::inf, 0.0);
         //Rcpp::Rcout << 3.1 << std::endl;
         ucYyj(i) = tmp(0); 
         //Rcpp::Rcout << 3.2 << std::endl;
@@ -3717,9 +3717,7 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
   if ((leftcensoring == 1) || (rounding == 1)) {
     for (int i = 0; i < T; i++) {
       
-      flgr = 0;
-      flgl = 0;
-      
+      /////////////////////////////////
       for (int j = 0; j < q; j++) {
         ii = i - 1 - j;
         if (ii >= 0) {
@@ -3735,6 +3733,10 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
       //Rcpp::Rcout << "Mu:" << Mu(i, 0) << std::endl;
       //Rcpp::Rcout << "VasPhi:" << VasPhi(0) << std::endl;
       
+      /////////////////////////////////
+      
+      flgr = 0;
+      
       if (rounding == 1) {
         if (updateYJ == 1) {
           tmp = yeojohnsontr(YZ.row(i) - 0.5, theta, eps);
@@ -3748,8 +3750,10 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
         flgr = 1;
       }
       
+      flgl = 0;
+      
       if (leftcensoring == 1) {
-        lbl = (-1.0) *arma::math::inf();
+        lbl = (-1.0) *arma::datum::inf;
         if (YZ(i) <= lowerbound) {
           if (updateYJ == 1) {
             tmp(0) = lowerbound;
@@ -3783,32 +3787,31 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
         lbvec(i) = lb;
         ubvec(i) = ub;
         
+        
+        
         if ((flgr == 1) || (flgl == 1)) {
           tmp = rtrnorm(1, fit(i, 0), sqrt(sigma2), lb, ub);
           YZyj(i) = tmp(0);
-          
+          tmp = invyeojohnsontr(YZyj.row(i), theta, eps);
+          tmp.replace(arma::datum::nan, (-1.0) * arma::datum::inf);
+          YZ.row(i) = tmp;
+        }
+        
+        //Rcpp::Rcout << "i:" << i  << std::endl;
+        //Rcpp::Rcout << "flgr + flgl:" << flgr + flgl  << std::endl;
         //Rcpp::Rcout << "fit(i, 0):" << fit(i, 0)  << std::endl;
         //Rcpp::Rcout << "sigma2:" << sigma2  << std::endl;
         //Rcpp::Rcout << "lb:" << lb  << std::endl;
         //Rcpp::Rcout << "ub:" << ub  << std::endl;
         //Rcpp::Rcout << "tmp:" << tmp  << std::endl;
+        //Rcpp::Rcout << "YZ:" << YZ(i)  << std::endl;
         //Rcpp::Rcout << "YZyj:" << YZyj(i)  << std::endl;
-          
-        }
-        
-        
       
       //////////////////////////// 
       
       V(i, 0) = YZyj(i) - Mu(i, 0);
       
     }
-  }
-  
-  if (updateYJ == 1) {
-    YZ = invyeojohnsontr(YZyj, theta, eps); 
-  } else {
-    YZ = YZyj;
   }
   
   return(YZ);
