@@ -3600,7 +3600,42 @@ double llhYJfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, doubl
  
 }
 
-
+//' Absolute-value-constrained normal distribution
+//' 
+//' gets a sample from a normal distribution whose absolute observations are constrained.
+//'
+//' @param n is sample size.
+//' @export
+//' @examples
+//' rtwosegnorm(10, 1, 2, 0, 1)
+// [[Rcpp::export]]
+double llhYJfXt(arma::colvec Y, int t, arma::mat Phi, arma::mat Mu, 
+                double sigma2, double theta, double eps) {
+ 
+ int q = Phi.n_rows;
+ int T = Y.n_elem;
+ 
+ arma::colvec Yyj = yeojohnsontr(Y, theta, eps);
+ arma::mat llhYJ = llhfX(Yyj, Phi, Mu, sigma2);
+ 
+ 
+ 
+ int m = t + q;
+ if (m > (T - 1)) {
+   m = T - 1;
+ }
+ 
+ arma::mat llhYJt = llhYJ.rows(t, m); 
+ double tmp = arma::accu(llhYJt);
+ 
+ for (int i = t; i <= m; i++) {
+   tmp = tmp + log(pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i))));
+ }
+ 
+ 
+ return(tmp);
+ 
+}
  
 
 // [[Rcpp::export]]
@@ -3675,7 +3710,11 @@ double dtrnorm(double x, double mean, double sd, double lower, double upper) {
   double alpha = (lower - mean) / sd;
   double z = R::pnorm5(beta, 0.0, 1.0, 1, 0) - R::pnorm5(alpha, 0.0, 1.0, 1, 0);
   double xi = (x - mean) / sd;
-  double out = R::dnorm4(xi, 0, 1, 0) / sd / z;
+  double out = 0.0;
+  if ((alpha <= xi) && (xi <= beta)) {
+    out = R::dnorm4(xi, 0, 1, 0) / sd / z;
+  } 
+  
   return(out);
 }
 
@@ -3697,6 +3736,9 @@ double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doubl
   double A;
   double u;
   
+  double newllhYJ;
+  double oldllhYJ;
+  
   int i;
   int j = 0;
   
@@ -3709,12 +3751,15 @@ double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doubl
     
     newYZ = Y + newZ_;
     
-    newllhYJ = llhYJfX(newYZ, Phi, Mu, sigma2, theta, tol);
-  
+    //newllhYJ = llhYJfX(newYZ, Phi, Mu, sigma2, theta, tol);
+    newllhYJ = llhYJfXt(newYZ, t, Phi, Mu, sigma2, theta, tol);
+    
+    //Rcpp::Rcout << t << std::endl;
+    
     //tmp = newllhYJ - oldllhYJ;
   
-    tmp = newllhYJ - log(dtrnorm(Zas, oldZt, 0.1, lb, ub)) - 
-      (oldllhYJ - log(dtrnorm(oldZt, Zas, 0.1, lb, ub)));
+    tmp = newllhYJ + log(dtrnorm(Zas, 0, 0.1, lb, ub))  - log(dtrnorm(Zas, oldZt, 0.1, lb, ub)) - 
+      (oldllhYJ + log(dtrnorm(oldZt, 0, 0.1, lb, ub)) - log(dtrnorm(oldZt, Zas, 0.1, lb, ub)));
   
     //Rcpp::Rcout << newllhYJ << std::endl;
     //Rcpp::Rcout << oldllhYJ << std::endl;
@@ -3742,6 +3787,82 @@ double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doubl
 }
 
 
+double updateYZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, double theta,
+                      arma::colvec oldYZ, int t, double lb, double ub, 
+                      double tol) {
+  
+  arma::colvec oldYZ_ = oldYZ;
+  arma::colvec newYZ_ = oldYZ;
+  
+  double oldYZt = oldYZ_(t);
+  double YZas;
+  arma::mat tmpYZt;
+  double tmp;
+
+  double pd;
+  double A;
+  double u;
+  
+  double newllhYJ;
+  double oldllhYJ;
+  
+  int i;
+  int j = 0;
+  
+    u = R::runif(0.0, 1.0);
+  
+    tmpYZt = rtrnorm(1, oldYZt, 0.1, lb, ub);
+    YZas = tmpYZt(0);
+    
+    newYZ_(t) = YZas;
+    
+    //newYZ = Y + newZ_;
+    
+    //newllhYJ = llhYJfX(newYZ, Phi, Mu, sigma2, theta, tol);
+    newllhYJ = llhYJfXt(newYZ_, t, Phi, Mu, sigma2, theta, tol);
+    
+    //Rcpp::Rcout << t << std::endl;
+    
+    //tmp = newllhYJ - oldllhYJ;
+  
+    tmp = newllhYJ + log(dtrnorm(YZas, 0, 0.1, lb, ub))  - log(dtrnorm(YZas, oldYZt, 0.1, lb, ub)) - 
+      (oldllhYJ + log(dtrnorm(oldYZt, 0, 0.1, lb, ub)) - log(dtrnorm(oldYZt, YZas, 0.1, lb, ub)));
+  
+    Rcpp::Rcout << "t:" << t << std::endl;
+    Rcpp::Rcout << "Yt:" << Y(t) << std::endl;
+    Rcpp::Rcout << "tmp:" << tmp << std::endl;
+    Rcpp::Rcout << "newllhYJ:" << newllhYJ << std::endl;
+    Rcpp::Rcout << "oldllhYJ:" << oldllhYJ << std::endl;
+    Rcpp::Rcout << "lb:" << lb << std::endl;
+    Rcpp::Rcout << "ub:" << ub << std::endl;
+    Rcpp::Rcout << "YZas:" << YZas << std::endl;
+    Rcpp::Rcout << "oldYZ:" << oldYZt << std::endl;
+    
+  
+    tmp = exp(tmp);
+  
+    //Rcpp::Rcout << tmp << std::endl;
+  
+    //Rcpp::Rcout << tmp << std::endl;
+    pd = tmp;
+    //Rcpp::Rcout << pd << std::endl;
+    A = std::min(1.0, pd);
+    //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
+    //Rcpp::Rcout << A << std::endl;
+  
+    if (u < A) {
+      oldYZt = YZas;
+      oldYZ_ = newYZ_;
+      oldllhYJ = newllhYJ;
+    } 
+  
+    //Rcpp::Rcout << oldtheta_ << std::endl;
+  
+  return(oldYZt);
+}
+
+
+
 // [[Rcpp::export]]
 arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, double theta,
                         arma::colvec oldZ, int leftcensoring, int rounding, 
@@ -3753,7 +3874,9 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
   int q = Phi.n_rows;
   
   arma::mat newZ(T, 1);
+  //arma::mat newYZ(T, 1);
   double tmpZt;
+  //double tmpYZt;
   arma::mat YZout(T, nsim);
   
   double lbr;
@@ -3771,49 +3894,61 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
   int i;
   int j = 0;
   int t = 0;
-  if ((rounding == 1) || (leftcensoring == 1)) {
 
     for (i = 0; i < (burnin + nsim); i++) {
       
       for (t = 0; t < T; t++) {
-        flgr = 0;
-        flgl = 0;
         
-        if (rounding == 1) {
-          lbr = -0.5;
-          ubr = 0.5;
-          flgr = 1;
-        }
+         if ((rounding == 1) || (leftcensoring == 1)) {
         
-        if (leftcensoring == 1) {
-          if (Y(t) <= 0.0) {
-            lbl = (-0.1) * arma::datum::inf;
-            ubl = 0.0;
-            flgl = 1;
-          }
-        }
-        
-        if ((flgr == 0) && (flgl == 0)) {
-          newZ(t) = oldZ(t);
-        } else {
-          if ((flgr == 1) && (flgl == 1)) {
-            lb = lbl;
-            ub = ubr;
-          } else if ((flgr == 1) && (flgl == 0)) {
-            lb = lbr;
-            ub = ubr;
-          } else if ((flgr == 0) && (flgl == 1)) {
-            lb = lbl;
-            ub = lbl;
-          }
-          
-          tmpZt = updateZt(Y, Phi, Mu, sigma2, theta,
-                      newZ, t, lb, ub, 
-                      tol);
-          
-          newZ(t) = tmpZt;
-          
-        }
+            flgr = 0;
+            flgl = 0 ;
+            
+            if (rounding == 1) {
+              lbr = -0.5;// + Y(t);
+              ubr = 0.5;// + Y(t);
+              flgr = 1;
+            }
+            
+            if (leftcensoring == 1) {
+              if (Y(t) <= 0.0) {
+                lbl = (-1) * arma::datum::inf;
+                ubl = 0.0;
+                flgl = 1;
+              }
+            }
+            
+            if ((flgr == 0) && (flgl == 0)) {
+              newZ(t) = oldZ(t);
+              //newYZ(t) = Y(t) + oldZ(t);
+            } else {
+              if ((flgr == 1) && (flgl == 1)) {
+                lb = lbl;
+                ub = ubr;
+              } else if ((flgr == 1) && (flgl == 0)) {
+                lb = lbr;
+                ub = ubr;
+              } else if ((flgr == 0) && (flgl == 1)) {
+                lb = lbl;
+                ub = ubl;
+              }
+              
+              //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
+              //Rcpp::Rcout << A << std::endl;
+              
+              tmpZt = updateZt(Y, Phi, Mu, sigma2, theta,
+                          newZ, t, lb, ub, 
+                          tol);
+              
+              newZ(t) = tmpZt;
+              
+              //tmpYZt = updateYZt(Y, Phi, Mu, sigma2, theta,
+              //            newYZ, t, lb, ub, 
+              //            tol);
+              
+              //newYZ(t) = tmpYZt;
+              
+            }
       
       
       }
@@ -3825,7 +3960,7 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
     }
     
     
-  }
+  } 
   
   return(YZout);
   
@@ -4128,6 +4263,8 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   
   //Rcpp::Rcout << 5 << std::endl;
   
+  Z.set_size(T, 1); 
+  Z.zeros();
   /////////////////////////////////////
   
   int tot_num = burnin + nsim * thin;
@@ -4146,8 +4283,13 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     //Rcpp::Rcout << "i:" << i << std::endl;
     
     if ((leftcensoring == 1) || (rounding == 1)) {
-      YZ = getYZ(Yyj, Y, Phi, Mu, sigma2, 
-                 theta_, tol, leftcensoring, rounding, updateYJ);
+      //YZ = getYZ(Yyj, Y, Phi, Mu, sigma2, 
+      //           theta_, tol, leftcensoring, rounding, updateYJ);
+      
+      YZ = getYZMHX(Y, Phi, Mu, sigma2, theta_, Z,  
+                    leftcensoring, rounding, 
+                    0, 1, tol);
+      Z = YZ - Y;
     } else {
       YZ = Y;
     }
@@ -4214,7 +4356,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
         }
         
         if ((leftcensoring == 1) || (rounding == 1)) {
-          Zmat.col(k) = YZ - Y;
+          Zmat.col(k) = Z;
         }
         
         k++;
