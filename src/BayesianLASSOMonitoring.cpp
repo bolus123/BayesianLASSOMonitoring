@@ -3775,11 +3775,25 @@ double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doubl
     //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
     //Rcpp::Rcout << A << std::endl;
   
+    Rcpp::Rcout << "t:" << t << std::endl;
+    Rcpp::Rcout << "Zas:" << Zas << std::endl;
+    Rcpp::Rcout << "lb:" << lb << std::endl;
+    Rcpp::Rcout << "ub:" << ub << std::endl;
+  
     if (u < A) {
       oldZt = Zas;
       oldZ_ = newZ_;
       oldllhYJ = newllhYJ;
     } 
+  
+    
+    //Rcpp::Rcout << "oldZt:" << oldZt << std::endl;
+    //Rcpp::Rcout << "newllhYJ:" << newllhYJ << std::endl;
+    //Rcpp::Rcout << "oldllhYJ:" << oldllhYJ << std::endl;
+    //Rcpp::Rcout << "lb:" << lb << std::endl;
+    //Rcpp::Rcout << "ub:" << ub << std::endl;
+    //Rcpp::Rcout << "YZas:" << YZas << std::endl;
+    //Rcpp::Rcout << "oldYZ:" << oldYZt << std::endl;
   
     //Rcpp::Rcout << oldtheta_ << std::endl;
   
@@ -4288,7 +4302,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
       
       YZ = getYZMHX(Y, Phi, Mu, sigma2, theta_, Z,  
                     leftcensoring, rounding, 
-                    0, 1, tol);
+                    100, 1, tol);
       Z = YZ - Y;
     } else {
       YZ = Y;
@@ -4303,7 +4317,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     //Rcpp::Rcout << 7 << std::endl;
     
     if (updateYJ == 1) {
-      tmp = thetaYeoJohnsonMHX(YZ, Phi, Mu, sigma2, theta_, 0, 1, tol);
+      tmp = thetaYeoJohnsonMHX(YZ, Phi, Mu, sigma2, theta_, 100, 1, tol);
       theta_ = tmp(0);
       Yyj = yeojohnsontr(YZ, theta_, tol);
     } else {
