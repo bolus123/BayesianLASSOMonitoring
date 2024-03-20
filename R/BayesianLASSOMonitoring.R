@@ -458,13 +458,13 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
     for (i in 1:n) {
       if (side == "right-sided") {
         lim[i, 1] <- -Inf
-        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha)
+        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha, na.rm = TRUE)
       } else if (side == "left-sided") {
-        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha)
-        lim[i, 2] <- infert
+        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha, na.rm = TRUE)
+        lim[i, 2] <- Inf
       } else if (side == "two-sided") {
-        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2)
-        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2)
+        lim[i, 1] <- quantile(ph1mat[i, ], adj.alpha / 2, na.rm = TRUE)
+        lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha / 2, na.rm = TRUE)
       }
     }
     
@@ -472,7 +472,7 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
       sig[, i] <- (lim[, 1] <= ph1mat[, i]) & (ph1mat[, i] <= lim[, 2])
     }
     
-    tmp <- mean(colSums(sig) == n)
+    tmp <- mean(colSums(sig) == n, na.rm = TRUE)
     dif <- tmp - (1 - FAP0)
     ##cat("dif:", dif, "\n")
     return(dif)
