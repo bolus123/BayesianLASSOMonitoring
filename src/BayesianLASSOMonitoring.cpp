@@ -2705,7 +2705,7 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
                            double mu0, double sigma2, double pho, double xi2,
                            int T, arma::mat H_, int m, int Xflg, int q){
   
-  double pi = 3.14159265359;
+  //double pi = 3.14159265359;
   
   arma::mat Ht(T, 1); 
   arma::mat tmpHt = Ht; 
@@ -2726,7 +2726,7 @@ Rcpp::List updateTauGammaX(arma::colvec Y, arma::mat X_, arma::colvec Phi, arma:
   arma::mat muGamma = Gamma;
   arma::mat sigma2Gamma = Gamma;
   
-  double tmpzetanot;
+  //double tmpzetanot;
   double tmpzetat;
   arma::mat tmp;
   double prob;
@@ -3022,10 +3022,10 @@ Rcpp::List simpleinitGibbsRFLSMXcpp(arma::colvec Y, Rcpp::List bset, double tol,
   
   
   int phiq = bset["phiq"];
-  double gammaxi2 = bset["gammaxi2"];
+  //double gammaxi2 = bset["gammaxi2"];
   Rcpp::String method = bset["method"];
   int updatelambda2 = bset["updatelambda2"];
-  int phimono = bset["phimono"];
+  //int phimono = bset["phimono"];
   
   /////////////////////
   
@@ -3523,7 +3523,7 @@ arma::mat llhfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
    double pi = 3.14159265359;
    
    int q = Phi.n_rows;
-   int T = Y.n_elem;
+   //int T = Y.n_elem;
    
    arma::mat V; 
    arma::mat Vas;
@@ -3642,10 +3642,10 @@ double llhYJfXt(arma::colvec Y, int t, arma::mat Phi, arma::mat Mu,
 arma::mat thetaYeoJohnsonMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
                         double oldtheta, int burnin, int nsim, double tol) {
   
-  double pi = 3.14159265359;
+  //double pi = 3.14159265359;
   
-  int T = Y.n_elem;
-  int q = Phi.n_rows;
+  //int T = Y.n_elem;
+  //int q = Phi.n_rows;
   
   double u;
   double oldtheta_ = oldtheta;
@@ -3739,8 +3739,8 @@ double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doubl
   double newllhYJ = 0.0;
   double oldllhYJ = 0.0;
   
-  int i;
-  int j = 0;
+  //int i;
+  //int j = 0;
   
     u = R::runif(0.0, 1.0);
   
@@ -3803,8 +3803,8 @@ double updateYZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doub
   double A;
   double u;
   
-  double newllhYJ;
-  double oldllhYJ;
+  double newllhYJ = 0.0;
+  double oldllhYJ = 0.0;
   
   int i;
   int j = 0;
@@ -3868,10 +3868,10 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
                         arma::colvec oldZ, int leftcensoring, int rounding, 
                         int burnin, int nsim, double tol) {
   
-  double pi = 3.14159265359;
+  //double pi = 3.14159265359;
 
   int T = Y.n_elem;
-  int q = Phi.n_rows;
+  //int q = Phi.n_rows;
   
   arma::mat newZ(T, 1);
   //arma::mat newYZ(T, 1);
@@ -4131,7 +4131,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   //int YJ = bset["YJ"];
   int leftcensoring = bset["leftcensoring"];
   //int lowerbound = bset["lowerbound"];
-  double lowerbound = 0.0;
+  //double lowerbound = 0.0;
   int rounding = bset["rounding"];
   int updateYJ = bset["updateYJ"];
   int phiq = bset["phiq"];
