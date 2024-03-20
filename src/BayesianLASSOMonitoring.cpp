@@ -3806,8 +3806,8 @@ double updateYZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doub
   double newllhYJ = 0.0;
   double oldllhYJ = 0.0;
   
-  int i;
-  int j = 0;
+  //int i;
+  //int j = 0;
   
     u = R::runif(0.0, 1.0);
   
@@ -4081,8 +4081,8 @@ arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, d
         } 
       }
         
-        lbvec(i) = lb;
-        ubvec(i) = ub;
+        //lbvec(i) = lb;
+        //ubvec(i) = ub;
         
         
         
