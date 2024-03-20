@@ -3775,10 +3775,10 @@ double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doubl
     //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
     //Rcpp::Rcout << A << std::endl;
   
-    Rcpp::Rcout << "t:" << t << std::endl;
-    Rcpp::Rcout << "Zas:" << Zas << std::endl;
-    Rcpp::Rcout << "lb:" << lb << std::endl;
-    Rcpp::Rcout << "ub:" << ub << std::endl;
+    //Rcpp::Rcout << "t:" << t << std::endl;
+    //Rcpp::Rcout << "Zas:" << Zas << std::endl;
+    //Rcpp::Rcout << "lb:" << lb << std::endl;
+    //Rcpp::Rcout << "ub:" << ub << std::endl;
   
     if (u < A) {
       oldZt = Zas;
