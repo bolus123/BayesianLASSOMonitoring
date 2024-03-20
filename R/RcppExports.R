@@ -319,12 +319,28 @@ llhYJfX <- function(Y, Phi, Mu, sigma2, theta, eps) {
     .Call(`_BayesianLASSOMonitoring_llhYJfX`, Y, Phi, Mu, sigma2, theta, eps)
 }
 
+#' Absolute-value-constrained normal distribution
+#' 
+#' gets a sample from a normal distribution whose absolute observations are constrained.
+#'
+#' @param n is sample size.
+#' @export
+#' @examples
+#' rtwosegnorm(10, 1, 2, 0, 1)
+llhYJfXt <- function(Y, t, Phi, Mu, sigma2, theta, eps) {
+    .Call(`_BayesianLASSOMonitoring_llhYJfXt`, Y, t, Phi, Mu, sigma2, theta, eps)
+}
+
 thetaYeoJohnsonMHX <- function(Y, Phi, Mu, sigma2, oldtheta, burnin, nsim, tol) {
     .Call(`_BayesianLASSOMonitoring_thetaYeoJohnsonMHX`, Y, Phi, Mu, sigma2, oldtheta, burnin, nsim, tol)
 }
 
-getYZ <- function(Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, updateYJ) {
-    .Call(`_BayesianLASSOMonitoring_getYZ`, Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, updateYJ)
+getYZMHX <- function(Y, Phi, Mu, sigma2, theta, oldZ, leftcensoring, rounding, burnin, nsim, tol) {
+    .Call(`_BayesianLASSOMonitoring_getYZMHX`, Y, Phi, Mu, sigma2, theta, oldZ, leftcensoring, rounding, burnin, nsim, tol)
+}
+
+getYZ <- function(Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, rounding, updateYJ) {
+    .Call(`_BayesianLASSOMonitoring_getYZ`, Yyj, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, rounding, updateYJ)
 }
 
 GibbsRFLSMXcpp <- function(Y, bset, tol, nsim, thin, burnin, verbose, X = NULL, H = NULL, lambda2 = NULL, theta = NULL) {
@@ -351,8 +367,8 @@ simYyjXph1 <- function(Yyj, Phi, Mu, sigma2) {
 #' @export
 #' @examples
 #' rtwosegnorm(10, 1, 2, 0, 1)
-simYXph1 <- function(Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z = NULL) {
-    .Call(`_BayesianLASSOMonitoring_simYXph1`, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z)
+simYXph1 <- function(Y, Phi, Mu, sigma2, theta, eps, leftcensoring, rounding, Z = NULL) {
+    .Call(`_BayesianLASSOMonitoring_simYXph1`, Y, Phi, Mu, sigma2, theta, eps, leftcensoring, rounding, Z)
 }
 
 #' Absolute-value-constrained normal distribution
@@ -375,7 +391,7 @@ simYyjXph2 <- function(h, Yyjph1, Phi, Mu, sigma2) {
 #' @export
 #' @examples
 #' rtwosegnorm(10, 1, 2, 0, 1)
-simYXph2 <- function(h, Y1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z1 = NULL) {
-    .Call(`_BayesianLASSOMonitoring_simYXph2`, h, Y1, Phi, Mu, sigma2, theta, eps, leftcensoring, lowerbound, rounding, Z1)
+simYXph2 <- function(h, Y1, Phi, Mu, sigma2, theta, eps, leftcensoring, rounding, Z1 = NULL) {
+    .Call(`_BayesianLASSOMonitoring_simYXph2`, h, Y1, Phi, Mu, sigma2, theta, eps, leftcensoring, rounding, Z1)
 }
 

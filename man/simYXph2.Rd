@@ -13,7 +13,6 @@ simYXph2(
   theta,
   eps,
   leftcensoring,
-  lowerbound,
   rounding,
   Z1 = NULL
 )
