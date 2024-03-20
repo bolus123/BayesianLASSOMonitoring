@@ -3835,7 +3835,9 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
 
 // [[Rcpp::export]]
 arma::colvec getYZ(arma::colvec Yyj,arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, 
-                   double theta, double eps, int leftcensoring, double lowerbound, int rounding, int updateYJ) {
+                   double theta, double eps, int leftcensoring, int rounding, int updateYJ) {
+  
+  double lowerbound = 0.0;
   
   int q = Phi.n_rows;
   //Rcpp::Rcout << q << std::endl;
@@ -3993,7 +3995,8 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
   
   //int YJ = bset["YJ"];
   int leftcensoring = bset["leftcensoring"];
-  int lowerbound = bset["lowerbound"];
+  //int lowerbound = bset["lowerbound"];
+  double lowerbound = 0.0;
   int rounding = bset["rounding"];
   int updateYJ = bset["updateYJ"];
   int phiq = bset["phiq"];
@@ -4144,7 +4147,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     
     if ((leftcensoring == 1) || (rounding == 1)) {
       YZ = getYZ(Yyj, Y, Phi, Mu, sigma2, 
-                 theta_, tol, leftcensoring, lowerbound, rounding, updateYJ);
+                 theta_, tol, leftcensoring, rounding, updateYJ);
     } else {
       YZ = Y;
     }
@@ -4329,8 +4332,10 @@ arma::colvec simYyjXph1(arma::colvec Yyj,arma::mat Phi,arma::mat Mu, double sigm
 //' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
 arma::colvec simYXph1(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
-                      int leftcensoring, double lowerbound, int rounding, 
+                      int leftcensoring, int rounding, 
                       Rcpp::Nullable<Rcpp::NumericMatrix> Z = R_NilValue) {
+  
+  double lowerbound = 0.0;
   
   arma::mat Z_; 
   if (Z.isNotNull()) {
@@ -4440,8 +4445,10 @@ arma::colvec simYyjXph2(int h,arma::colvec Yyjph1,arma::mat Phi,arma::mat Mu, do
 //' rtwosegnorm(10, 1, 2, 0, 1)
 // [[Rcpp::export]]
 arma::colvec simYXph2(int h,arma::colvec Y1,arma::mat Phi,arma::mat Mu, double sigma2, double theta, double eps, 
-                      int leftcensoring, double lowerbound, int rounding, 
+                      int leftcensoring, int rounding, 
                       Rcpp::Nullable<Rcpp::NumericMatrix> Z1 = R_NilValue) {
+  
+  double lowerbound = 0.0;
   
   arma::mat Z1_; 
   if (Z1.isNotNull()) {
