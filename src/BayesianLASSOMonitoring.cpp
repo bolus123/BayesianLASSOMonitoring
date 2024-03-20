@@ -3736,8 +3736,8 @@ double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doubl
   double A;
   double u;
   
-  double newllhYJ;
-  double oldllhYJ;
+  double newllhYJ = 0.0;
+  double oldllhYJ = 0.0;
   
   int i;
   int j = 0;
