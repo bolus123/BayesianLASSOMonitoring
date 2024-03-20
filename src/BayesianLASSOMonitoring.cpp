@@ -4302,7 +4302,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
       
       YZ = getYZMHX(Y, Phi, Mu, sigma2, theta_, Z,  
                     leftcensoring, rounding, 
-                    100, 1, tol);
+                    0, 1, tol);
       Z = YZ - Y;
     } else {
       YZ = Y;
@@ -4317,7 +4317,7 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
     //Rcpp::Rcout << 7 << std::endl;
     
     if (updateYJ == 1) {
-      tmp = thetaYeoJohnsonMHX(YZ, Phi, Mu, sigma2, theta_, 100, 1, tol);
+      tmp = thetaYeoJohnsonMHX(YZ, Phi, Mu, sigma2, theta_, 0, 1, tol);
       theta_ = tmp(0);
       Yyj = yeojohnsontr(YZ, theta_, tol);
     } else {
