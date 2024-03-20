@@ -3670,6 +3670,166 @@ arma::mat thetaYeoJohnsonMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double s
   
 }
 
+double dtrnorm(double x, double mean, double sd, double lower, double upper) {
+  double beta = (upper - mean) / sd;
+  double alpha = (lower - mean) / sd;
+  double z = R::pnorm5(beta, 0.0, 1.0, 1, 0) - R::pnorm5(alpha, 0.0, 1.0, 1, 0);
+  double xi = (x - mean) / sd;
+  double out = R::dnorm4(xi, 0, 1, 0) / sd / z;
+  return(out);
+}
+
+double updateZt(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, double theta,
+                      arma::colvec oldZ, int t, double lb, double ub, 
+                      double tol) {
+  
+  arma::colvec oldZ_ = oldZ;
+  arma::colvec newZ_ = oldZ;
+  
+  arma::colvec newYZ;
+  
+  double oldZt = oldZ_(t);
+  double Zas;
+  arma::mat tmpZt;
+  double tmp;
+
+  double pd;
+  double A;
+  double u;
+  
+  int i;
+  int j = 0;
+  
+    u = R::runif(0.0, 1.0);
+  
+    tmpZt = rtrnorm(1, oldZt, 0.1, lb, ub);
+    Zas = tmpZt(0);
+    
+    newZ_(t) = Zas;
+    
+    newYZ = Y + newZ_;
+    
+    newllhYJ = llhYJfX(newYZ, Phi, Mu, sigma2, theta, tol);
+  
+    //tmp = newllhYJ - oldllhYJ;
+  
+    tmp = newllhYJ - log(dtrnorm(Zas, oldZt, 0.1, lb, ub)) - 
+      (oldllhYJ - log(dtrnorm(oldZt, Zas, 0.1, lb, ub)));
+  
+    //Rcpp::Rcout << newllhYJ << std::endl;
+    //Rcpp::Rcout << oldllhYJ << std::endl;
+  
+    tmp = exp(tmp);
+  
+    //Rcpp::Rcout << tmp << std::endl;
+  
+    //Rcpp::Rcout << tmp << std::endl;
+    pd = tmp;
+    //Rcpp::Rcout << pd << std::endl;
+    A = std::min(1.0, pd);
+    //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
+    //Rcpp::Rcout << A << std::endl;
+  
+    if (u < A) {
+      oldZt = Zas;
+      oldZ_ = newZ_;
+      oldllhYJ = newllhYJ;
+    } 
+  
+    //Rcpp::Rcout << oldtheta_ << std::endl;
+  
+  return(oldZt);
+}
+
+
+// [[Rcpp::export]]
+arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, double theta,
+                        arma::colvec oldZ, int leftcensoring, int rounding, 
+                        int burnin, int nsim, double tol) {
+  
+  double pi = 3.14159265359;
+
+  int T = Y.n_elem;
+  int q = Phi.n_rows;
+  
+  arma::mat newZ(T, 1);
+  double tmpZt;
+  arma::mat YZout(T, nsim);
+  
+  double lbr;
+  double ubr;
+  
+  double lbl;
+  double ubl;
+  
+  double ub;
+  double lb;
+  
+  int flgr;
+  int flgl;
+  
+  int i;
+  int j = 0;
+  int t = 0;
+  if ((rounding == 1) || (leftcensoring == 1)) {
+
+    for (i = 0; i < (burnin + nsim); i++) {
+      
+      for (t = 0; t < T; t++) {
+        flgr = 0;
+        flgl = 0;
+        
+        if (rounding == 1) {
+          lbr = -0.5;
+          ubr = 0.5;
+          flgr = 1;
+        }
+        
+        if (leftcensoring == 1) {
+          if (Y(t) <= 0.0) {
+            lbl = (-0.1) * arma::datum::inf;
+            ubl = 0.0;
+            flgl = 1;
+          }
+        }
+        
+        if ((flgr == 0) && (flgl == 0)) {
+          newZ(t) = oldZ(t);
+        } else {
+          if ((flgr == 1) && (flgl == 1)) {
+            lb = lbl;
+            ub = ubr;
+          } else if ((flgr == 1) && (flgl == 0)) {
+            lb = lbr;
+            ub = ubr;
+          } else if ((flgr == 0) && (flgl == 1)) {
+            lb = lbl;
+            ub = lbl;
+          }
+          
+          tmpZt = updateZt(Y, Phi, Mu, sigma2, theta,
+                      newZ, t, lb, ub, 
+                      tol);
+          
+          newZ(t) = tmpZt;
+          
+        }
+      
+      
+      }
+    }
+    
+    if (i >= burnin) {
+      YZout.col(j) = Y + newZ;
+      j = j + 1;
+    }
+    
+    
+  }
+  
+  return(YZout);
+  
+}
 
 
 
