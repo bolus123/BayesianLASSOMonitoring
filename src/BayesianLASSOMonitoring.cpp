@@ -3618,18 +3618,19 @@ double llhYJfXt(arma::colvec Y, int t, arma::mat Phi, arma::mat Mu,
  arma::colvec Yyj = yeojohnsontr(Y, theta, eps);
  arma::mat llhYJ = llhfX(Yyj, Phi, Mu, sigma2);
  
+ //int m = t + q;
+ //if (m > (T - 1)) {
+ //  m = T - 1;
+ //}
  
+ //arma::mat llhYJt = llhYJ.rows(t, m); 
+ //double tmp = arma::accu(llhYJt);
  
- int m = t + q;
- if (m > (T - 1)) {
-   m = T - 1;
- }
+ double tmp = 0;
  
- arma::mat llhYJt = llhYJ.rows(t, m); 
- double tmp = arma::accu(llhYJt);
- 
- for (int i = t; i <= m; i++) {
-   tmp = tmp + log(pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i))));
+ //for (int i = t; i <= m; i++) {
+ for (int i = 0; i < T; i++) {
+   tmp = llhYJ(t) + log(pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i))));
  }
  
  
