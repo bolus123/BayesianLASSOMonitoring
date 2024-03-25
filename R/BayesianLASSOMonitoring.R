@@ -450,12 +450,16 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
                                    FAP0 = 0.2, side = "right-sided", 
                                    nsim = 10000, interval = c(0.000001, 0.499999)) {
   
-  root.finding <- function(adj.alpha, ph1mat, FAP0, n, nsim, side = "right-sided") {
+  root.finding <- function(adj.alpha, ph1mat, FAP0, n, q, nsim, side = "right-sided") {
+    
     
     lim <- matrix(NA, nrow = n, ncol = 2)
+    lim[, 1] <- -Inf
+    lim[, 2] <- Inf
+    
     sig <- matrix(NA, nrow = n, ncol = nsim)
     
-    for (i in 1:n) {
+    for (i in (q + 1):n) {
       if (side == "right-sided") {
         lim[i, 1] <- -Inf
         lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha, na.rm = TRUE)
@@ -472,7 +476,7 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
       sig[, i] <- (lim[, 1] <= ph1mat[, i]) & (ph1mat[, i] <= lim[, 2])
     }
     
-    tmp <- mean(colSums(sig) == n, na.rm = TRUE)
+    tmp <- mean(colSums(sig[(q + 1):n, ]) == n - q, na.rm = TRUE)
     dif <- tmp - (1 - FAP0)
     ##cat("dif:", dif, "\n")
     return(dif)
@@ -498,13 +502,16 @@ Ph1MultipleTesting.Y01 <- function(model, bset,
     
   }
   
-  adj.alpha <- uniroot(root.finding, interval, ph1mat = ph1mat, FAP0 = FAP0, n = n, nsim = nsim, side = side, 
+  adj.alpha <- uniroot(root.finding, interval, ph1mat = ph1mat, FAP0 = FAP0, n = n, q = q, nsim = nsim, side = side, 
           tol = 1e-6)$root
   
   lim <- matrix(NA, nrow = n, ncol = 2)
+  lim[, 1] <- -Inf
+  lim[, 2] <- Inf
+    
   sig <- matrix(NA, nrow = n, ncol = 1)
   
-  for (i in 1:n) {
+  for (i in (q + 1):n) {
     if (side == "right-sided") {
       lim[i, 1] <- -Inf
       lim[i, 2] <- quantile(ph1mat[i, ], 1 - adj.alpha, na.rm = TRUE)
