@@ -3807,109 +3807,78 @@ double llYZt(arma::colvec YZ, arma::mat Phi,arma::mat Mu,
   
 }
 
+double llf(arma::colvec resi, arma::colvec YZ, double sigma2, double theta){
+  
+  int T = YZ.n_rows;
+  arma::colvec tmp; 
+  
+  for (int i = 0; i < T; i++) {
+    tmp(i) = (-1.0) / 2.0 / sigma2 * pow(resi(i), 2.0) + 
+      (theta - 1.0) * sign(YZ(i)) * log(abs(YZ(i)) + 1.0);
+  }
+  
+  double out = arma::accu(tmp);
+  return(out);
+  
+} 
+
 double updateYZt(arma::colvec YZ, arma::mat Phi,arma::mat Mu, double sigma2, double theta,
-                int t, double lb, double ub, double tol) {
+                int t, double lb, double ub, double tol, int burnin) {
   
-  arma::colvec oldYZ = YZ;
-  double oldYZt = oldYZ(t);
+  int T = YZ.n_rows;
+  int q = Phi.n_rows;
   
-  double YZtas;
-  double newYZt;
+  arma::colvec oldYZ = YZ; 
+  arma::colvec oldYZyj = yeojohnsontr(oldYZ, theta, tol);
+  arma::colvec oldresi = oldYZyj - Mu; 
+  oldresi = updateResi(oldresi, Phi, q); 
+  double oldll = llf(oldresi, oldYZ, sigma2, theta);
+  
+  arma::colvec newYZ = oldYZ; 
+  arma::colvec newYZyj = oldYZyj;
+  
+  arma::colvec YZtas;
+  arma::colvec YZyjtas;
+  arma::colvec resias;
+  
+  double Mut = Mu(t);
+  
+  double newll;
   
   double pd;
   double A;
   double u;
   
-  double Mut = ;
-  
-  double oldllhYJ = R::dnorm4()
-  
-  double newllhYJ = 0.0;
-  double oldllhYJ = 0.0;
-  
-  int i = 0;
-  
-  for (i = 0; i <= burnin; i++) {
-    u = R::runif(0.0, 1.0);
-  
-    tmpZt = rtrnorm(1, oldZt, 0.1, lb, ub);
-    Zas = tmpZt(0);
+  for (int i = 0; i < burnin; i++) {
     
-    newZ_(t) = Zas;
+    u = R::runif(0, 1);
     
-    newYZ = Y + newZ_;
+    YZyjtas = rtrnorm(1, Mut, sqrt(sigma2), lb, ub);
+    newYZyj.row(t) = YZyjtas;
+    newYZ.row(t) = invyeojohnsontr(YZyjtas, theta, tol);
     
-    newllhYJ = llhYJfXt(newYZ, t, Phi, Mu, sigma2, theta, tol);
-  
-    tmp = newllhYJ + log(dtrnorm(Zas, 0, 0.1, lb, ub))  - log(dtrnorm(Zas, oldZt, 0.1, lb, ub)) - 
-      (oldllhYJ + log(dtrnorm(oldZt, 0, 0.1, lb, ub)) - log(dtrnorm(oldZt, Zas, 0.1, lb, ub)));
-  
-    tmp = exp(tmp);
+    resias = newYZyj - Mu;
+    resias = updateResi(resias, Phi, q); 
     
-    pd = tmp;
+    newll = llf(resias, newYZ, sigma2, theta);
+   
+    pd = newll - log(dtrnorm(newYZyj(t), oldYZyj(t), 0.1, lb, ub)) - 
+      (oldll - log(dtrnorm(oldYZyj(t), newYZyj(t), 0.1, lb, ub)));
+    
+    pd = exp(pd);
     
     A = std::min(1.0, pd);
-  
     if (u < A) {
-      oldZt = Zas;
-      oldZ_ = newZ_;
-      oldllhYJ = newllhYJ;
+      oldll = newll;
+      oldYZyj = newYZyj;
+      oldYZ = newYZ;
     } 
+    
   }
   
-  //int i;
-  //int j = 0;
+  double out = newYZ(t);
+  return(out);
   
-    u = R::runif(0.0, 1.0);
-  
-    tmpYZt = rtrnorm(1, oldYZt, 0.1, lb, ub);
-    YZas = tmpYZt(0);
-    
-    newYZ_(t) = YZas;
-    
-    //newYZ = Y + newZ_;
-    
-    //newllhYJ = llhYJfX(newYZ, Phi, Mu, sigma2, theta, tol);
-    newllhYJ = llhYJfXt(newYZ_, t, Phi, Mu, sigma2, theta, tol);
-    
-    //Rcpp::Rcout << t << std::endl;
-    
-    //tmp = newllhYJ - oldllhYJ;
-  
-    tmp = newllhYJ + log(dtrnorm(YZas, 0, 0.1, lb, ub))  - log(dtrnorm(YZas, oldYZt, 0.1, lb, ub)) - 
-      (oldllhYJ + log(dtrnorm(oldYZt, 0, 0.1, lb, ub)) - log(dtrnorm(oldYZt, YZas, 0.1, lb, ub)));
-  
-    Rcpp::Rcout << "t:" << t << std::endl;
-    Rcpp::Rcout << "Yt:" << Y(t) << std::endl;
-    Rcpp::Rcout << "tmp:" << tmp << std::endl;
-    Rcpp::Rcout << "newllhYJ:" << newllhYJ << std::endl;
-    Rcpp::Rcout << "oldllhYJ:" << oldllhYJ << std::endl;
-    Rcpp::Rcout << "lb:" << lb << std::endl;
-    Rcpp::Rcout << "ub:" << ub << std::endl;
-    Rcpp::Rcout << "YZas:" << YZas << std::endl;
-    Rcpp::Rcout << "oldYZ:" << oldYZt << std::endl;
-    
-  
-    tmp = exp(tmp);
-  
-    //Rcpp::Rcout << tmp << std::endl;
-  
-    //Rcpp::Rcout << tmp << std::endl;
-    pd = tmp;
-    //Rcpp::Rcout << pd << std::endl;
-    A = std::min(1.0, pd);
-    //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
-    //Rcpp::Rcout << A << std::endl;
-  
-    if (u < A) {
-      oldYZt = YZas;
-      oldYZ_ = newYZ_;
-      oldllhYJ = newllhYJ;
-    } 
-  
-    //Rcpp::Rcout << oldtheta_ << std::endl;
-  
-  return(oldYZt);
 }
 
 
@@ -3919,16 +3888,11 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
                         arma::colvec oldZ, int leftcensoring, int rounding, 
                         int burnin, int nsim, double tol) {
   
-  //double pi = 3.14159265359;
-
   int T = Y.n_elem;
-  //int q = Phi.n_rows;
   
-  //arma::mat newZ(T, 1);
-  arma::mat newYZ(T, 1);
   arma::mat oldYZ = Y + oldZ;
+  arma::mat newYZ = oldYZ;
   
-  //double tmpZt;
   double tmpYZt;
   arma::mat YZout(T, nsim);
   
@@ -3940,6 +3904,8 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
   
   double ub;
   double lb;
+  
+  arma::colvec tmp; 
   
   int flgr;
   int flgl;
@@ -3956,8 +3922,13 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
             flgl = 0 ;
             
             if (rounding == 1) {
-              lbr = -0.5 + Y(t);
-              ubr = 0.5 + Y(t);
+              tmp = -0.5 + Y.row(t);
+              tmp = yeojohnsontr(tmp, theta, tol);
+              lbr = tmp(0);
+              
+              tmp = 0.5 + Y.row(t);
+              tmp = yeojohnsontr(tmp, theta, tol);
+              ubr = tmp(0);
               flgr = 1;
             }
             
@@ -3984,18 +3955,8 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
                 ub = ubl;
               }
               
-              //Rcpp::Rcout << tmp(T - q - 1) << std::endl;
-              //Rcpp::Rcout << A << std::endl;
-              
-              //tmpZt = updateZt(Y, Phi, Mu, sigma2, theta,
-              //            newZ, t, lb, ub, 
-              //            tol, burnin);
-              //
-              //newZ(t) = tmpZt;
-              
-              tmpYZt = updateYZt(Y, Phi, Mu, sigma2, theta,
-                          newYZ, t, lb, ub, 
-                          tol);
+              tmpYZt = updateYZt(newYZ, Phi, Mu, sigma2, theta,
+                t, lb, ub, tol, burnin);
               
               newYZ(t) = tmpYZt;
               
@@ -4009,9 +3970,6 @@ arma::mat getYZMHX(arma::colvec Y,arma::mat Phi,arma::mat Mu, double sigma2, dou
     YZout.col(i) = newYZ;
   }
       
-      
-    
-  
   return(YZout);
   
 }
