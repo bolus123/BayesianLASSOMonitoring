@@ -3759,7 +3759,7 @@ double llf(arma::colvec resi, arma::colvec YZ, double sigma2, double theta){
   arma::colvec tmp(T); 
   
   for (int i = 0; i < T; i++) {
-    tmp(i) = (-1.0) / 2.0 / sigma2 * pow(resi(i), 2.0) + 
+    tmp(i) = R::dnorm4(resi(i), 0.0, sqrt(sigma2), 1) + 
       (theta - 1.0) * sign(YZ(i)) * log(abs(YZ(i)) + 1.0);
   }
   
@@ -4021,13 +4021,14 @@ double updateZt(arma::colvec Z, arma::colvec Y,
    
     //Rcpp::Rcout << 2.2  << std::endl;
    
-    pd = newll + log(dtrnorm(Ztas(0), 0, 0.1, lb, ub)) - log(dtrnorm(newYZ(t), oldYZ(t), 0.1, lb, ub)) - 
-      (oldll + log(dtrnorm(oldZ(t), 0, 0.1, lb, ub)) - log(dtrnorm(oldYZ(t), newYZ(t), 0.1, lb, ub)));
+    pd = newll + log(dtrnorm(Ztas(0), 0, 0.1, lb, ub)) - log(dtrnorm(Ztas(0), oldZ(t), 0.1, lb, ub)) - 
+      (oldll + log(dtrnorm(oldZ(t), 0, 0.1, lb, ub)) - log(dtrnorm(oldZ(t), Ztas(0), 0.1, lb, ub)));
     
     pd = exp(pd);
     
     A = std::min(1.0, pd);
     if (u < A) {
+      oldZ.row(t) = Ztas;
       oldll = newll;
       oldYZyj = newYZyj;
       oldYZ = newYZ;
@@ -4036,7 +4037,7 @@ double updateZt(arma::colvec Z, arma::colvec Y,
     
   }
   
-  double out = oldYZ(t);
+  double out = oldZ(t);
   return(out);
   
 }
@@ -4044,7 +4045,7 @@ double updateZt(arma::colvec Z, arma::colvec Y,
 
 
 // [[Rcpp::export]]
-arma::mat getYZZ(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, double theta,
+arma::mat getZZ(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, double theta,
                         arma::colvec oldZ, int leftcensoring, int rounding, 
                         int burnin, int nsim, double tol) {
   
@@ -4053,9 +4054,11 @@ arma::mat getYZZ(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doub
   arma::mat oldYZ = Y + oldZ;
   arma::mat newYZ = oldYZ;
   
+  arma::mat newZ = oldZ;
+  
   //double tmpYZt;
   double tmpZt;
-  arma::mat YZout(T, nsim);
+  arma::mat Zout(T, nsim);
   
   double lbr;
   double ubr;
@@ -4085,17 +4088,15 @@ arma::mat getYZZ(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doub
             flgl = 0 ;
             
             if (rounding == 1) {
-              tmp = -0.5;
-              lbr = tmp(0);
+              lbr = -0.5;
               
-              tmp = 0.5;
-              ubr = tmp(0);
+              ubr = 0.5;
               flgr = 1;
             }
             
             if (leftcensoring == 1) {
               if (Y(t) <= 0.0) {
-                lbl = (-1) * arma::datum::inf;
+                lbl = (-1.0) * arma::datum::inf;
                 ubl = 0.0;
                 flgl = 1;
               }
@@ -4104,7 +4105,7 @@ arma::mat getYZZ(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doub
             
             
             if ((flgr == 0) && (flgl == 0)) {
-              newYZ(t) = oldYZ(t);
+              newZ(t) = oldZ(t);
               //newYZ(t) = Y(t) + oldZ(t);
             } else {
               if ((flgr == 1) && (flgl == 1)) {
@@ -4118,9 +4119,8 @@ arma::mat getYZZ(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doub
                 ub = ubl;
               }
               
-              tmpZt = updateZt(oldZ, Y, Phi, Mu, sigma2, theta, t, lb, ub, tol, burnin);
+              newZ(t) = updateZt(newZ, Y, Phi, Mu, sigma2, theta, t, lb, ub, tol, burnin);
               
-              newYZ(t) = tmpZt + Y(t);
               
             }
       
@@ -4129,10 +4129,10 @@ arma::mat getYZZ(arma::colvec Y, arma::mat Phi,arma::mat Mu, double sigma2, doub
     }
     
     //YZout.col(i) = Y + newZ;
-    YZout.col(i) = newYZ;
+    Zout.col(i) = newZ;
   }
       
-  return(YZout);
+  return(Zout);
   
 }
 
@@ -4459,15 +4459,19 @@ Rcpp::List GibbsRFLSMXcpp(arma::colvec Y,
       //Rcpp::Rcout <<"leftcensoring: " << leftcensoring << std::endl;
       //Rcpp::Rcout <<"rounding: " << rounding << std::endl;
       
-      YZ = getYZMHX(Y, Phi, Mu, sigma2, theta_, Z,  
-                    leftcensoring, rounding, 
-                    0, 1, tol);
+      //YZ = getYZMHX(Y, Phi, Mu, sigma2, theta_, Z,  
+      //              leftcensoring, rounding, 
+      //              0, 1, tol);
+      
+      Z = getZZ(Y, Phi, Mu,  sigma2,  theta_,
+           Z,  leftcensoring,  rounding, 
+                        0, 1, tol);
       
       //YZ = getYZZ(Y, Phi, Mu, sigma2, theta_, Z,  
       //              leftcensoring, rounding, 
       //              0, 1, tol);
       
-      Z = YZ - Y;
+      YZ = Y + Z;
     } else {
       YZ = Y;
     }
