@@ -3565,6 +3565,8 @@ arma::mat llhfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2) {
    
    resi = V - VasPhi;
    
+   resi.shed_rows(0, q);
+   
    arma::mat tmp = sqrt(1 / 2.0 / pi / sigma2) * exp(- 1.0 / 2.0 * arma::pow(resi, 2) / sigma2);
    tmp = arma::log(tmp);
    
@@ -3614,12 +3616,13 @@ arma::mat lhYJfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, dou
 double llhYJfX(arma::colvec Y, arma::mat Phi, arma::mat Mu, double sigma2, double theta, double eps) {
  
  int T = Y.n_elem;
+ int q = Phi.n_rows;
  
  arma::colvec Yyj = yeojohnsontr(Y, theta, eps);
  arma::mat llhYJ = llhfX(Yyj, Phi, Mu, sigma2);
  double tmp = arma::accu(llhYJ);
  
- for (int i = 0; i < T; i++) {
+ for (int i = q; i < T; i++) {
    tmp = tmp + log(pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i))));
  }
  
@@ -3657,7 +3660,7 @@ double llhYJfXt(arma::colvec Y, int t, arma::mat Phi, arma::mat Mu,
  double tmp = 0;
  
  //for (int i = t; i <= m; i++) {
- for (int i = 0; i < T; i++) {
+ for (int i = q; i < T; i++) {
    tmp = llhYJ(t) + log(pow(abs(Y(i)) + 1, (theta - 1) * sign(Y(i))));
  }
  
